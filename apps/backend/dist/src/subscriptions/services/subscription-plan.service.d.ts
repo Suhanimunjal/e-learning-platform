@@ -1,0 +1,100 @@
+import { PrismaService } from '../../prisma/prisma.service';
+export declare class SubscriptionPlanService {
+    private prisma;
+    private readonly logger;
+    constructor(prisma: PrismaService);
+    createPlan(data: {
+        name: string;
+        description?: string;
+        price: number;
+        billingCycle: string;
+        features?: any;
+        maxCourses?: number;
+        maxStudents?: number;
+        supportLevel?: string;
+        razorpayPlanId?: string;
+    }): Promise<{
+        id: string;
+        name: string;
+        description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        price: number;
+        features: import("@prisma/client/runtime/client").JsonValue | null;
+        billingCycle: string;
+        maxCourses: number;
+        maxStudents: number;
+        supportLevel: string;
+        isActive: boolean;
+        razorpayPlanId: string | null;
+    }>;
+    getPlanById(planId: string): Promise<{
+        id: string;
+        name: string;
+        description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        price: number;
+        features: import("@prisma/client/runtime/client").JsonValue | null;
+        billingCycle: string;
+        maxCourses: number;
+        maxStudents: number;
+        supportLevel: string;
+        isActive: boolean;
+        razorpayPlanId: string | null;
+    }>;
+    getAllPlans(onlyActive?: boolean): Promise<{
+        id: string;
+        name: string;
+        description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        price: number;
+        features: import("@prisma/client/runtime/client").JsonValue | null;
+        billingCycle: string;
+        maxCourses: number;
+        maxStudents: number;
+        supportLevel: string;
+        isActive: boolean;
+        razorpayPlanId: string | null;
+    }[]>;
+    updatePlan(planId: string, data: Partial<{
+        name: string;
+        description: string;
+        price: number;
+        features: any;
+        maxCourses: number;
+        maxStudents: number;
+        supportLevel: string;
+        isActive: boolean;
+    }>): Promise<{
+        id: string;
+        name: string;
+        description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        price: number;
+        features: import("@prisma/client/runtime/client").JsonValue | null;
+        billingCycle: string;
+        maxCourses: number;
+        maxStudents: number;
+        supportLevel: string;
+        isActive: boolean;
+        razorpayPlanId: string | null;
+    }>;
+    deletePlan(planId: string): Promise<{
+        id: string;
+        name: string;
+        description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        price: number;
+        features: import("@prisma/client/runtime/client").JsonValue | null;
+        billingCycle: string;
+        maxCourses: number;
+        maxStudents: number;
+        supportLevel: string;
+        isActive: boolean;
+        razorpayPlanId: string | null;
+    }>;
+}
