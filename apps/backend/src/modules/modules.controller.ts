@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query, ValidationPipe } from '@nestjs/common';
 import { ModulesService } from './modules.service';
 import { CreateModuleDto } from './dto/create-module.dto';
+import { GenerateContentDto } from './dto/generate-content.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CourseEnrollmentGuard } from '../common/guards/course-enrollment.guard';
@@ -46,7 +47,12 @@ export class ModulesController {
   
   @Post(':id/generate-content')
   @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
-  generateContent(@Param('id') id: string, @Body() body: { topic: string }, @Request() req) {
+  generateContent(
+    @Param('id') id: string,
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) 
+    body: GenerateContentDto,
+    @Request() req,
+  ) {
     return this.modulesService.generateContent(id, body.topic, req.user);
   }
 

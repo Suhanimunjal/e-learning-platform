@@ -164,6 +164,9 @@ model Module {
   progresses  Progress[]
   
   @@index([sectionId])
+  @@index([contentStatus])
+  @@index([videoStatus])
+  @@index([type])
 }
 
 model Quiz {
@@ -179,9 +182,11 @@ model Quiz {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
-  module       Module   @relation(fields: [moduleId], references: [id])
+  module       Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   questions    Question[]
   attempts     QuizAttempt[]
+  
+  @@index([moduleId])
 }
 
 model Question {
@@ -194,7 +199,8 @@ model Question {
   points      Int      @default(1)
   order       Int      @default(0)
   
-  quiz        Quiz     @relation(fields: [quizId], references: [id])
+  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  
   @@index([quizId])
 }
 

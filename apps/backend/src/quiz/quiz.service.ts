@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuizDto, UpdateQuizDto, CreateQuestionDto } from './dto';
-import { User, Role } from '@prisma/client';
+import { User, Role, ModuleType, ContentStatus } from '@prisma/client';
 
 @Injectable()
 export class QuizService {
@@ -34,41 +34,113 @@ export class QuizService {
         throw new ForbiddenException('You can only create quizzes for your own courses');
       }
 
-      // Create quiz
-      const quiz = await this.prisma.quiz.create({
-        data: {
-          moduleId: createQuizDto.moduleId,
-          title: createQuizDto.title,
-          description: createQuizDto.description,
-          timeLimit: createQuizDto.timeLimit,
-          maxAttempts: createQuizDto.maxAttempts || 1,
-          passingScore: createQuizDto.passingScore || 50,
-          shuffleQuestions: createQuizDto.shuffleQuestions || false,
-          published: false,
-        },
-        include: { questions: true },
+      // VALIDATION 1: Check module type is QUIZ
+      if (module.type !== ModuleType.QUIZ) {
+        throw new BadRequestException(
+          `Module must be of type QUIZ to create a quiz. Current module type: ${module.type}`
+        );
+      }
+
+      // VALIDATION 2: Check content approval status
+      if (module.contentStatus !== ContentStatus.APPROVED) {
+        throw new BadRequestException(
+          `Module content must be approved before creating a quiz. Current status: ${module.contentStatus}. ` +
+          `Please generate and approve the content first.`
+        );
+      }
+
+      // VALIDATION 3: Check if quiz already exists for this module
+      const existingQuiz = await this.prisma.quiz.findUnique({
+        where: { moduleId: createQuizDto.moduleId },
       });
 
-      // Add questions if provided
+      if (existingQuiz) {
+        throw new BadRequestException('Quiz already exists for this module. Delete the existing quiz to create a new one.');
+      }
+
+      // VALIDATION 4: Validate questions if provided
       if (createQuizDto.questions && createQuizDto.questions.length > 0) {
-        for (const question of createQuizDto.questions) {
-          await this.prisma.question.create({
-            data: {
-              quizId: quiz.id,
-              type: question.type,
-              text: question.text,
-              options: question.options,
-              correctAnswer: question.correctAnswer,
-              points: question.points || 1,
-            },
-          });
+        for (let i = 0; i < createQuizDto.questions.length; i++) {
+          const question = createQuizDto.questions[i];
+          const questionIndex = i + 1;
+
+          // Validate text
+          if (!question.text || question.text.trim().length === 0) {
+            throw new BadRequestException(`Question ${questionIndex}: Text cannot be empty`);
+          }
+
+          // Validate multiple choice requirements
+          if (question.type === 'multiple_choice') {
+            if (!question.options || question.options.length < 2) {
+              throw new BadRequestException(
+                `Question ${questionIndex}: Multiple choice questions must have at least 2 options`
+              );
+            }
+
+            if (!question.correctAnswer) {
+              throw new BadRequestException(`Question ${questionIndex}: Multiple choice questions must have a correct answer`);
+            }
+
+            if (!question.options.includes(question.correctAnswer)) {
+              throw new BadRequestException(
+                `Question ${questionIndex}: Correct answer must be one of the provided options`
+              );
+            }
+          }
+
+          // Validate short answer requirements
+          if (question.type === 'short_answer') {
+            if (!question.correctAnswer) {
+              throw new BadRequestException(`Question ${questionIndex}: Short answer questions must have a correct answer`);
+            }
+          }
         }
       }
+
+      // Create quiz and questions in a single atomic transaction (all or nothing)
+      const quiz = await this.prisma.$transaction(async (tx) => {
+        // Create quiz
+        const newQuiz = await tx.quiz.create({
+          data: {
+            moduleId: createQuizDto.moduleId,
+            title: createQuizDto.title,
+            description: createQuizDto.description || '',
+            timeLimit: createQuizDto.timeLimit || null,
+            maxAttempts: createQuizDto.maxAttempts || 1,
+            passingScore: createQuizDto.passingScore || 50,
+            shuffleQuestions: createQuizDto.shuffleQuestions || false,
+            published: false,
+          },
+          include: { questions: true },
+        });
+
+        // Add questions if provided (all in transaction - if any fails, all rollback)
+        if (createQuizDto.questions && createQuizDto.questions.length > 0) {
+          for (const question of createQuizDto.questions) {
+            await tx.question.create({
+              data: {
+                quizId: newQuiz.id,
+                type: question.type,
+                text: question.text,
+                options: question.options || [],
+                correctAnswer: question.correctAnswer || '',
+                points: question.points || 1,
+                order: question.order || 0,
+              },
+            });
+          }
+        }
+
+        return newQuiz;
+      });
 
       return this.getQuiz(quiz.id, user);
     } catch (error) {
       console.error('Quiz creation error:', error);
-      throw error;
+      if (error instanceof NotFoundException || error instanceof ForbiddenException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to create quiz: ' + error?.message || 'Unknown error');
     }
   }
 

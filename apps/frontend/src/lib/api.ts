@@ -114,6 +114,10 @@ export const analytics = {
 };
 
 export const modules = {
+  create: async (data: { title: string; sectionId: string; type: 'LESSON' | 'QUIZ' | 'ASSIGNMENT' | 'DISCUSSION' | 'SCORM'; order?: number }) => {
+    const res = await api.post('/modules', data);
+    return res.data;
+  },
   getBySection: async (sectionId: string) => {
     const res = await api.get(`/modules/section/${sectionId}`);
     return res.data;
@@ -205,6 +209,18 @@ export const modules = {
 export const sections = {
   getByCourse: async (courseId: string) => {
     const res = await api.get(`/sections/course/${courseId}`);
+    return res.data;
+  },
+  create: async (data: { title: string; courseId: string; order?: number }) => {
+    const res = await api.post('/sections', data);
+    return res.data;
+  },
+  update: async (id: string, data: any) => {
+    const res = await api.patch(`/sections/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await api.delete(`/sections/${id}`);
     return res.data;
   },
 };
