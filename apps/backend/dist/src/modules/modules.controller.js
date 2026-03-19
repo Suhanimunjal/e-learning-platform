@@ -39,6 +39,33 @@ let ModulesController = class ModulesController {
     remove(id, req) {
         return this.modulesService.remove(id, req.user);
     }
+    generateContent(id, body, req) {
+        return this.modulesService.generateContent(id, body.topic, req.user);
+    }
+    updateContent(id, body, req) {
+        return this.modulesService.updateContent(id, body.content, req.user);
+    }
+    approveContent(id, req) {
+        return this.modulesService.approveContent(id, req.user);
+    }
+    getVideoStatus(id, req) {
+        return this.modulesService.getVideoStatus(id, req.user);
+    }
+    generateVideo(id, body, req) {
+        return this.modulesService.generateVideo(id, body.voiceId, req.user);
+    }
+    getVideoPreview(id, req) {
+        return this.modulesService.getVideoPreview(id, req.user);
+    }
+    approveVideo(id, req) {
+        return this.modulesService.approveVideo(id, req.user);
+    }
+    rejectVideo(id, body, req) {
+        return this.modulesService.rejectVideo(id, body.reason, req.user);
+    }
+    getVoices() {
+        return this.modulesService.getAvailableVoices();
+    }
 };
 exports.ModulesController = ModulesController;
 __decorate([
@@ -87,6 +114,88 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], ModulesController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)(':id/generate-content'),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], ModulesController.prototype, "generateContent", null);
+__decorate([
+    (0, common_1.Patch)(':id/content'),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], ModulesController.prototype, "updateContent", null);
+__decorate([
+    (0, common_1.Post)(':id/approve-content'),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], ModulesController.prototype, "approveContent", null);
+__decorate([
+    (0, common_1.Get)(':id/video-status'),
+    (0, common_1.UseGuards)(course_enrollment_guard_1.CourseEnrollmentGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], ModulesController.prototype, "getVideoStatus", null);
+__decorate([
+    (0, common_1.Post)(':id/generate-video'),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], ModulesController.prototype, "generateVideo", null);
+__decorate([
+    (0, common_1.Get)(':id/video-preview'),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], ModulesController.prototype, "getVideoPreview", null);
+__decorate([
+    (0, common_1.Post)(':id/approve-video'),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], ModulesController.prototype, "approveVideo", null);
+__decorate([
+    (0, common_1.Post)(':id/reject-video'),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], ModulesController.prototype, "rejectVideo", null);
+__decorate([
+    (0, common_1.Get)('voices'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], ModulesController.prototype, "getVoices", null);
 exports.ModulesController = ModulesController = __decorate([
     (0, common_1.Controller)('modules'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

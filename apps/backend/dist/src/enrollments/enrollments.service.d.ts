@@ -33,6 +33,19 @@ export declare class EnrollmentsService {
                     isPreview: boolean;
                     hasVideo: boolean;
                     videoGenId: string | null;
+                    topic: string | null;
+                    generatedContent: import("@prisma/client/runtime/client").JsonValue | null;
+                    contentStatus: import(".prisma/client").$Enums.ContentStatus;
+                    videoStatus: import(".prisma/client").$Enums.VideoStatus;
+                    audioUrl: string | null;
+                    transcript: string | null;
+                    voiceId: string | null;
+                    approvedAt: Date | null;
+                    approvedBy: string | null;
+                    rejectionReason: string | null;
+                    contentGeneratedAt: Date | null;
+                    videoGeneratedAt: Date | null;
+                    retryCount: number;
                 }[];
             } & {
                 id: string;

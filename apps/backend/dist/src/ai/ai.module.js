@@ -14,6 +14,9 @@ const ai_service_1 = require("./services/ai.service");
 const anthropic_service_1 = require("./services/anthropic.service");
 const ai_job_processor_1 = require("./services/ai-job.processor");
 const prisma_service_1 = require("../prisma/prisma.service");
+const tts_service_1 = require("./tts.service");
+const content_generator_enhanced_service_1 = require("./content-generator-enhanced.service");
+const quiz_verification_service_1 = require("./quiz-verification.service");
 let AiModule = class AiModule {
 };
 exports.AiModule = AiModule;
@@ -32,8 +35,16 @@ exports.AiModule = AiModule = __decorate([
             }),
         ],
         controllers: [ai_controller_1.AiController],
-        providers: [ai_service_1.AiService, anthropic_service_1.AnthropicService, ai_job_processor_1.AiJobProcessor, prisma_service_1.PrismaService],
-        exports: [ai_service_1.AiService],
+        providers: [
+            ai_service_1.AiService,
+            anthropic_service_1.AnthropicService,
+            ai_job_processor_1.AiJobProcessor,
+            prisma_service_1.PrismaService,
+            tts_service_1.TTSService,
+            content_generator_enhanced_service_1.ContentGeneratorEnhancedService,
+            quiz_verification_service_1.QuizVerificationService,
+        ],
+        exports: [ai_service_1.AiService, tts_service_1.TTSService, content_generator_enhanced_service_1.ContentGeneratorEnhancedService, quiz_verification_service_1.QuizVerificationService],
     })
 ], AiModule);
 //# sourceMappingURL=ai.module.js.map

@@ -9,30 +9,30 @@ export declare class QuizService {
             section: {
                 course: {
                     id: string;
+                    description: string;
+                    updatedAt: Date;
                     organizationId: string | null;
                     createdAt: Date;
-                    updatedAt: Date;
-                    title: string;
-                    description: string;
-                    published: boolean;
                     slug: string;
+                    title: string;
                     thumbnail: string | null;
                     videoIntro: string | null;
                     price: number;
                     instructorId: string;
+                    published: boolean;
                 };
             } & {
                 id: string;
                 title: string;
-                order: number;
                 courseId: string;
+                order: number;
             };
         } & {
             id: string;
             title: string;
             order: number;
-            type: import(".prisma/client").$Enums.ModuleType;
             sectionId: string;
+            type: import(".prisma/client").$Enums.ModuleType;
             videoUrl: string | null;
             textContent: string | null;
             content: import("@prisma/client/runtime/client").JsonValue | null;
@@ -40,12 +40,25 @@ export declare class QuizService {
             isPreview: boolean;
             hasVideo: boolean;
             videoGenId: string | null;
+            topic: string | null;
+            generatedContent: import("@prisma/client/runtime/client").JsonValue | null;
+            contentStatus: import(".prisma/client").$Enums.ContentStatus;
+            videoStatus: import(".prisma/client").$Enums.VideoStatus;
+            audioUrl: string | null;
+            transcript: string | null;
+            voiceId: string | null;
+            approvedAt: Date | null;
+            approvedBy: string | null;
+            rejectionReason: string | null;
+            contentGeneratedAt: Date | null;
+            videoGeneratedAt: Date | null;
+            retryCount: number;
         };
         questions: {
             id: string;
             order: number;
-            quizId: string;
             type: string;
+            quizId: string;
             text: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
             correctAnswer: string | null;
@@ -53,57 +66,57 @@ export declare class QuizService {
         }[];
         attempts: {
             id: string;
-            quizId: string;
             userId: string;
-            answers: import("@prisma/client/runtime/client").JsonValue;
+            quizId: string;
             score: number | null;
-            percentage: number | null;
             passed: boolean | null;
+            answers: import("@prisma/client/runtime/client").JsonValue;
+            percentage: number | null;
             startedAt: Date;
             completedAt: Date | null;
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        title: string;
+        published: boolean;
+        moduleId: string;
         timeLimit: number | null;
         maxAttempts: number;
         passingScore: number;
         shuffleQuestions: boolean;
-        published: boolean;
-        moduleId: string;
     }>;
     getQuiz(quizId: string, user: User): Promise<{
         module: {
             section: {
                 course: {
                     id: string;
+                    description: string;
+                    updatedAt: Date;
                     organizationId: string | null;
                     createdAt: Date;
-                    updatedAt: Date;
-                    title: string;
-                    description: string;
-                    published: boolean;
                     slug: string;
+                    title: string;
                     thumbnail: string | null;
                     videoIntro: string | null;
                     price: number;
                     instructorId: string;
+                    published: boolean;
                 };
             } & {
                 id: string;
                 title: string;
-                order: number;
                 courseId: string;
+                order: number;
             };
         } & {
             id: string;
             title: string;
             order: number;
-            type: import(".prisma/client").$Enums.ModuleType;
             sectionId: string;
+            type: import(".prisma/client").$Enums.ModuleType;
             videoUrl: string | null;
             textContent: string | null;
             content: import("@prisma/client/runtime/client").JsonValue | null;
@@ -111,12 +124,25 @@ export declare class QuizService {
             isPreview: boolean;
             hasVideo: boolean;
             videoGenId: string | null;
+            topic: string | null;
+            generatedContent: import("@prisma/client/runtime/client").JsonValue | null;
+            contentStatus: import(".prisma/client").$Enums.ContentStatus;
+            videoStatus: import(".prisma/client").$Enums.VideoStatus;
+            audioUrl: string | null;
+            transcript: string | null;
+            voiceId: string | null;
+            approvedAt: Date | null;
+            approvedBy: string | null;
+            rejectionReason: string | null;
+            contentGeneratedAt: Date | null;
+            videoGeneratedAt: Date | null;
+            retryCount: number;
         };
         questions: {
             id: string;
             order: number;
-            quizId: string;
             type: string;
+            quizId: string;
             text: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
             correctAnswer: string | null;
@@ -124,34 +150,34 @@ export declare class QuizService {
         }[];
         attempts: {
             id: string;
-            quizId: string;
             userId: string;
-            answers: import("@prisma/client/runtime/client").JsonValue;
+            quizId: string;
             score: number | null;
-            percentage: number | null;
             passed: boolean | null;
+            answers: import("@prisma/client/runtime/client").JsonValue;
+            percentage: number | null;
             startedAt: Date;
             completedAt: Date | null;
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        title: string;
+        published: boolean;
+        moduleId: string;
         timeLimit: number | null;
         maxAttempts: number;
         passingScore: number;
         shuffleQuestions: boolean;
-        published: boolean;
-        moduleId: string;
     }>;
     findByModule(moduleId: string, user: User): Promise<{
         questions: {
             id: string;
             order: number;
-            quizId: string;
             type: string;
+            quizId: string;
             text: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
             correctAnswer: string | null;
@@ -159,34 +185,34 @@ export declare class QuizService {
         }[];
         attempts: {
             id: string;
-            quizId: string;
             userId: string;
-            answers: import("@prisma/client/runtime/client").JsonValue;
+            quizId: string;
             score: number | null;
-            percentage: number | null;
             passed: boolean | null;
+            answers: import("@prisma/client/runtime/client").JsonValue;
+            percentage: number | null;
             startedAt: Date;
             completedAt: Date | null;
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        title: string;
+        published: boolean;
+        moduleId: string;
         timeLimit: number | null;
         maxAttempts: number;
         passingScore: number;
         shuffleQuestions: boolean;
-        published: boolean;
-        moduleId: string;
     }>;
     update(quizId: string, updateQuizDto: UpdateQuizDto, user: User): Promise<{
         questions: {
             id: string;
             order: number;
-            quizId: string;
             type: string;
+            quizId: string;
             text: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
             correctAnswer: string | null;
@@ -194,22 +220,22 @@ export declare class QuizService {
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        title: string;
+        published: boolean;
+        moduleId: string;
         timeLimit: number | null;
         maxAttempts: number;
         passingScore: number;
         shuffleQuestions: boolean;
-        published: boolean;
-        moduleId: string;
     }>;
     addQuestion(quizId: string, createQuestionDto: CreateQuestionDto, user: User): Promise<{
         id: string;
         order: number;
-        quizId: string;
         type: string;
+        quizId: string;
         text: string;
         options: import("@prisma/client/runtime/client").JsonValue | null;
         correctAnswer: string | null;
@@ -218,8 +244,8 @@ export declare class QuizService {
     updateQuestion(questionId: string, updateQuestionDto: any, user: User): Promise<{
         id: string;
         order: number;
-        quizId: string;
         type: string;
+        quizId: string;
         text: string;
         options: import("@prisma/client/runtime/client").JsonValue | null;
         correctAnswer: string | null;
@@ -228,8 +254,8 @@ export declare class QuizService {
     deleteQuestion(questionId: string, user: User): Promise<{
         id: string;
         order: number;
-        quizId: string;
         type: string;
+        quizId: string;
         text: string;
         options: import("@prisma/client/runtime/client").JsonValue | null;
         correctAnswer: string | null;
@@ -239,8 +265,8 @@ export declare class QuizService {
         questions: {
             id: string;
             order: number;
-            quizId: string;
             type: string;
+            quizId: string;
             text: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
             correctAnswer: string | null;
@@ -248,23 +274,23 @@ export declare class QuizService {
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        title: string;
+        published: boolean;
+        moduleId: string;
         timeLimit: number | null;
         maxAttempts: number;
         passingScore: number;
         shuffleQuestions: boolean;
-        published: boolean;
-        moduleId: string;
     }>;
     unpublishQuiz(quizId: string, user: User): Promise<{
         questions: {
             id: string;
             order: number;
-            quizId: string;
             type: string;
+            quizId: string;
             text: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
             correctAnswer: string | null;
@@ -272,44 +298,44 @@ export declare class QuizService {
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        title: string;
+        published: boolean;
+        moduleId: string;
         timeLimit: number | null;
         maxAttempts: number;
         passingScore: number;
         shuffleQuestions: boolean;
-        published: boolean;
-        moduleId: string;
     }>;
     deleteQuiz(quizId: string, user: User): Promise<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        title: string;
+        published: boolean;
+        moduleId: string;
         timeLimit: number | null;
         maxAttempts: number;
         passingScore: number;
         shuffleQuestions: boolean;
-        published: boolean;
-        moduleId: string;
     }>;
     getQuizzesByCourse(courseId: string, user: User): Promise<({
         module: {
             section: {
                 id: string;
                 title: string;
-                order: number;
                 courseId: string;
+                order: number;
             };
         } & {
             id: string;
             title: string;
             order: number;
-            type: import(".prisma/client").$Enums.ModuleType;
             sectionId: string;
+            type: import(".prisma/client").$Enums.ModuleType;
             videoUrl: string | null;
             textContent: string | null;
             content: import("@prisma/client/runtime/client").JsonValue | null;
@@ -317,12 +343,25 @@ export declare class QuizService {
             isPreview: boolean;
             hasVideo: boolean;
             videoGenId: string | null;
+            topic: string | null;
+            generatedContent: import("@prisma/client/runtime/client").JsonValue | null;
+            contentStatus: import(".prisma/client").$Enums.ContentStatus;
+            videoStatus: import(".prisma/client").$Enums.VideoStatus;
+            audioUrl: string | null;
+            transcript: string | null;
+            voiceId: string | null;
+            approvedAt: Date | null;
+            approvedBy: string | null;
+            rejectionReason: string | null;
+            contentGeneratedAt: Date | null;
+            videoGeneratedAt: Date | null;
+            retryCount: number;
         };
         questions: {
             id: string;
             order: number;
-            quizId: string;
             type: string;
+            quizId: string;
             text: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
             correctAnswer: string | null;
@@ -330,26 +369,26 @@ export declare class QuizService {
         }[];
         attempts: {
             id: string;
-            quizId: string;
             userId: string;
-            answers: import("@prisma/client/runtime/client").JsonValue;
+            quizId: string;
             score: number | null;
-            percentage: number | null;
             passed: boolean | null;
+            answers: import("@prisma/client/runtime/client").JsonValue;
+            percentage: number | null;
             startedAt: Date;
             completedAt: Date | null;
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
+        title: string;
+        published: boolean;
+        moduleId: string;
         timeLimit: number | null;
         maxAttempts: number;
         passingScore: number;
         shuffleQuestions: boolean;
-        published: boolean;
-        moduleId: string;
     })[]>;
 }

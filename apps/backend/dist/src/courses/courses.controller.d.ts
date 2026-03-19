@@ -6,17 +6,17 @@ export declare class CoursesController {
     constructor(coursesService: CoursesService);
     create(req: any, createCourseDto: CreateCourseDto): Promise<{
         id: string;
-        description: string;
-        updatedAt: Date;
-        organizationId: string | null;
-        createdAt: Date;
-        slug: string;
         title: string;
+        slug: string;
+        description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        instructorId: string;
         published: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        instructorId: string;
+        organizationId: string | null;
     }>;
     findAll(req: any): Promise<({
         instructor: {
@@ -38,6 +38,19 @@ export declare class CoursesController {
                 isPreview: boolean;
                 hasVideo: boolean;
                 videoGenId: string | null;
+                topic: string | null;
+                generatedContent: import("@prisma/client/runtime/client").JsonValue | null;
+                contentStatus: import(".prisma/client").$Enums.ContentStatus;
+                videoStatus: import(".prisma/client").$Enums.VideoStatus;
+                audioUrl: string | null;
+                transcript: string | null;
+                voiceId: string | null;
+                approvedAt: Date | null;
+                approvedBy: string | null;
+                rejectionReason: string | null;
+                contentGeneratedAt: Date | null;
+                videoGeneratedAt: Date | null;
+                retryCount: number;
             }[];
         } & {
             id: string;
@@ -47,29 +60,22 @@ export declare class CoursesController {
         })[];
     } & {
         id: string;
-        description: string;
-        updatedAt: Date;
-        organizationId: string | null;
-        createdAt: Date;
-        slug: string;
         title: string;
+        slug: string;
+        description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        instructorId: string;
         published: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        instructorId: string;
+        organizationId: string | null;
     })[]>;
     findOne(id: string, req: any): Promise<{
         isEnrolled: boolean;
         previewOnly: boolean;
         message: string;
-        enrollments: {
-            id: string;
-            createdAt: Date;
-            courseId: string;
-            userId: string;
-            accessStatus: string;
-        }[];
         instructor: {
             id: string;
             name: string;
@@ -89,6 +95,19 @@ export declare class CoursesController {
                 isPreview: boolean;
                 hasVideo: boolean;
                 videoGenId: string | null;
+                topic: string | null;
+                generatedContent: import("@prisma/client/runtime/client").JsonValue | null;
+                contentStatus: import(".prisma/client").$Enums.ContentStatus;
+                videoStatus: import(".prisma/client").$Enums.VideoStatus;
+                audioUrl: string | null;
+                transcript: string | null;
+                voiceId: string | null;
+                approvedAt: Date | null;
+                approvedBy: string | null;
+                rejectionReason: string | null;
+                contentGeneratedAt: Date | null;
+                videoGeneratedAt: Date | null;
+                retryCount: number;
             }[];
         } & {
             id: string;
@@ -96,29 +115,29 @@ export declare class CoursesController {
             courseId: string;
             order: number;
         })[];
+        enrollments: {
+            id: string;
+            createdAt: Date;
+            courseId: string;
+            userId: string;
+            accessStatus: string;
+        }[];
         id: string;
-        description: string;
-        updatedAt: Date;
-        organizationId: string | null;
-        createdAt: Date;
-        slug: string;
         title: string;
+        slug: string;
+        description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        instructorId: string;
         published: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        instructorId: string;
+        organizationId: string | null;
     } | {
         isEnrolled: boolean;
         isInstructor: boolean;
         isAdmin: boolean;
-        enrollments: {
-            id: string;
-            createdAt: Date;
-            courseId: string;
-            userId: string;
-            accessStatus: string;
-        }[];
         instructor: {
             id: string;
             name: string;
@@ -138,6 +157,19 @@ export declare class CoursesController {
                 isPreview: boolean;
                 hasVideo: boolean;
                 videoGenId: string | null;
+                topic: string | null;
+                generatedContent: import("@prisma/client/runtime/client").JsonValue | null;
+                contentStatus: import(".prisma/client").$Enums.ContentStatus;
+                videoStatus: import(".prisma/client").$Enums.VideoStatus;
+                audioUrl: string | null;
+                transcript: string | null;
+                voiceId: string | null;
+                approvedAt: Date | null;
+                approvedBy: string | null;
+                rejectionReason: string | null;
+                contentGeneratedAt: Date | null;
+                videoGeneratedAt: Date | null;
+                retryCount: number;
             }[];
         } & {
             id: string;
@@ -145,45 +177,52 @@ export declare class CoursesController {
             courseId: string;
             order: number;
         })[];
+        enrollments: {
+            id: string;
+            createdAt: Date;
+            courseId: string;
+            userId: string;
+            accessStatus: string;
+        }[];
         id: string;
-        description: string;
-        updatedAt: Date;
-        organizationId: string | null;
-        createdAt: Date;
-        slug: string;
         title: string;
+        slug: string;
+        description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        instructorId: string;
         published: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        instructorId: string;
+        organizationId: string | null;
     }>;
     update(id: string, updateCourseDto: UpdateCourseDto, req: any): Promise<{
         id: string;
-        description: string;
-        updatedAt: Date;
-        organizationId: string | null;
-        createdAt: Date;
-        slug: string;
         title: string;
+        slug: string;
+        description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        instructorId: string;
         published: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        instructorId: string;
+        organizationId: string | null;
     }>;
     remove(id: string, req: any): Promise<{
         id: string;
-        description: string;
-        updatedAt: Date;
-        organizationId: string | null;
-        createdAt: Date;
-        slug: string;
         title: string;
+        slug: string;
+        description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        instructorId: string;
         published: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        instructorId: string;
+        organizationId: string | null;
     }>;
 }

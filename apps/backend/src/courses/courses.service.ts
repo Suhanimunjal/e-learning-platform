@@ -24,24 +24,27 @@ export class CoursesService {
   }
 
   async findAll(user: User) {
-    const where: any = { published: true };
+    // Build where clause based on role
+    const where: any = {};
 
     if (user) {
       if (user.role === Role.ADMIN) {
-        // Admins can see all courses
+        // Admins can see all courses (no filter)
       } else if (user.role === Role.MANAGER) {
         where.organizationId = user.organizationId;
       } else if (user.role === Role.TEACHER) {
-        where.OR = [
-          { instructorId: user.id },
-          { organizationId: user.organizationId },
-        ];
+        // Teachers can see their own courses (published AND unpublished)
+        // CRITICAL FIX: Teacher should see all their courses for "My Courses"
+        where.instructorId = user.id;
       } else if (user.role === Role.STUDENT) {
-        // Students can see published courses
+        // Students can see only published courses
+        where.published = true;
         where.organizationId = user.organizationId;
       }
+    } else {
+      // If no user (public), show only published courses
+      where.published = true;
     }
-    // If no user (public), show only published courses
 
     return this.prisma.course.findMany({
       where,
@@ -93,7 +96,12 @@ export class CoursesService {
       if (!user) {
         throw new ForbiddenException('Please login to view this course');
       }
-      if (user.role === Role.STUDENT) {
+      
+      // CRITICAL FIX: Teachers can see their own unpublished courses
+      const isInstructor = user && course.instructorId === user.id;
+      const isAdmin = user && user.role === Role.ADMIN;
+      
+      if (user.role === Role.STUDENT && !isInstructor && !isAdmin) {
         throw new ForbiddenException('You do not have access to this course');
       }
     }

@@ -109,6 +109,22 @@ enum ModuleType {
   SCORM
 }
 
+enum ContentStatus {
+  PENDING
+  GENERATING
+  GENERATED
+  APPROVED
+  REJECTED
+}
+
+enum VideoStatus {
+  PENDING
+  GENERATING
+  APPROVED
+  REJECTED
+  FAILED
+}
+
 model Module {
   id          String   @id @default(uuid())
   title       String
@@ -122,6 +138,25 @@ model Module {
   isPreview   Boolean  @default(false)
   hasVideo    Boolean  @default(false)
   videoGenId String?
+  
+  // Video Generation Fields
+  topic              String?
+  generatedContent   Json?
+  contentStatus      ContentStatus @default(PENDING)
+  videoStatus        VideoStatus   @default(PENDING)
+  audioUrl           String?
+  transcript         String?
+  voiceId            String?
+  
+  // Approval workflow
+  approvedAt          DateTime?
+  approvedBy          String?
+  rejectionReason     String?
+  
+  // Content generation tracking
+  contentGeneratedAt DateTime?
+  videoGeneratedAt   DateTime?
+  retryCount         Int @default(0)
   
   section     Section  @relation(fields: [sectionId], references: [id])
   quiz        Quiz?

@@ -30,7 +30,7 @@ let CoursesService = class CoursesService {
         });
     }
     async findAll(user) {
-        const where = { published: true };
+        const where = {};
         if (user) {
             if (user.role === client_1.Role.ADMIN) {
             }
@@ -38,14 +38,15 @@ let CoursesService = class CoursesService {
                 where.organizationId = user.organizationId;
             }
             else if (user.role === client_1.Role.TEACHER) {
-                where.OR = [
-                    { instructorId: user.id },
-                    { organizationId: user.organizationId },
-                ];
+                where.instructorId = user.id;
             }
             else if (user.role === client_1.Role.STUDENT) {
+                where.published = true;
                 where.organizationId = user.organizationId;
             }
+        }
+        else {
+            where.published = true;
         }
         return this.prisma.course.findMany({
             where,
@@ -93,7 +94,9 @@ let CoursesService = class CoursesService {
             if (!user) {
                 throw new common_1.ForbiddenException('Please login to view this course');
             }
-            if (user.role === client_1.Role.STUDENT) {
+            const isInstructor = user && course.instructorId === user.id;
+            const isAdmin = user && user.role === client_1.Role.ADMIN;
+            if (user.role === client_1.Role.STUDENT && !isInstructor && !isAdmin) {
                 throw new common_1.ForbiddenException('You do not have access to this course');
             }
         }

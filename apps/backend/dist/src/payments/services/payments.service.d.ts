@@ -28,8 +28,8 @@ export declare class PaymentsService {
         courseId: string;
         userId: string;
         amount: number;
-        currency: string;
         status: string;
+        currency: string;
         razorpayOrderId: string | null;
         razorpayPaymentId: string | null;
         paymentMethod: string | null;

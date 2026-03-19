@@ -12,12 +12,13 @@ const modules_service_1 = require("./modules.service");
 const modules_controller_1 = require("./modules.controller");
 const prisma_service_1 = require("../prisma/prisma.service");
 const analytics_module_1 = require("../analytics/analytics.module");
+const ai_module_1 = require("../ai/ai.module");
 let ModulesModule = class ModulesModule {
 };
 exports.ModulesModule = ModulesModule;
 exports.ModulesModule = ModulesModule = __decorate([
     (0, common_1.Module)({
-        imports: [analytics_module_1.AnalyticsModule],
+        imports: [analytics_module_1.AnalyticsModule, ai_module_1.AiModule],
         controllers: [modules_controller_1.ModulesController],
         providers: [modules_service_1.ModulesService, prisma_service_1.PrismaService],
     })

@@ -11,10 +11,10 @@ export declare class AiController {
         updatedAt: Date;
         createdAt: Date;
         type: string;
+        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
-        retryCount: number;
         tenantId: string | null;
     }>;
     generateLessons(req: any, courseId: string): Promise<{
@@ -24,10 +24,10 @@ export declare class AiController {
         updatedAt: Date;
         createdAt: Date;
         type: string;
+        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
-        retryCount: number;
         tenantId: string | null;
     }>;
     getJobStatus(jobId: string): Promise<{
@@ -37,10 +37,10 @@ export declare class AiController {
         updatedAt: Date;
         createdAt: Date;
         type: string;
+        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
-        retryCount: number;
         tenantId: string | null;
     }>;
     generateQuiz(req: any, moduleId: string): Promise<{
@@ -50,10 +50,10 @@ export declare class AiController {
         updatedAt: Date;
         createdAt: Date;
         type: string;
+        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
-        retryCount: number;
         tenantId: string | null;
     }>;
     generateFlashcards(req: any, moduleId: string): Promise<{
@@ -63,10 +63,10 @@ export declare class AiController {
         updatedAt: Date;
         createdAt: Date;
         type: string;
+        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
-        retryCount: number;
         tenantId: string | null;
     }>;
     generateAssignment(body: {

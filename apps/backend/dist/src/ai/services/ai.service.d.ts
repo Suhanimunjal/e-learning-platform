@@ -12,10 +12,10 @@ export declare class AiService {
         updatedAt: Date;
         createdAt: Date;
         type: string;
+        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
-        retryCount: number;
         tenantId: string | null;
     }>;
     generateLessons(courseId: string, userId: string): Promise<{
@@ -25,10 +25,10 @@ export declare class AiService {
         updatedAt: Date;
         createdAt: Date;
         type: string;
+        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
-        retryCount: number;
         tenantId: string | null;
     }>;
     getJobStatus(jobId: string): Promise<{
@@ -38,10 +38,10 @@ export declare class AiService {
         updatedAt: Date;
         createdAt: Date;
         type: string;
+        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
-        retryCount: number;
         tenantId: string | null;
     }>;
     generateQuiz(moduleId: string, userId: string): Promise<{
@@ -51,10 +51,10 @@ export declare class AiService {
         updatedAt: Date;
         createdAt: Date;
         type: string;
+        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
-        retryCount: number;
         tenantId: string | null;
     }>;
     generateFlashcards(moduleId: string, userId: string): Promise<{
@@ -64,10 +64,10 @@ export declare class AiService {
         updatedAt: Date;
         createdAt: Date;
         type: string;
+        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
-        retryCount: number;
         tenantId: string | null;
     }>;
     generateAssignment(topic: string, tone: string): Promise<{
