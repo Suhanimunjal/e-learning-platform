@@ -7,17 +7,17 @@ export declare class CoursesService {
     constructor(prisma: PrismaService);
     create(createCourseDto: CreateCourseDto, user: User): Promise<{
         id: string;
-        title: string;
-        slug: string;
         description: string;
+        updatedAt: Date;
+        organizationId: string | null;
+        createdAt: Date;
+        slug: string;
+        title: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        published: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         instructorId: string;
-        organizationId: string | null;
+        published: boolean;
     }>;
     findAll(user: User): Promise<({
         instructor: {
@@ -61,22 +61,29 @@ export declare class CoursesService {
         })[];
     } & {
         id: string;
-        title: string;
-        slug: string;
         description: string;
+        updatedAt: Date;
+        organizationId: string | null;
+        createdAt: Date;
+        slug: string;
+        title: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        published: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         instructorId: string;
-        organizationId: string | null;
+        published: boolean;
     })[]>;
     findOne(id: string, user: any): Promise<{
         isEnrolled: boolean;
         previewOnly: boolean;
         message: string;
+        enrollments: {
+            id: string;
+            createdAt: Date;
+            courseId: string;
+            userId: string;
+            accessStatus: string;
+        }[];
         instructor: {
             id: string;
             name: string;
@@ -116,29 +123,29 @@ export declare class CoursesService {
             courseId: string;
             order: number;
         })[];
-        enrollments: {
-            id: string;
-            createdAt: Date;
-            courseId: string;
-            userId: string;
-            accessStatus: string;
-        }[];
         id: string;
-        title: string;
-        slug: string;
         description: string;
+        updatedAt: Date;
+        organizationId: string | null;
+        createdAt: Date;
+        slug: string;
+        title: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        published: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         instructorId: string;
-        organizationId: string | null;
+        published: boolean;
     } | {
         isEnrolled: boolean;
         isInstructor: boolean;
         isAdmin: boolean;
+        enrollments: {
+            id: string;
+            createdAt: Date;
+            courseId: string;
+            userId: string;
+            accessStatus: string;
+        }[];
         instructor: {
             id: string;
             name: string;
@@ -178,52 +185,45 @@ export declare class CoursesService {
             courseId: string;
             order: number;
         })[];
-        enrollments: {
-            id: string;
-            createdAt: Date;
-            courseId: string;
-            userId: string;
-            accessStatus: string;
-        }[];
         id: string;
-        title: string;
-        slug: string;
         description: string;
+        updatedAt: Date;
+        organizationId: string | null;
+        createdAt: Date;
+        slug: string;
+        title: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        published: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         instructorId: string;
-        organizationId: string | null;
+        published: boolean;
     }>;
     update(id: string, updateCourseDto: UpdateCourseDto, user: User): Promise<{
         id: string;
-        title: string;
-        slug: string;
         description: string;
+        updatedAt: Date;
+        organizationId: string | null;
+        createdAt: Date;
+        slug: string;
+        title: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        published: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         instructorId: string;
-        organizationId: string | null;
+        published: boolean;
     }>;
     remove(id: string, user: User): Promise<{
         id: string;
-        title: string;
-        slug: string;
         description: string;
+        updatedAt: Date;
+        organizationId: string | null;
+        createdAt: Date;
+        slug: string;
+        title: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        published: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         instructorId: string;
-        organizationId: string | null;
+        published: boolean;
     }>;
 }

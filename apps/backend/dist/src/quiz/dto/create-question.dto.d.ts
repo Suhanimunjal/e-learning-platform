@@ -1,7 +1,7 @@
 export declare class CreateQuestionDto {
     type: string;
     text: string;
-    options?: any;
+    options?: string[];
     correctAnswer?: string;
     points?: number;
     order?: number;

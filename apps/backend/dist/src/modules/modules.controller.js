@@ -16,6 +16,7 @@ exports.ModulesController = void 0;
 const common_1 = require("@nestjs/common");
 const modules_service_1 = require("./modules.service");
 const create_module_dto_1 = require("./dto/create-module.dto");
+const generate_content_dto_1 = require("./dto/generate-content.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const course_enrollment_guard_1 = require("../common/guards/course-enrollment.guard");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
@@ -118,10 +119,10 @@ __decorate([
     (0, common_1.Post)(':id/generate-content'),
     (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(1, (0, common_1.Body)(new common_1.ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, generate_content_dto_1.GenerateContentDto, Object]),
     __metadata("design:returntype", void 0)
 ], ModulesController.prototype, "generateContent", null);
 __decorate([

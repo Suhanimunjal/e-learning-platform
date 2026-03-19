@@ -38,38 +38,83 @@ let QuizService = class QuizService {
             if (user.role === client_1.Role.TEACHER && module.section.course.instructorId !== user.id) {
                 throw new common_1.ForbiddenException('You can only create quizzes for your own courses');
             }
-            const quiz = await this.prisma.quiz.create({
-                data: {
-                    moduleId: createQuizDto.moduleId,
-                    title: createQuizDto.title,
-                    description: createQuizDto.description,
-                    timeLimit: createQuizDto.timeLimit,
-                    maxAttempts: createQuizDto.maxAttempts || 1,
-                    passingScore: createQuizDto.passingScore || 50,
-                    shuffleQuestions: createQuizDto.shuffleQuestions || false,
-                    published: false,
-                },
-                include: { questions: true },
+            if (module.type !== client_1.ModuleType.QUIZ) {
+                throw new common_1.BadRequestException(`Module must be of type QUIZ to create a quiz. Current module type: ${module.type}`);
+            }
+            if (module.contentStatus !== client_1.ContentStatus.APPROVED) {
+                throw new common_1.BadRequestException(`Module content must be approved before creating a quiz. Current status: ${module.contentStatus}. ` +
+                    `Please generate and approve the content first.`);
+            }
+            const existingQuiz = await this.prisma.quiz.findUnique({
+                where: { moduleId: createQuizDto.moduleId },
             });
+            if (existingQuiz) {
+                throw new common_1.BadRequestException('Quiz already exists for this module. Delete the existing quiz to create a new one.');
+            }
             if (createQuizDto.questions && createQuizDto.questions.length > 0) {
-                for (const question of createQuizDto.questions) {
-                    await this.prisma.question.create({
-                        data: {
-                            quizId: quiz.id,
-                            type: question.type,
-                            text: question.text,
-                            options: question.options,
-                            correctAnswer: question.correctAnswer,
-                            points: question.points || 1,
-                        },
-                    });
+                for (let i = 0; i < createQuizDto.questions.length; i++) {
+                    const question = createQuizDto.questions[i];
+                    const questionIndex = i + 1;
+                    if (!question.text || question.text.trim().length === 0) {
+                        throw new common_1.BadRequestException(`Question ${questionIndex}: Text cannot be empty`);
+                    }
+                    if (question.type === 'multiple_choice') {
+                        if (!question.options || question.options.length < 2) {
+                            throw new common_1.BadRequestException(`Question ${questionIndex}: Multiple choice questions must have at least 2 options`);
+                        }
+                        if (!question.correctAnswer) {
+                            throw new common_1.BadRequestException(`Question ${questionIndex}: Multiple choice questions must have a correct answer`);
+                        }
+                        if (!question.options.includes(question.correctAnswer)) {
+                            throw new common_1.BadRequestException(`Question ${questionIndex}: Correct answer must be one of the provided options`);
+                        }
+                    }
+                    if (question.type === 'short_answer') {
+                        if (!question.correctAnswer) {
+                            throw new common_1.BadRequestException(`Question ${questionIndex}: Short answer questions must have a correct answer`);
+                        }
+                    }
                 }
             }
+            const quiz = await this.prisma.$transaction(async (tx) => {
+                const newQuiz = await tx.quiz.create({
+                    data: {
+                        moduleId: createQuizDto.moduleId,
+                        title: createQuizDto.title,
+                        description: createQuizDto.description || '',
+                        timeLimit: createQuizDto.timeLimit || null,
+                        maxAttempts: createQuizDto.maxAttempts || 1,
+                        passingScore: createQuizDto.passingScore || 50,
+                        shuffleQuestions: createQuizDto.shuffleQuestions || false,
+                        published: false,
+                    },
+                    include: { questions: true },
+                });
+                if (createQuizDto.questions && createQuizDto.questions.length > 0) {
+                    for (const question of createQuizDto.questions) {
+                        await tx.question.create({
+                            data: {
+                                quizId: newQuiz.id,
+                                type: question.type,
+                                text: question.text,
+                                options: question.options || [],
+                                correctAnswer: question.correctAnswer || '',
+                                points: question.points || 1,
+                                order: question.order || 0,
+                            },
+                        });
+                    }
+                }
+                return newQuiz;
+            });
             return this.getQuiz(quiz.id, user);
         }
         catch (error) {
             console.error('Quiz creation error:', error);
-            throw error;
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException || error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            throw new common_1.BadRequestException('Failed to create quiz: ' + error?.message || 'Unknown error');
         }
     }
     async getQuiz(quizId, user) {

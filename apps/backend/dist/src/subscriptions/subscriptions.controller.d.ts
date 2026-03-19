@@ -10,12 +10,12 @@ export declare class SubscriptionsController {
     createPlan(dto: CreateSubscriptionPlanDto): Promise<{
         id: string;
         name: string;
-        description: string | null;
-        updatedAt: Date;
         createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
         price: number;
-        features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
+        features: import("@prisma/client/runtime/client").JsonValue | null;
         maxCourses: number;
         maxStudents: number;
         supportLevel: string;
@@ -25,12 +25,12 @@ export declare class SubscriptionsController {
     getAllPlans(req: any): Promise<{
         id: string;
         name: string;
-        description: string | null;
-        updatedAt: Date;
         createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
         price: number;
-        features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
+        features: import("@prisma/client/runtime/client").JsonValue | null;
         maxCourses: number;
         maxStudents: number;
         supportLevel: string;
@@ -40,12 +40,12 @@ export declare class SubscriptionsController {
     getPlan(planId: string): Promise<{
         id: string;
         name: string;
-        description: string | null;
-        updatedAt: Date;
         createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
         price: number;
-        features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
+        features: import("@prisma/client/runtime/client").JsonValue | null;
         maxCourses: number;
         maxStudents: number;
         supportLevel: string;
@@ -55,12 +55,12 @@ export declare class SubscriptionsController {
     updatePlan(planId: string, dto: UpdateSubscriptionPlanDto): Promise<{
         id: string;
         name: string;
-        description: string | null;
-        updatedAt: Date;
         createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
         price: number;
-        features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
+        features: import("@prisma/client/runtime/client").JsonValue | null;
         maxCourses: number;
         maxStudents: number;
         supportLevel: string;
@@ -70,12 +70,12 @@ export declare class SubscriptionsController {
     deletePlan(planId: string): Promise<{
         id: string;
         name: string;
-        description: string | null;
-        updatedAt: Date;
         createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
         price: number;
-        features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
+        features: import("@prisma/client/runtime/client").JsonValue | null;
         maxCourses: number;
         maxStudents: number;
         supportLevel: string;
@@ -88,23 +88,23 @@ export declare class SubscriptionsController {
         user: {
             id: string;
             name: string;
-            updatedAt: Date;
-            email: string;
-            password: string | null;
-            role: import(".prisma/client").$Enums.Role;
-            avatar: string | null;
-            organizationId: string | null;
             createdAt: Date;
+            updatedAt: Date;
+            role: import(".prisma/client").$Enums.Role;
+            password: string | null;
+            organizationId: string | null;
+            email: string;
+            avatar: string | null;
         };
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
-            features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
+            features: import("@prisma/client/runtime/client").JsonValue | null;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
@@ -113,27 +113,27 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
-        userId: string;
-        planId: string;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
         razorpaySubscriptionId: string | null;
+        planId: string;
     }>;
     getMySubscription(req: any): Promise<{
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
-            features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
+            features: import("@prisma/client/runtime/client").JsonValue | null;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
@@ -142,27 +142,27 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
-        userId: string;
-        planId: string;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
         razorpaySubscriptionId: string | null;
+        planId: string;
     }>;
     getMyActiveSubscription(req: any): Promise<{
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
-            features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
+            features: import("@prisma/client/runtime/client").JsonValue | null;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
@@ -171,27 +171,27 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
-        userId: string;
-        planId: string;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
         razorpaySubscriptionId: string | null;
+        planId: string;
     }>;
     cancelSubscription(req: any, subscriptionId: string): Promise<{
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
-            features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
+            features: import("@prisma/client/runtime/client").JsonValue | null;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
@@ -200,27 +200,27 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
-        userId: string;
-        planId: string;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
         razorpaySubscriptionId: string | null;
+        planId: string;
     }>;
     renewSubscription(subscriptionId: string): Promise<{
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
-            features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
+            features: import("@prisma/client/runtime/client").JsonValue | null;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
@@ -229,38 +229,38 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
-        userId: string;
-        planId: string;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
         razorpaySubscriptionId: string | null;
+        planId: string;
     }>;
     getSubscription(subscriptionId: string): Promise<{
         user: {
             id: string;
             name: string;
-            updatedAt: Date;
-            email: string;
-            password: string | null;
-            role: import(".prisma/client").$Enums.Role;
-            avatar: string | null;
-            organizationId: string | null;
             createdAt: Date;
+            updatedAt: Date;
+            role: import(".prisma/client").$Enums.Role;
+            password: string | null;
+            organizationId: string | null;
+            email: string;
+            avatar: string | null;
         };
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
-            features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
+            features: import("@prisma/client/runtime/client").JsonValue | null;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
@@ -269,38 +269,38 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
-        userId: string;
-        planId: string;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
         razorpaySubscriptionId: string | null;
+        planId: string;
     }>;
     getAllSubscriptions(req: any): Promise<({
         user: {
             id: string;
             name: string;
-            updatedAt: Date;
-            email: string;
-            password: string | null;
-            role: import(".prisma/client").$Enums.Role;
-            avatar: string | null;
-            organizationId: string | null;
             createdAt: Date;
+            updatedAt: Date;
+            role: import(".prisma/client").$Enums.Role;
+            password: string | null;
+            organizationId: string | null;
+            email: string;
+            avatar: string | null;
         };
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
-            features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
+            features: import("@prisma/client/runtime/client").JsonValue | null;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
@@ -309,16 +309,16 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
-        userId: string;
-        planId: string;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
         razorpaySubscriptionId: string | null;
+        planId: string;
     })[]>;
     createSubscriptionCheckout(req: any, planId: string): Promise<{
         subscriptionId: string;
@@ -330,7 +330,7 @@ export declare class SubscriptionsController {
             billingCycle: string;
         };
         keyId: any;
-        message: string;
+        status: "pending" | "completed" | "active" | "created" | "authenticated" | "halted" | "cancelled" | "expired";
     }>;
     handleWebhook(payload: any): Promise<{
         success: boolean;

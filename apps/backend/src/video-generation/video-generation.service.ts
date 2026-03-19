@@ -1,9 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TTSService } from '../ai/tts.service';
 
 @Injectable()
 export class VideoGenerationService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(VideoGenerationService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private ttsService: TTSService,
+  ) {}
 
   async generateVideo(moduleId: string): Promise<any> {
     const module = await this.prisma.module.findUnique({
@@ -80,11 +86,12 @@ export class VideoGenerationService {
 
       return this.findByModuleId(moduleId);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Video generation failed';
       await this.prisma.videoGeneration.update({
         where: { id: videoGen.id },
         data: {
           status: 'FAILED',
-          errorMessage: error.message || 'Video generation failed',
+          errorMessage,
         },
       });
       throw error;
@@ -122,9 +129,23 @@ export class VideoGenerationService {
     return `Welcome to this lesson on ${title}. In this lesson, we will explore the key concepts and fundamentals of ${title}. We will cover the main topics, discuss important points, and provide examples to help you understand better. By the end of this lesson, you should have a clear understanding of ${title}. Let's begin our learning journey.`;
   }
 
-  private async generateAudio(script: string): Promise<string> {
-    const mockAudioUrl = `https://storage.example.com/audio/${Date.now()}.mp3`;
-    return mockAudioUrl;
+  private async generateAudio(script: string, voiceId?: string): Promise<string> {
+    const voice = voiceId 
+      ? this.ttsService.getVoiceById(voiceId)
+      : this.ttsService.getAvailableVoices()[0];
+
+    if (!voice) {
+      throw new BadRequestException('Voice not found or not configured');
+    }
+
+    const voiceConfig = {
+      languageCode: voice.languageCode,
+      name: voice.name,
+      ssmlGender: voice.gender as 'MALE' | 'FEMALE' | 'NEUTRAL',
+    };
+
+    const result = await this.ttsService.generateAudio(script, voiceConfig);
+    return result.audioUrl;
   }
 
   async findByModuleId(moduleId: string): Promise<any> {

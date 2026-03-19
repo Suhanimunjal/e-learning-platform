@@ -1,205 +1,94 @@
 import { Queue } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ContentGeneratorEnhancedService } from '../content-generator-enhanced.service';
+import { AnthropicService } from './anthropic.service';
+import { TTSService } from '../tts.service';
 export declare class AiService {
     private prisma;
     private aiQueue;
+    private contentGenerator;
+    private anthropicService;
+    private ttsService;
     private readonly logger;
-    constructor(prisma: PrismaService, aiQueue: Queue);
+    constructor(prisma: PrismaService, aiQueue: Queue, contentGenerator: ContentGeneratorEnhancedService, anthropicService: AnthropicService, ttsService: TTSService);
     generateCourseOutline(topic: string, userId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         type: string;
-        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
+        retryCount: number;
+        version: string;
         tenantId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     generateLessons(courseId: string, userId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         type: string;
-        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
+        retryCount: number;
+        version: string;
         tenantId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     getJobStatus(jobId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         type: string;
-        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
+        retryCount: number;
+        version: string;
         tenantId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     generateQuiz(moduleId: string, userId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         type: string;
-        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
+        retryCount: number;
+        version: string;
         tenantId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     generateFlashcards(moduleId: string, userId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         type: string;
-        retryCount: number;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
+        retryCount: number;
+        version: string;
         tenantId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
-    generateAssignment(topic: string, tone: string): Promise<{
-        success: boolean;
-        data: {
-            title: string;
-            content: string;
-            tone: string;
-            topic: string;
-        };
-    }>;
-    generateExamples(topic: string, tone: string): Promise<{
-        success: boolean;
-        data: {
-            title: string;
-            content: string;
-            tone: string;
-            topic: string;
-        };
-    }>;
-    summarizeContent(content: string, tone: string): Promise<{
-        success: boolean;
-        data: {
-            title: string;
-            content: string;
-            tone: string;
-            originalLength: number;
-        };
-    }>;
-    gradeSubmission(submissionId: string): Promise<{
-        success: boolean;
-        data: {
-            submissionId: string;
-            aiScore: number;
-            aiConfidence: number;
-            feedback: string;
-            gradedAt: string;
-        };
-    }>;
-    getGradingFeedback(submissionId: string): Promise<{
-        success: boolean;
-        data: {
-            submissionId: string;
-            feedback: string;
-            suggestions: string[];
-        };
-    }>;
-    overrideGrade(submissionId: string, score: number, feedback?: string): Promise<{
-        success: boolean;
-        data: {
-            submissionId: string;
-            finalScore: number;
-            teacherOverride: boolean;
-            feedback: string;
-            overriddenAt: string;
-        };
-    }>;
-    getRecommendations(studentId: string): Promise<{
-        success: boolean;
-        data: {
-            courseId: string;
-            title: string;
-            reason: string;
-            matchScore: number;
-        }[];
-    }>;
-    trackProgress(studentId: string, topic: string, score: number): Promise<{
-        success: boolean;
-        data: {
-            studentId: string;
-            topic: string;
-            score: number;
-            trackedAt: string;
-        };
-    }>;
-    translateText(text: string, targetLang: string, sourceLang?: string): Promise<{
-        success: boolean;
-        data: {
-            original: string;
-            translated: string;
-            sourceLang: string;
-            targetLang: string;
-        };
-    }>;
-    detectLanguage(text: string): Promise<{
-        success: boolean;
-        data: {
-            language: string;
-            confidence: number;
-            code: string;
-        };
-    }>;
-    search(query: string, filters?: any): Promise<{
-        success: boolean;
-        data: {
-            id: string;
-            type: string;
-            title: string;
-            snippet: string;
-            relevanceScore: number;
-        }[];
-        query: string;
-        filters: any;
-    }>;
-    getSearchSuggestions(query: string): Promise<{
-        success: boolean;
-        data: string[];
-    }>;
-    chat(message: string, sessionId?: string, courseId?: string): Promise<{
-        success: boolean;
-        data: {
-            message: string;
-            response: string;
-            sessionId: string;
-            timestamp: string;
-        };
-    }>;
-    getChatHistory(sessionId: string): Promise<{
-        success: boolean;
-        data: {
-            role: string;
-            content: string;
-            timestamp: string;
-        }[];
-        sessionId: string;
-    }>;
-    createChatSession(courseId?: string): Promise<{
-        success: boolean;
-        data: {
-            id: string;
-            courseId: string;
-            createdAt: string;
-        };
-    }>;
+    generateAssignment(topic: string, tone: string): Promise<any>;
+    generateExamples(topic: string, tone: string): Promise<any>;
+    summarizeContent(contentText: string, tone: string): Promise<any>;
+    gradeSubmission(submissionId: string): Promise<any>;
+    getGradingFeedback(submissionId: string): Promise<any>;
+    overrideGrade(submissionId: string, score: number, feedback?: string): Promise<any>;
+    getRecommendations(studentId: string): Promise<any>;
+    trackProgress(studentId: string, topic: string, score: number): Promise<any>;
+    translateText(text: string, targetLang: string, sourceLang?: string): Promise<any>;
+    detectLanguage(text: string): Promise<any>;
+    search(query: string, filters?: any): Promise<any>;
+    getSearchSuggestions(query: string): Promise<any>;
+    chat(message: string, sessionId?: string, courseId?: string): Promise<any>;
+    getChatHistory(sessionId: string): Promise<any>;
+    createChatSession(courseId?: string): Promise<any>;
 }

@@ -11,11 +11,13 @@ const common_1 = require("@nestjs/common");
 const video_generation_controller_1 = require("./video-generation.controller");
 const video_generation_service_1 = require("./video-generation.service");
 const prisma_service_1 = require("../prisma/prisma.service");
+const ai_module_1 = require("../ai/ai.module");
 let VideoGenerationModule = class VideoGenerationModule {
 };
 exports.VideoGenerationModule = VideoGenerationModule;
 exports.VideoGenerationModule = VideoGenerationModule = __decorate([
     (0, common_1.Module)({
+        imports: [ai_module_1.AiModule],
         controllers: [video_generation_controller_1.VideoGenerationController],
         providers: [video_generation_service_1.VideoGenerationService, prisma_service_1.PrismaService],
         exports: [video_generation_service_1.VideoGenerationService],

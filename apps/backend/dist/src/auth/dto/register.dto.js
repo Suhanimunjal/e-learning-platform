@@ -13,9 +13,6 @@ exports.RegisterDto = void 0;
 const class_validator_1 = require("class-validator");
 const client_1 = require("@prisma/client");
 class RegisterDto {
-    constructor() {
-        this.role = client_1.Role.STUDENT;
-    }
 }
 exports.RegisterDto = RegisterDto;
 __decorate([

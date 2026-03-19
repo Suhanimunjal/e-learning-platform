@@ -8,13 +8,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var VideoGenerationService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VideoGenerationService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
-let VideoGenerationService = class VideoGenerationService {
-    constructor(prisma) {
+const tts_service_1 = require("../ai/tts.service");
+let VideoGenerationService = VideoGenerationService_1 = class VideoGenerationService {
+    constructor(prisma, ttsService) {
         this.prisma = prisma;
+        this.ttsService = ttsService;
+        this.logger = new common_1.Logger(VideoGenerationService_1.name);
     }
     async generateVideo(moduleId) {
         const module = await this.prisma.module.findUnique({
@@ -83,11 +87,12 @@ let VideoGenerationService = class VideoGenerationService {
             return this.findByModuleId(moduleId);
         }
         catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Video generation failed';
             await this.prisma.videoGeneration.update({
                 where: { id: videoGen.id },
                 data: {
                     status: 'FAILED',
-                    errorMessage: error.message || 'Video generation failed',
+                    errorMessage,
                 },
             });
             throw error;
@@ -117,9 +122,20 @@ let VideoGenerationService = class VideoGenerationService {
     generateDefaultScript(title) {
         return `Welcome to this lesson on ${title}. In this lesson, we will explore the key concepts and fundamentals of ${title}. We will cover the main topics, discuss important points, and provide examples to help you understand better. By the end of this lesson, you should have a clear understanding of ${title}. Let's begin our learning journey.`;
     }
-    async generateAudio(script) {
-        const mockAudioUrl = `https://storage.example.com/audio/${Date.now()}.mp3`;
-        return mockAudioUrl;
+    async generateAudio(script, voiceId) {
+        const voice = voiceId
+            ? this.ttsService.getVoiceById(voiceId)
+            : this.ttsService.getAvailableVoices()[0];
+        if (!voice) {
+            throw new common_1.BadRequestException('Voice not found or not configured');
+        }
+        const voiceConfig = {
+            languageCode: voice.languageCode,
+            name: voice.name,
+            ssmlGender: voice.gender,
+        };
+        const result = await this.ttsService.generateAudio(script, voiceConfig);
+        return result.audioUrl;
     }
     async findByModuleId(moduleId) {
         const videoGen = await this.prisma.videoGeneration.findUnique({
@@ -182,8 +198,9 @@ let VideoGenerationService = class VideoGenerationService {
     }
 };
 exports.VideoGenerationService = VideoGenerationService;
-exports.VideoGenerationService = VideoGenerationService = __decorate([
+exports.VideoGenerationService = VideoGenerationService = VideoGenerationService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        tts_service_1.TTSService])
 ], VideoGenerationService);
 //# sourceMappingURL=video-generation.service.js.map

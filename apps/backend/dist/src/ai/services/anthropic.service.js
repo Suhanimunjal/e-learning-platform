@@ -33,7 +33,31 @@ let AnthropicService = AnthropicService_1 = class AnthropicService {
     }
     ensureConfigured() {
         if (!this.isConfigured) {
-            throw new Error('AI features are disabled. Please configure ANTHROPIC_API_KEY in .env');
+            throw new Error('ANTHROPIC_API_KEY environment variable is required. Please set it in your .env file.');
+        }
+    }
+    async generateStructuredResponse(prompt) {
+        this.ensureConfigured();
+        try {
+            const response = await this.anthropic.messages.create({
+                model: ai_config_1.AI_CONFIG.anthropic.model,
+                max_tokens: 4000,
+                messages: [
+                    {
+                        role: 'user',
+                        content: prompt,
+                    },
+                ],
+            });
+            const content = response.content[0];
+            if (content.type === 'text') {
+                return this.parseJSONResponse(content.text);
+            }
+            throw new Error('Invalid response type from Anthropic API');
+        }
+        catch (error) {
+            this.logger.error('Error generating structured response:', error);
+            throw error;
         }
     }
     async generateCourseOutline(topic) {

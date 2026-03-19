@@ -15,11 +15,12 @@ export declare class ModulesService {
     create(createModuleDto: CreateModuleDto, user: User): Promise<{
         id: string;
         title: string;
+        order: number;
+        sectionId: string;
         type: import(".prisma/client").$Enums.ModuleType;
         videoUrl: string | null;
         textContent: string | null;
         content: import("@prisma/client/runtime/client").JsonValue | null;
-        order: number;
         duration: number | null;
         isPreview: boolean;
         hasVideo: boolean;
@@ -37,16 +38,16 @@ export declare class ModulesService {
         contentGeneratedAt: Date | null;
         videoGeneratedAt: Date | null;
         retryCount: number;
-        sectionId: string;
     }>;
     findAll(sectionId: string, user: User): Promise<{
         id: string;
         title: string;
+        order: number;
+        sectionId: string;
         type: import(".prisma/client").$Enums.ModuleType;
         videoUrl: string | null;
         textContent: string | null;
         content: import("@prisma/client/runtime/client").JsonValue | null;
-        order: number;
         duration: number | null;
         isPreview: boolean;
         hasVideo: boolean;
@@ -64,38 +65,38 @@ export declare class ModulesService {
         contentGeneratedAt: Date | null;
         videoGeneratedAt: Date | null;
         retryCount: number;
-        sectionId: string;
     }[]>;
     findOne(id: string, user: User): Promise<{
         section: {
             course: {
                 id: string;
-                title: string;
-                slug: string;
                 description: string;
+                updatedAt: Date;
+                organizationId: string | null;
+                createdAt: Date;
+                slug: string;
+                title: string;
                 thumbnail: string | null;
                 videoIntro: string | null;
                 price: number;
                 instructorId: string;
-                organizationId: string | null;
                 published: boolean;
-                createdAt: Date;
-                updatedAt: Date;
             };
         } & {
             id: string;
             title: string;
-            order: number;
             courseId: string;
+            order: number;
         };
     } & {
         id: string;
         title: string;
+        order: number;
+        sectionId: string;
         type: import(".prisma/client").$Enums.ModuleType;
         videoUrl: string | null;
         textContent: string | null;
         content: import("@prisma/client/runtime/client").JsonValue | null;
-        order: number;
         duration: number | null;
         isPreview: boolean;
         hasVideo: boolean;
@@ -113,16 +114,16 @@ export declare class ModulesService {
         contentGeneratedAt: Date | null;
         videoGeneratedAt: Date | null;
         retryCount: number;
-        sectionId: string;
     }>;
     update(id: string, updateModuleDto: any, user: User): Promise<{
         id: string;
         title: string;
+        order: number;
+        sectionId: string;
         type: import(".prisma/client").$Enums.ModuleType;
         videoUrl: string | null;
         textContent: string | null;
         content: import("@prisma/client/runtime/client").JsonValue | null;
-        order: number;
         duration: number | null;
         isPreview: boolean;
         hasVideo: boolean;
@@ -140,16 +141,16 @@ export declare class ModulesService {
         contentGeneratedAt: Date | null;
         videoGeneratedAt: Date | null;
         retryCount: number;
-        sectionId: string;
     }>;
     remove(id: string, user: User): Promise<{
         id: string;
         title: string;
+        order: number;
+        sectionId: string;
         type: import(".prisma/client").$Enums.ModuleType;
         videoUrl: string | null;
         textContent: string | null;
         content: import("@prisma/client/runtime/client").JsonValue | null;
-        order: number;
         duration: number | null;
         isPreview: boolean;
         hasVideo: boolean;
@@ -167,7 +168,6 @@ export declare class ModulesService {
         contentGeneratedAt: Date | null;
         videoGeneratedAt: Date | null;
         retryCount: number;
-        sectionId: string;
     }>;
     generateContent(moduleId: string, topic: string, user: User): Promise<{
         status: string;
@@ -180,11 +180,12 @@ export declare class ModulesService {
     updateContent(moduleId: string, content: Partial<StructuredContent>, user: User): Promise<{
         id: string;
         title: string;
+        order: number;
+        sectionId: string;
         type: import(".prisma/client").$Enums.ModuleType;
         videoUrl: string | null;
         textContent: string | null;
         content: import("@prisma/client/runtime/client").JsonValue | null;
-        order: number;
         duration: number | null;
         isPreview: boolean;
         hasVideo: boolean;
@@ -202,16 +203,16 @@ export declare class ModulesService {
         contentGeneratedAt: Date | null;
         videoGeneratedAt: Date | null;
         retryCount: number;
-        sectionId: string;
     }>;
     approveContent(moduleId: string, user: User): Promise<{
         id: string;
         title: string;
+        order: number;
+        sectionId: string;
         type: import(".prisma/client").$Enums.ModuleType;
         videoUrl: string | null;
         textContent: string | null;
         content: import("@prisma/client/runtime/client").JsonValue | null;
-        order: number;
         duration: number | null;
         isPreview: boolean;
         hasVideo: boolean;
@@ -229,7 +230,6 @@ export declare class ModulesService {
         contentGeneratedAt: Date | null;
         videoGeneratedAt: Date | null;
         retryCount: number;
-        sectionId: string;
     }>;
     getVideoStatus(moduleId: string, user: User): Promise<{
         moduleId: string;
@@ -268,11 +268,12 @@ export declare class ModulesService {
     rejectVideo(moduleId: string, reason: string | undefined, user: User): Promise<{
         id: string;
         title: string;
+        order: number;
+        sectionId: string;
         type: import(".prisma/client").$Enums.ModuleType;
         videoUrl: string | null;
         textContent: string | null;
         content: import("@prisma/client/runtime/client").JsonValue | null;
-        order: number;
         duration: number | null;
         isPreview: boolean;
         hasVideo: boolean;
@@ -290,7 +291,6 @@ export declare class ModulesService {
         contentGeneratedAt: Date | null;
         videoGeneratedAt: Date | null;
         retryCount: number;
-        sectionId: string;
     }>;
     getAvailableVoices(): import("../ai/tts.service").Voice[];
 }

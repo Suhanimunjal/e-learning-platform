@@ -18,7 +18,10 @@ const axios_1 = __importDefault(require("axios"));
 let ContentGeneratorEnhancedService = class ContentGeneratorEnhancedService {
     constructor() {
         this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-        this.apiKey = process.env.GEMINI_API_KEY || '';
+        this.apiKey = process.env.GEMINI_API_KEY;
+        if (!this.apiKey) {
+            throw new Error('GEMINI_API_KEY environment variable is required. Please set it in your .env file.');
+        }
     }
     async generateFullContent(topic, moduleTitle) {
         const prompt = this.buildContentPrompt(topic, moduleTitle);
@@ -45,9 +48,24 @@ let ContentGeneratorEnhancedService = class ContentGeneratorEnhancedService {
             });
             const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
             if (!content) {
-                throw new Error('Failed to generate content');
+                throw new Error('Failed to generate content - no response from API');
             }
-            return JSON.parse(content);
+            let parsed;
+            try {
+                parsed = JSON.parse(content);
+            }
+            catch (parseError) {
+                if (parseError instanceof SyntaxError) {
+                    throw new Error(`Invalid JSON response from API: ${parseError.message}. Response was: ${content.substring(0, 200)}`);
+                }
+                throw parseError;
+            }
+            const requiredFields = ['topic', 'title', 'quiz', 'assignment'];
+            const missingFields = requiredFields.filter(field => !(field in parsed));
+            if (missingFields.length > 0) {
+                throw new Error(`Invalid content structure - missing required fields: ${missingFields.join(', ')}`);
+            }
+            return parsed;
         }
         catch (error) {
             console.error('Content generation error:', error?.response?.data || error?.message || error);

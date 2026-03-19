@@ -11,8 +11,8 @@ export declare class AuthService {
     login(loginDto: LoginDto): Promise<AuthResponseDto>;
     validateUser(userId: string): Promise<{
         id: string;
-        name: string;
         email: string;
+        name: string;
         role: import(".prisma/client").$Enums.Role;
         organizationId: string;
     }>;

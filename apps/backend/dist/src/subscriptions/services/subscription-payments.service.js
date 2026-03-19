@@ -27,77 +27,97 @@ let SubscriptionPaymentsService = SubscriptionPaymentsService_1 = class Subscrip
         this.logger = new common_1.Logger(SubscriptionPaymentsService_1.name);
         const keyId = this.configService.get('RAZORPAY_KEY_ID');
         const keySecret = this.configService.get('RAZORPAY_KEY_SECRET');
-        if (keyId && keySecret) {
-            this.razorpay = new razorpay_1.default({
-                key_id: keyId,
-                key_secret: keySecret,
-            });
+        if (!keyId || !keySecret) {
+            throw new Error('RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables are required. Please set them in your .env file.');
         }
+        this.razorpay = new razorpay_1.default({
+            key_id: keyId,
+            key_secret: keySecret,
+        });
     }
     async createSubscriptionOrder(userId, planId) {
+        const plan = await this.prisma.subscriptionPlan.findUnique({
+            where: { id: planId },
+        });
+        if (!plan) {
+            throw new common_1.BadRequestException('Subscription plan not found');
+        }
+        if (!plan.razorpayPlanId) {
+            throw new common_1.BadRequestException('Razorpay plan not configured for this subscription plan');
+        }
+        const existingSub = await this.prisma.subscription.findFirst({
+            where: {
+                userId,
+                status: 'active',
+            },
+        });
+        if (existingSub) {
+            throw new common_1.BadRequestException('User already has an active subscription');
+        }
         try {
-            const plan = await this.prisma.subscriptionPlan.findUnique({
-                where: { id: planId },
-            });
-            if (!plan) {
-                throw new common_1.BadRequestException('Subscription plan not found');
-            }
-            const existingSub = await this.prisma.subscription.findFirst({
-                where: {
+            const subscription = await this.razorpay.subscriptions.create({
+                plan_id: plan.razorpayPlanId,
+                customer_notify: 1,
+                quantity: 1,
+                total_count: 12,
+                notes: {
                     userId,
-                    status: 'active',
+                    planId,
                 },
             });
-            if (existingSub) {
-                throw new common_1.BadRequestException('User already has an active subscription');
-            }
-            const mockSubscriptionId = `sub_mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            const subscription = await this.subscriptionsService.createSubscription({
+            const dbSubscription = await this.subscriptionsService.createSubscription({
                 userId,
                 planId,
-                razorpaySubscriptionId: mockSubscriptionId,
+                razorpaySubscriptionId: subscription.id,
             });
             return {
-                subscriptionId: subscription.id,
-                razorpaySubscriptionId: mockSubscriptionId,
+                subscriptionId: dbSubscription.id,
+                razorpaySubscriptionId: subscription.id,
                 plan: {
                     id: plan.id,
                     name: plan.name,
                     price: plan.price,
                     billingCycle: plan.billingCycle,
                 },
-                keyId: this.configService.get('RAZORPAY_KEY_ID') || 'rzp_test_demo',
-                message: 'Subscription created successfully (demo mode)',
+                keyId: this.configService.get('RAZORPAY_KEY_ID'),
+                status: subscription.status,
             };
         }
         catch (error) {
-            this.logger.error('Error creating subscription order:', error);
-            throw error;
+            this.logger.error('Razorpay subscription creation failed:', error);
+            throw new common_1.BadRequestException('Failed to create subscription');
         }
     }
     async handleSubscriptionWebhook(payload, signature) {
-        try {
-            this.logger.log('Subscription webhook received', { event: payload.event });
-            const event = payload.event;
-            switch (event) {
-                case 'subscription.activated':
-                    return this.handleSubscriptionActivated(payload.payload.subscription.entity);
-                case 'subscription.charged':
-                    return this.handleSubscriptionCharged(payload.payload.subscription.entity);
-                case 'subscription.completed':
-                    return this.handleSubscriptionCompleted(payload.payload.subscription.entity);
-                case 'subscription.cancelled':
-                    return this.handleSubscriptionCancelled(payload.payload.subscription.entity);
-                case 'subscription.pending':
-                    return this.handleSubscriptionPending(payload.payload.subscription.entity);
-                default:
-                    this.logger.log(`Event ${event} not handled`);
-                    return { success: true };
-            }
+        const webhookSecret = this.configService.get('RAZORPAY_WEBHOOK_SECRET');
+        if (!webhookSecret) {
+            throw new Error('RAZORPAY_WEBHOOK_SECRET environment variable is required');
         }
-        catch (error) {
-            this.logger.error('Error handling subscription webhook:', error);
-            throw error;
+        const crypto = require('crypto');
+        const expectedSignature = crypto
+            .createHmac('sha256', webhookSecret)
+            .update(JSON.stringify(payload))
+            .digest('hex');
+        if (signature !== expectedSignature) {
+            this.logger.warn('Invalid subscription webhook signature');
+            throw new common_1.BadRequestException('Invalid webhook signature');
+        }
+        this.logger.log('Subscription webhook received', { event: payload.event });
+        const event = payload.event;
+        switch (event) {
+            case 'subscription.activated':
+                return this.handleSubscriptionActivated(payload.payload.subscription.entity);
+            case 'subscription.charged':
+                return this.handleSubscriptionCharged(payload.payload.subscription.entity);
+            case 'subscription.completed':
+                return this.handleSubscriptionCompleted(payload.payload.subscription.entity);
+            case 'subscription.cancelled':
+                return this.handleSubscriptionCancelled(payload.payload.subscription.entity);
+            case 'subscription.pending':
+                return this.handleSubscriptionPending(payload.payload.subscription.entity);
+            default:
+                this.logger.log(`Event ${event} not handled`);
+                return { success: true };
         }
     }
     async handleSubscriptionActivated(entity) {

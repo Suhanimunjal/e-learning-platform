@@ -9,6 +9,14 @@ export declare class PaymentsController {
         amount: number;
         currency: string;
         keyId: any;
+        status: string;
+    } | {
+        orderId: string;
+        razorpayOrderId: string;
+        amount: number;
+        currency: string;
+        keyId: any;
+        status?: undefined;
     }>;
     handleWebhook(payload: any, signature: string): Promise<{
         success: boolean;
@@ -19,14 +27,14 @@ export declare class PaymentsController {
     }>;
     getOrderStatus(orderId: string): Promise<{
         id: string;
-        createdAt: Date;
-        courseId: string;
-        userId: string;
         amount: number;
-        status: string;
         currency: string;
+        status: string;
         razorpayOrderId: string | null;
         razorpayPaymentId: string | null;
         paymentMethod: string | null;
+        createdAt: Date;
+        userId: string;
+        courseId: string;
     }>;
 }

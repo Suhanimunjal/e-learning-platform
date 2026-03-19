@@ -1,7 +1,10 @@
 import { PrismaService } from '../prisma/prisma.service';
+import { TTSService } from '../ai/tts.service';
 export declare class VideoGenerationService {
     private prisma;
-    constructor(prisma: PrismaService);
+    private ttsService;
+    private readonly logger;
+    constructor(prisma: PrismaService, ttsService: TTSService);
     generateVideo(moduleId: string): Promise<any>;
     private generateScript;
     private convertToNarrativeScript;

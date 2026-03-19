@@ -4,6 +4,14 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '@prisma/client';
+import {
+  GenerateAssignmentDto,
+  GenerateExamplesDto,
+  SummarizeContentDto,
+  TranslateTextDto,
+  DetectLanguageDto,
+  ChatDto,
+} from './dto/ai-content.dto';
 
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
@@ -43,20 +51,20 @@ export class AiController {
   // Content Generation
   @Post('generate-assignment')
   @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
-  async generateAssignment(@Body() body: { topic: string; tone?: string }) {
-    return this.aiService.generateAssignment(body.topic, body.tone || 'formal');
+  async generateAssignment(@Body() dto: GenerateAssignmentDto) {
+    return this.aiService.generateAssignment(dto.topic, dto.tone || 'formal');
   }
 
   @Post('generate-examples')
   @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
-  async generateExamples(@Body() body: { topic: string; tone?: string }) {
-    return this.aiService.generateExamples(body.topic, body.tone || 'casual');
+  async generateExamples(@Body() dto: GenerateExamplesDto) {
+    return this.aiService.generateExamples(dto.topic, dto.tone || 'casual');
   }
 
   @Post('summarize-content')
   @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
-  async summarizeContent(@Body() body: { content: string; tone?: string }) {
-    return this.aiService.summarizeContent(body.content, body.tone || 'simplified');
+  async summarizeContent(@Body() dto: SummarizeContentDto) {
+    return this.aiService.summarizeContent(dto.content, dto.tone || 'simplified');
   }
 
   // Auto-Grading
@@ -93,13 +101,13 @@ export class AiController {
 
   // Translation
   @Post('translate')
-  async translate(@Body() body: { text: string; targetLang: string; sourceLang?: string }) {
-    return this.aiService.translateText(body.text, body.targetLang, body.sourceLang);
+  async translate(@Body() dto: TranslateTextDto) {
+    return this.aiService.translateText(dto.text, dto.targetLang, dto.sourceLang);
   }
 
   @Post('detect-language')
-  async detectLanguage(@Body() body: { text: string }) {
-    return this.aiService.detectLanguage(body.text);
+  async detectLanguage(@Body() dto: DetectLanguageDto) {
+    return this.aiService.detectLanguage(dto.text);
   }
 
   // Smart Search
@@ -115,8 +123,8 @@ export class AiController {
 
   // Chatbot
   @Post('chat')
-  async chat(@Body() body: { message: string; sessionId?: string; courseId?: string }) {
-    return this.aiService.chat(body.message, body.sessionId, body.courseId);
+  async chat(@Body() dto: ChatDto) {
+    return this.aiService.chat(dto.message, dto.sessionId, dto.courseId);
   }
 
   @Get('chat/history/:sessionId')

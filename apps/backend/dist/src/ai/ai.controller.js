@@ -18,6 +18,7 @@ const ai_service_1 = require("./services/ai.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const client_1 = require("@prisma/client");
+const ai_content_dto_1 = require("./dto/ai-content.dto");
 let AiController = class AiController {
     constructor(aiService) {
         this.aiService = aiService;
@@ -37,14 +38,14 @@ let AiController = class AiController {
     async generateFlashcards(req, moduleId) {
         return this.aiService.generateFlashcards(moduleId, req.user.id);
     }
-    async generateAssignment(body) {
-        return this.aiService.generateAssignment(body.topic, body.tone || 'formal');
+    async generateAssignment(dto) {
+        return this.aiService.generateAssignment(dto.topic, dto.tone || 'formal');
     }
-    async generateExamples(body) {
-        return this.aiService.generateExamples(body.topic, body.tone || 'casual');
+    async generateExamples(dto) {
+        return this.aiService.generateExamples(dto.topic, dto.tone || 'casual');
     }
-    async summarizeContent(body) {
-        return this.aiService.summarizeContent(body.content, body.tone || 'simplified');
+    async summarizeContent(dto) {
+        return this.aiService.summarizeContent(dto.content, dto.tone || 'simplified');
     }
     async gradeSubmission(submissionId) {
         return this.aiService.gradeSubmission(submissionId);
@@ -61,11 +62,11 @@ let AiController = class AiController {
     async trackProgress(body) {
         return this.aiService.trackProgress(body.studentId, body.topic, body.score);
     }
-    async translate(body) {
-        return this.aiService.translateText(body.text, body.targetLang, body.sourceLang);
+    async translate(dto) {
+        return this.aiService.translateText(dto.text, dto.targetLang, dto.sourceLang);
     }
-    async detectLanguage(body) {
-        return this.aiService.detectLanguage(body.text);
+    async detectLanguage(dto) {
+        return this.aiService.detectLanguage(dto.text);
     }
     async search(query, filters) {
         return this.aiService.search(query, filters);
@@ -73,8 +74,8 @@ let AiController = class AiController {
     async getSuggestions(query) {
         return this.aiService.getSearchSuggestions(query);
     }
-    async chat(body) {
-        return this.aiService.chat(body.message, body.sessionId, body.courseId);
+    async chat(dto) {
+        return this.aiService.chat(dto.message, dto.sessionId, dto.courseId);
     }
     async getChatHistory(sessionId) {
         return this.aiService.getChatHistory(sessionId);
@@ -132,7 +133,7 @@ __decorate([
     (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [ai_content_dto_1.GenerateAssignmentDto]),
     __metadata("design:returntype", Promise)
 ], AiController.prototype, "generateAssignment", null);
 __decorate([
@@ -140,7 +141,7 @@ __decorate([
     (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [ai_content_dto_1.GenerateExamplesDto]),
     __metadata("design:returntype", Promise)
 ], AiController.prototype, "generateExamples", null);
 __decorate([
@@ -148,7 +149,7 @@ __decorate([
     (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [ai_content_dto_1.SummarizeContentDto]),
     __metadata("design:returntype", Promise)
 ], AiController.prototype, "summarizeContent", null);
 __decorate([
@@ -193,14 +194,14 @@ __decorate([
     (0, common_1.Post)('translate'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [ai_content_dto_1.TranslateTextDto]),
     __metadata("design:returntype", Promise)
 ], AiController.prototype, "translate", null);
 __decorate([
     (0, common_1.Post)('detect-language'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [ai_content_dto_1.DetectLanguageDto]),
     __metadata("design:returntype", Promise)
 ], AiController.prototype, "detectLanguage", null);
 __decorate([
@@ -222,7 +223,7 @@ __decorate([
     (0, common_1.Post)('chat'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [ai_content_dto_1.ChatDto]),
     __metadata("design:returntype", Promise)
 ], AiController.prototype, "chat", null);
 __decorate([

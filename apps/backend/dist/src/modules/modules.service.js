@@ -198,8 +198,26 @@ let ModulesService = class ModulesService {
                     contentStatus: client_1.ContentStatus.PENDING,
                 },
             });
-            const message = error?.message || 'Failed to generate content';
-            throw new common_1.BadRequestException(message);
+            let errorMessage = 'Failed to generate content';
+            if (error?.message) {
+                if (error.message.includes('GEMINI_API_KEY')) {
+                    errorMessage = 'API key not configured. Please set GEMINI_API_KEY environment variable.';
+                }
+                else if (error.message.includes('Invalid JSON')) {
+                    errorMessage = 'API returned invalid data format. Please try again.';
+                }
+                else if (error.message.includes('missing required fields')) {
+                    errorMessage = 'Generated content is incomplete. ' + error.message;
+                }
+                else {
+                    errorMessage = error.message;
+                }
+            }
+            throw new common_1.BadRequestException({
+                message: errorMessage,
+                reason: error?.message || 'Unknown error',
+                timestamp: new Date().toISOString(),
+            });
         }
     }
     async updateContent(moduleId, content, user) {

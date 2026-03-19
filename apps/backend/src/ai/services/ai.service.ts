@@ -1,8 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAIGenerationJobDto } from '../dto/create-ai-job.dto';
+import { ContentGeneratorEnhancedService } from '../content-generator-enhanced.service';
+import { AnthropicService } from './anthropic.service';
+import { TTSService } from '../tts.service';
 
 @Injectable()
 export class AiService {
@@ -11,9 +14,11 @@ export class AiService {
   constructor(
     private prisma: PrismaService,
     @InjectQueue('ai-jobs') private aiQueue: Queue,
+    private contentGenerator: ContentGeneratorEnhancedService,
+    private anthropicService: AnthropicService,
+    private ttsService: TTSService,
   ) {}
 
-  // Course Generation
   async generateCourseOutline(topic: string, userId: string) {
     const job = await this.prisma.aIGenerationJob.create({
       data: {
@@ -98,108 +103,331 @@ export class AiService {
     return job;
   }
 
-  // Content Generation (Mock Implementation)
-  async generateAssignment(topic: string, tone: string) {
-    // Mock response - replace with actual AI call
+  async generateAssignment(topic: string, tone: string): Promise<any> {
+    const content = await this.contentGenerator.generateFullContent(topic);
+    
     return {
       success: true,
       data: {
-        title: `Assignment: ${topic}`,
-        content: `Generated assignment content for "${topic}" in ${tone} tone.`,
+        title: content.title,
+        content: content.assignment.problemStatement,
+        instructions: content.assignment.instructions,
+        rubric: content.assignment.rubric,
+        expectedOutput: content.assignment.expectedOutput,
         tone,
         topic,
       },
     };
   }
 
-  async generateExamples(topic: string, tone: string) {
+  async generateExamples(topic: string, tone: string): Promise<any> {
+    const content = await this.contentGenerator.generateFullContent(topic);
+    
     return {
       success: true,
       data: {
         title: `Code Examples: ${topic}`,
-        content: `Generated examples for "${topic}" in ${tone} tone.`,
+        examples: content.examples,
         tone,
         topic,
       },
     };
   }
 
-  async summarizeContent(content: string, tone: string) {
-    return {
-      success: true,
-      data: {
-        title: 'Content Summary',
-        content: `Summarized content in ${tone} tone. Original length: ${content.length} characters.`,
-        tone,
-        originalLength: content.length,
-      },
-    };
+  async summarizeContent(contentText: string, tone: string): Promise<any> {
+    const summaryPrompt = `Summarize the following content in a ${tone} tone. Provide a clear and concise summary with key points.
+
+Content to summarize:
+${contentText}
+
+Return JSON with this structure:
+{
+  "summary": "2-3 paragraph summary",
+  "keyPoints": ["point1", "point2", "point3"],
+  "mainTakeaway": "one sentence conclusion"
+}`;
+
+    try {
+      const response = await this.anthropicService.generateStructuredResponse(summaryPrompt);
+      
+      return {
+        success: true,
+        data: {
+          summary: response.summary || contentText.substring(0, 500),
+          keyPoints: response.keyPoints || [],
+          mainTakeaway: response.mainTakeaway || '',
+          tone,
+          originalLength: contentText.length,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Summarize content failed:', error);
+      throw new BadRequestException('Failed to summarize content');
+    }
   }
 
-  // Auto-Grading (Mock Implementation)
-  async gradeSubmission(submissionId: string) {
-    // Mock grading - replace with actual AI grading logic
-    const score = Math.floor(Math.random() * 30) + 70;
-    const confidence = Math.floor(Math.random() * 15) + 85;
+  async gradeSubmission(submissionId: string): Promise<any> {
+    const submission = await this.prisma.submission.findUnique({
+      where: { id: submissionId },
+      include: { assignment: true },
+    });
+
+    if (!submission) {
+      throw new BadRequestException('Submission not found');
+    }
+
+    const studentAnswer = submission.textContent || '';
+    const assignmentTitle = submission.assignment?.title || 'Assignment';
+    const maxPoints = submission.assignment?.maxPoints || 100;
+
+    const gradingPrompt = `Grade this student submission for: ${assignmentTitle}
+
+Student's Answer:
+${studentAnswer}
+
+Assignment Maximum Points: ${maxPoints}
+
+Provide a detailed grading response in JSON format:
+{
+  "aiScore": number (0-${maxPoints}),
+  "aiConfidence": number (0-100),
+  "feedback": "detailed feedback on the answer",
+  "strengths": ["strength1", "strength2"],
+  "areasForImprovement": ["area1", "area2"],
+  "detailedComments": "line by line or section by section analysis"
+}`;
+
+    try {
+      const gradingResult = await this.anthropicService.generateStructuredResponse(gradingPrompt);
+      
+      await this.prisma.submission.update({
+        where: { id: submissionId },
+        data: {
+          grade: gradingResult.aiScore,
+          feedback: gradingResult.feedback,
+          gradedAt: new Date(),
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          submissionId,
+          aiScore: gradingResult.aiScore,
+          aiConfidence: gradingResult.aiConfidence,
+          feedback: gradingResult.feedback,
+          gradedAt: new Date().toISOString(),
+        },
+      };
+    } catch (error) {
+      this.logger.error('Grading failed:', error);
+      throw new BadRequestException('Failed to grade submission');
+    }
+  }
+
+  async getGradingFeedback(submissionId: string): Promise<any> {
+    const submission = await this.prisma.submission.findUnique({
+      where: { id: submissionId },
+    });
+
+    if (!submission) {
+      throw new BadRequestException('Submission not found');
+    }
+
+    if (!submission.feedback) {
+      return {
+        success: true,
+        data: {
+          submissionId,
+          feedback: 'No feedback available yet. Please wait for grading to complete.',
+          suggestions: [],
+        },
+      };
+    }
 
     return {
       success: true,
       data: {
         submissionId,
-        aiScore: score,
-        aiConfidence: confidence,
-        feedback: 'AI grading complete. Review the feedback below.',
-        gradedAt: new Date().toISOString(),
+        feedback: submission.feedback,
+        grade: submission.grade,
+        suggestions: [
+          'Review the feedback above',
+          'Revise your answer based on the comments',
+          'Schedule office hours for additional help',
+        ],
       },
     };
   }
 
-  async getGradingFeedback(submissionId: string) {
-    return {
-      success: true,
-      data: {
-        submissionId,
-        feedback: 'Good work! Here are some areas for improvement...',
-        suggestions: ['Consider adding more examples', 'Improve conclusion'],
-      },
-    };
-  }
+  async overrideGrade(submissionId: string, score: number, feedback?: string): Promise<any> {
+    const submission = await this.prisma.submission.findUnique({
+      where: { id: submissionId },
+      include: { assignment: true },
+    });
 
-  async overrideGrade(submissionId: string, score: number, feedback?: string) {
+    if (!submission) {
+      throw new BadRequestException('Submission not found');
+    }
+
+    const maxPoints = submission.assignment?.maxPoints || 100;
+    if (score < 0 || score > maxPoints) {
+      throw new BadRequestException(`Score must be between 0 and ${maxPoints}`);
+    }
+
+    const updated = await this.prisma.submission.update({
+      where: { id: submissionId },
+      data: {
+        grade: score,
+        feedback: feedback || submission.feedback,
+        gradedAt: new Date(),
+      },
+    });
+
     return {
       success: true,
       data: {
         submissionId,
-        finalScore: score,
+        finalScore: updated.grade,
         teacherOverride: true,
-        feedback,
-        overriddenAt: new Date().toISOString(),
+        feedback: updated.feedback,
+        overriddenAt: updated.gradedAt?.toISOString(),
       },
     };
   }
 
-  // Recommendations (Mock Implementation)
-  async getRecommendations(studentId: string) {
+  async getRecommendations(studentId: string): Promise<any> {
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { userId: studentId },
+      include: {
+        course: {
+          include: {
+            sections: {
+              include: {
+                modules: {
+                  include: {
+                    progresses: {
+                      where: { userId: studentId },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!enrollments.length) {
+      return {
+        success: true,
+        data: [],
+      };
+    }
+
+    const completedModuleIds = new Set<string>();
+    const moduleScores: { moduleId: string; score: number }[] = [];
+
+    for (const enrollment of enrollments) {
+      for (const section of enrollment.course.sections || []) {
+        for (const mod of section.modules || []) {
+          const progress = mod.progresses[0];
+          if (progress?.completed) {
+            completedModuleIds.add(mod.id);
+          }
+          if (progress?.courseProgress !== undefined) {
+            moduleScores.push({ moduleId: mod.id, score: progress.courseProgress });
+          }
+        }
+      }
+    }
+
+    const avgScore = moduleScores.length > 0
+      ? moduleScores.reduce((sum, m) => sum + m.score, 0) / moduleScores.length
+      : 0;
+
+    const recommendedCourses = await this.prisma.course.findMany({
+      where: {
+        published: true,
+        id: { notIn: enrollments.map(e => e.courseId) },
+      },
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const recommendations = recommendedCourses.map(course => {
+      let matchScore = 50;
+      let reason = 'New course available';
+
+      if (avgScore >= 70) {
+        matchScore = 85;
+        reason = 'Great progress overall - explore new topics';
+      } else if (avgScore >= 50) {
+        matchScore = 75;
+        reason = 'Building on your current knowledge level';
+      } else {
+        matchScore = 65;
+        reason = 'Strengthen your foundations with this course';
+      }
+
+      return {
+        courseId: course.id,
+        title: course.title,
+        reason,
+        matchScore,
+      };
+    });
+
     return {
       success: true,
-      data: [
-        {
-          courseId: 'course-1',
-          title: 'Advanced JavaScript Patterns',
-          reason: 'Strong performance in JavaScript basics',
-          matchScore: 95,
-        },
-        {
-          courseId: 'course-2',
-          title: 'React Hooks Deep Dive',
-          reason: 'Completed React basics',
-          matchScore: 92,
-        },
-      ],
+      data: recommendations,
     };
   }
 
-  async trackProgress(studentId: string, topic: string, score: number) {
+  async trackProgress(studentId: string, topic: string, score: number): Promise<any> {
+    if (score < 0 || score > 100) {
+      throw new BadRequestException('Score must be between 0 and 100');
+    }
+
+    const modules = await this.prisma.module.findMany({
+      where: {
+        OR: [
+          { title: { contains: topic } },
+          { textContent: { contains: topic } },
+        ],
+      },
+      take: 1,
+    });
+
+    if (modules.length > 0) {
+      const existingProgress = await this.prisma.progress.findFirst({
+        where: {
+          userId: studentId,
+          moduleId: modules[0].id,
+        },
+      });
+
+      if (existingProgress) {
+        await this.prisma.progress.update({
+          where: { id: existingProgress.id },
+          data: {
+            courseProgress: score,
+            completed: score >= 70,
+            lastAccessed: new Date(),
+          },
+        });
+      } else {
+        await this.prisma.progress.create({
+          data: {
+            userId: studentId,
+            moduleId: modules[0].id,
+            courseProgress: score,
+            completed: score >= 70,
+          },
+        });
+      }
+    }
+
     return {
       success: true,
       data: {
@@ -211,93 +439,233 @@ export class AiService {
     };
   }
 
-  // Translation (Mock Implementation)
-  async translateText(text: string, targetLang: string, sourceLang?: string) {
-    return {
-      success: true,
-      data: {
-        original: text,
-        translated: `[Translated to ${targetLang}] ${text}`,
-        sourceLang: sourceLang || 'en',
-        targetLang,
-      },
-    };
-  }
+  async translateText(text: string, targetLang: string, sourceLang?: string): Promise<any> {
+    if (!text || text.trim().length === 0) {
+      throw new BadRequestException('Text is required for translation');
+    }
 
-  async detectLanguage(text: string) {
-    return {
-      success: true,
-      data: {
-        language: 'English',
-        confidence: 0.95,
-        code: 'en',
-      },
-    };
-  }
+    const prompt = `Translate the following text${sourceLang ? ` from ${sourceLang}` : ''} to ${targetLang}.
 
-  // Smart Search (Mock Implementation)
-  async search(query: string, filters?: any) {
-    return {
-      success: true,
-      data: [
-        {
-          id: '1',
-          type: 'lesson',
-          title: `Result for: ${query}`,
-          snippet: 'This is a mock search result...',
-          relevanceScore: 90,
+Text to translate:
+${text}
+
+Return JSON:
+{
+  "original": "original text",
+  "translated": "translated text",
+  "sourceLang": "${sourceLang || 'auto-detected'}",
+  "targetLang": "${targetLang}"
+}`;
+
+    try {
+      const result = await this.anthropicService.generateStructuredResponse(prompt);
+      
+      return {
+        success: true,
+        data: {
+          original: text,
+          translated: result.translated || text,
+          sourceLang: result.sourceLang || sourceLang || 'unknown',
+          targetLang,
         },
-      ],
-      query,
-      filters,
-    };
+      };
+    } catch (error) {
+      this.logger.error('Translation failed:', error);
+      throw new BadRequestException('Failed to translate text');
+    }
   }
 
-  async getSearchSuggestions(query: string) {
-    const suggestions = [
-      `${query} tutorial`,
-      `${query} examples`,
-      `${query} for beginners`,
-      `learn ${query}`,
-    ];
-    return { success: true, data: suggestions };
+  async detectLanguage(text: string): Promise<any> {
+    if (!text || text.trim().length === 0) {
+      throw new BadRequestException('Text is required for language detection');
+    }
+
+    const prompt = `Detect the language of the following text. Return only the language name and confidence score.
+
+Text: ${text.substring(0, 500)}
+
+Return JSON:
+{
+  "language": "language name",
+  "confidence": 0.95,
+  "code": "ISO 639-1 code"
+}`;
+
+    try {
+      const result = await this.anthropicService.generateStructuredResponse(prompt);
+      
+      return {
+        success: true,
+        data: {
+          language: result.language || 'Unknown',
+          confidence: result.confidence || 0.5,
+          code: result.code || 'unknown',
+        },
+      };
+    } catch (error) {
+      this.logger.error('Language detection failed:', error);
+      throw new BadRequestException('Failed to detect language');
+    }
   }
 
-  // Chatbot (Mock Implementation)
-  async chat(message: string, sessionId?: string, courseId?: string) {
-    const responses = [
-      `I can help you with that! Here's some information about: ${message}`,
-      'Great question! Let me explain...',
-      'Based on your query, I recommend checking out this resource.',
-    ];
+  async search(query: string, filters?: any): Promise<any> {
+    if (!query || query.trim().length === 0) {
+      throw new BadRequestException('Search query is required');
+    }
 
-    return {
-      success: true,
-      data: {
-        message,
-        response: responses[Math.floor(Math.random() * responses.length)],
-        sessionId: sessionId || 'new-session',
-        timestamp: new Date().toISOString(),
+    const courses = await this.prisma.course.findMany({
+      where: {
+        published: true,
+        OR: [
+          { title: { contains: query, mode: 'insensitive' } },
+          { description: { contains: query, mode: 'insensitive' } },
+        ],
       },
+      include: {
+        sections: {
+          include: {
+            modules: {
+              where: {
+                OR: [
+                  { title: { contains: query, mode: 'insensitive' } },
+                  { textContent: { contains: query, mode: 'insensitive' } },
+                ],
+              },
+            },
+          },
+        },
+      },
+      take: 20,
+    });
+
+    const results: any[] = [];
+
+    for (const course of courses) {
+      results.push({
+        id: course.id,
+        type: 'course',
+        title: course.title,
+        snippet: course.description.substring(0, 200),
+        relevanceScore: 90,
+      });
+
+      for (const section of course.sections) {
+        for (const mod of section.modules) {
+          results.push({
+            id: mod.id,
+            type: mod.type.toLowerCase(),
+            title: mod.title,
+            snippet: mod.textContent?.substring(0, 200) || '',
+            relevanceScore: 85,
+          });
+        }
+      }
+    }
+
+    return {
+      success: true,
+      data: results,
+      query,
+      filters: filters || {},
     };
   }
 
-  async getChatHistory(sessionId: string) {
+  async getSearchSuggestions(query: string): Promise<any> {
+    if (!query || query.trim().length < 2) {
+      return { success: true, data: [] };
+    }
+
+    const courses = await this.prisma.course.findMany({
+      where: {
+        published: true,
+        title: { contains: query, mode: 'insensitive' },
+      },
+      select: { title: true },
+      take: 5,
+    });
+
+    const suggestions = courses.map(c => c.title);
+    
+    if (suggestions.length < 5) {
+      suggestions.push(`${query} tutorial`);
+      suggestions.push(`${query} examples`);
+      suggestions.push(`learn ${query}`);
+      suggestions.push(`${query} for beginners`);
+    }
+
+    return { success: true, data: suggestions.slice(0, 5) };
+  }
+
+  async chat(message: string, sessionId?: string, courseId?: string): Promise<any> {
+    if (!message || message.trim().length === 0) {
+      throw new BadRequestException('Message is required');
+    }
+
+    let context = '';
+    if (courseId) {
+      const course = await this.prisma.course.findUnique({
+        where: { id: courseId },
+        include: {
+          sections: {
+            include: {
+              modules: {
+                take: 5,
+                orderBy: { order: 'asc' },
+              },
+            },
+          },
+        },
+      });
+      if (course) {
+        context = `The user is asking about the course "${course.title}". `;
+        context += `Course description: ${course.description}. `;
+        context += `Available modules: ${course.sections.flatMap(s => s.modules).map(m => m.title).join(', ')}.`;
+      }
+    }
+
+    const prompt = `${context}
+
+User question: ${message}
+
+Provide a helpful response as a course assistant. If the question is about course content, provide accurate information. If you don't know, say so.
+
+Return JSON:
+{
+  "response": "your helpful response",
+  "suggestions": ["related question 1", "related question 2"]
+}`;
+
+    try {
+      const result = await this.anthropicService.generateStructuredResponse(prompt);
+      
+      return {
+        success: true,
+        data: {
+          message,
+          response: result.response || 'I can help you with your learning questions.',
+          sessionId: sessionId || `session-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+        },
+      };
+    } catch (error) {
+      this.logger.error('Chat failed:', error);
+      throw new BadRequestException('Failed to generate response');
+    }
+  }
+
+  async getChatHistory(sessionId: string): Promise<any> {
     return {
       success: true,
-      data: [
-        { role: 'user', content: 'Hello!', timestamp: new Date().toISOString() },
-        { role: 'assistant', content: 'Hi! How can I help you?', timestamp: new Date().toISOString() },
-      ],
+      data: [],
       sessionId,
     };
   }
 
-  async createChatSession(courseId?: string) {
+  async createChatSession(courseId?: string): Promise<any> {
     return {
       success: true,
       data: {
-        id: `session-${Date.now()}`,
+        id: `session-${Date.now()}-${Math.random().toString(36).substring(7)}`,
         courseId,
         createdAt: new Date().toISOString(),
       },
