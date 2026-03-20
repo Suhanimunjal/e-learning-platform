@@ -11,8 +11,9 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
-  Printer,
-  Download
+  Bot,
+  Sparkles,
+  Users
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -22,7 +23,7 @@ interface Question {
   id: string;
   type: 'multiple-choice' | 'short-answer' | 'essay';
   questionText: string;
-  aiAnswer: string;
+  aiAnswer?: string;
   internetReference?: {
     title: string;
     snippet: string;
@@ -31,6 +32,8 @@ interface Question {
   topic: string;
   difficulty: 'easy' | 'medium' | 'hard';
   points: number;
+  options?: string[];
+  correctAnswer?: string;
 }
 
 interface StudentAnswer {
@@ -66,36 +69,31 @@ interface Submission {
   studentAnswers: StudentAnswer[];
   gradedResults?: Record<string, GradedResult>;
   submittedAt: string;
+  status?: 'pending' | 'grading' | 'graded' | 'reviewed';
+  score?: number;
+  percentage?: number;
 }
 
 interface GradingPanelProps {
   submission: Submission | null;
   onGradeComplete?: (submissionId: string, results: Record<string, GradedResult>) => void;
+  onAutoGrade?: () => void;
+  gradingLoading?: boolean;
+  gradingAttemptId?: string | null;
 }
 
-const MOCK_INTERNET_REFERENCES = [
-  {
-    title: 'MDN Web Docs - JavaScript',
-    snippet: 'Variables in JavaScript are containers for storing values. Learn about var, let, and const declarations.',
-    url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Variables'
-  },
-  {
-    title: 'W3Schools JavaScript Tutorial',
-    snippet: 'JavaScript functions are blocks of code designed to perform a particular task.',
-    url: 'https://www.w3schools.com/js/js_functions.asp'
-  },
-  {
-    title: 'JavaScript.info',
-    snippet: 'Array methods like map(), filter(), and reduce() are powerful tools for data transformation.',
-    url: 'https://javascript.info/array-methods'
-  },
-];
-
-export default function GradingPanel({ submission, onGradeComplete }: GradingPanelProps) {
+export default function GradingPanel({ 
+  submission, 
+  onGradeComplete,
+  onAutoGrade,
+  gradingLoading = false,
+  gradingAttemptId,
+}: GradingPanelProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [gradedResults, setGradedResults] = useState<Record<string, GradedResult>>({});
   const [saving, setSaving] = useState(false);
-  const [autoGradeLoading, setAutoGradeLoading] = useState(false);
+  const [aiAnswerLoading, setAiAnswerLoading] = useState(false);
+  const [aiAnswerError, setAiAnswerError] = useState<string | null>(null);
 
   useEffect(() => {
     if (submission?.gradedResults) {
@@ -104,6 +102,7 @@ export default function GradingPanel({ submission, onGradeComplete }: GradingPan
       setGradedResults({});
     }
     setCurrentQuestionIndex(0);
+    setAiAnswerError(null);
   }, [submission]);
 
   if (!submission) {
@@ -119,16 +118,17 @@ export default function GradingPanel({ submission, onGradeComplete }: GradingPan
   }
 
   const currentQuestion = submission.questions[currentQuestionIndex];
-  const currentStudentAnswer = submission.studentAnswers.find(
-    a => a.id === currentQuestion.id
+  const currentStudentAnswer = submission.studentAnswers?.find(
+    a => a.id === currentQuestion?.id
   );
-  const currentGradedResult = gradedResults[currentQuestion.id];
+  const currentGradedResult = gradedResults[currentQuestion?.id];
 
   const gradedCount = Object.keys(gradedResults).length;
   const totalQuestions = submission.questions.length;
-  const progress = (gradedCount / totalQuestions) * 100;
+  const progress = totalQuestions > 0 ? (gradedCount / totalQuestions) * 100 : 0;
 
   const handleGrade = (result: Partial<GradedResult>) => {
+    if (!currentQuestion) return;
     setGradedResults(prev => ({
       ...prev,
       [currentQuestion.id]: {
@@ -141,28 +141,14 @@ export default function GradingPanel({ submission, onGradeComplete }: GradingPan
   };
 
   const handleAutoGrade = async () => {
-    setAutoGradeLoading(true);
+    setAiAnswerLoading(true);
+    setAiAnswerError(null);
     
-    for (const question of submission.questions) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Simulate AI grading
-      const score = Math.floor(Math.random() * 40) + 60; // 60-100
-      const maxScore = question.points;
-      const earnedPoints = Math.floor((score / 100) * maxScore);
-      
-      setGradedResults(prev => ({
-        ...prev,
-        [question.id]: {
-          id: question.id,
-          feedback: `AI-generated feedback: Good attempt at explaining ${question.topic}. Consider adding more examples.`,
-          points: earnedPoints,
-          confidence: Math.floor(Math.random() * 20) + 80,
-        }
-      }));
+    try {
+      onAutoGrade?.();
+    } finally {
+      // Keep loading state while grading is in progress
     }
-    
-    setAutoGradeLoading(false);
   };
 
   const handleNext = () => {
@@ -180,7 +166,6 @@ export default function GradingPanel({ submission, onGradeComplete }: GradingPan
   const handleSaveAll = async () => {
     setSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
       onGradeComplete?.(submission.id, gradedResults);
     } finally {
       setSaving(false);
@@ -190,6 +175,9 @@ export default function GradingPanel({ submission, onGradeComplete }: GradingPan
   const allGraded = gradedCount === totalQuestions;
   const currentScore = currentGradedResult?.points || 0;
   const maxScore = currentQuestion?.points || 0;
+
+  // Determine if we're loading AI answer for current question
+  const isLoadingAIAnswer = gradingLoading && gradingAttemptId === submission.id;
 
   return (
     <div className="bg-white rounded-xl border overflow-hidden">
@@ -236,14 +224,19 @@ export default function GradingPanel({ submission, onGradeComplete }: GradingPan
               variant="outline"
               size="sm"
               onClick={handleAutoGrade}
-              disabled={autoGradeLoading || gradedCount > 0}
+              disabled={gradingLoading || gradedCount > 0}
             >
-              {autoGradeLoading ? (
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              {gradingLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  AI Grading...
+                </>
               ) : (
-                <AlertCircle className="h-4 w-4 mr-1" />
+                <>
+                  <Sparkles className="h-4 w-4 mr-1" />
+                  AI Auto-Grade
+                </>
               )}
-              AI Auto-Grade
             </Button>
           </div>
 
@@ -254,6 +247,20 @@ export default function GradingPanel({ submission, onGradeComplete }: GradingPan
           </div>
         </div>
       </div>
+
+      {/* Error Message */}
+      {aiAnswerError && (
+        <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <span className="text-sm">{aiAnswerError}</span>
+          <button 
+            onClick={() => setAiAnswerError(null)}
+            className="ml-auto text-red-500 hover:text-red-700"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Question Tabs */}
       <div className="flex overflow-x-auto border-b bg-gray-50 p-2 gap-1">
@@ -288,6 +295,8 @@ export default function GradingPanel({ submission, onGradeComplete }: GradingPan
           gradedResult={currentGradedResult}
           onGrade={handleGrade}
           isActive={true}
+          loadingAIAnswer={isLoadingAIAnswer}
+          errorAIAnswer={aiAnswerError}
         />
       </div>
 

@@ -33,7 +33,9 @@ export default function SubmissionList({
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredSubmissions = submissions.filter((sub: any) => {
-    const matchesFilter = filter === 'all' || sub.status === filter || (filter === 'pending' && sub.status === 'pending');
+    const matchesFilter = filter === 'all' || 
+      (filter === 'pending' && (sub.status === 'pending' || sub.status === 'grading')) ||
+      (filter === 'graded' && (sub.status === 'graded' || sub.status === 'reviewed'));
     const matchesSearch = !searchQuery || 
       sub.studentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sub.quizTitle?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -59,6 +61,7 @@ export default function SubmissionList({
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return '--';
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -161,16 +164,16 @@ export default function SubmissionList({
                   <div className="flex items-center gap-3 text-xs text-gray-400">
                     <span className="flex items-center gap-1">
                       <FileText className="h-3 w-3" />
-                      {submission.questionCount} questions
+                      {submission.questionCount || submission.questions?.length || 0} questions
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {formatDate(submission.submittedAt)}
                     </span>
-                    {submission.avgScore !== undefined && (
+                    {submission.percentage !== undefined && submission.percentage !== null && (
                       <span className="flex items-center gap-1">
                         <CheckCircle className="h-3 w-3" />
-                        Avg: {submission.avgScore}%
+                        Score: {submission.percentage}%
                       </span>
                     )}
                   </div>

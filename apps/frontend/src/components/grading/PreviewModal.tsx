@@ -1,20 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   X, 
   FileQuestion,
   Edit3,
   Save,
   CheckCircle,
-  Printer,
-  Download,
   ChevronLeft,
   ChevronRight,
   CheckSquare,
   FileText,
   MessageSquare,
-  Lightbulb
+  Lightbulb,
+  Loader2
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -38,10 +37,10 @@ interface Question {
 interface GeneratedQuiz {
   id: string;
   title: string;
-  courseName: string;
+  courseName?: string;
   questions: Question[];
-  createdAt: string;
-  totalPoints: number;
+  createdAt?: string;
+  totalPoints?: number;
 }
 
 interface PreviewModalProps {
@@ -50,6 +49,7 @@ interface PreviewModalProps {
   quiz: GeneratedQuiz | null;
   onSave?: (quiz: GeneratedQuiz) => void;
   onPublish?: (quiz: GeneratedQuiz) => void;
+  saving?: boolean;
 }
 
 export default function PreviewModal({ 
@@ -57,18 +57,20 @@ export default function PreviewModal({
   onClose, 
   quiz,
   onSave,
-  onPublish 
+  onPublish,
+  saving = false
 }: PreviewModalProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [editingQuiz, setEditingQuiz] = useState<GeneratedQuiz | null>(quiz);
+  const [editingQuiz, setEditingQuiz] = useState<GeneratedQuiz | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     if (quiz) {
       setEditingQuiz(quiz);
+      setCurrentIndex(0);
+      setIsEditing(false);
     }
-  });
+  }, [quiz]);
 
   if (!isOpen || !editingQuiz) return null;
 
@@ -101,25 +103,13 @@ export default function PreviewModal({
   };
 
   const handleSave = async () => {
-    setSaving(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      onSave?.(editingQuiz);
-      onClose();
-    } finally {
-      setSaving(false);
-    }
+    onSave?.(editingQuiz);
+    onClose();
   };
 
   const handlePublish = async () => {
-    setSaving(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      onPublish?.(editingQuiz);
-      onClose();
-    } finally {
-      setSaving(false);
-    }
+    onPublish?.(editingQuiz);
+    onClose();
   };
 
   const handleQuestionEdit = (field: string, value: any) => {

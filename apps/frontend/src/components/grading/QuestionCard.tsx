@@ -14,7 +14,8 @@ import {
   CheckCircle,
   Edit3,
   Save,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -23,7 +24,7 @@ interface Question {
   id: string;
   type: 'multiple-choice' | 'short-answer' | 'essay';
   questionText: string;
-  aiAnswer: string;
+  aiAnswer?: string;
   internetReference?: {
     title: string;
     snippet: string;
@@ -32,6 +33,8 @@ interface Question {
   topic: string;
   difficulty: 'easy' | 'medium' | 'hard';
   points: number;
+  options?: string[];
+  correctAnswer?: string;
 }
 
 interface StudentAnswer {
@@ -62,6 +65,8 @@ interface QuestionCardProps {
   gradedResult?: GradedResult;
   onGrade?: (result: Partial<GradedResult>) => void;
   isActive?: boolean;
+  loadingAIAnswer?: boolean;
+  errorAIAnswer?: string | null;
 }
 
 export default function QuestionCard({ 
@@ -69,7 +74,9 @@ export default function QuestionCard({
   studentAnswer, 
   gradedResult,
   onGrade,
-  isActive = false 
+  isActive = false,
+  loadingAIAnswer = false,
+  errorAIAnswer = null,
 }: QuestionCardProps) {
   const [expanded, setExpanded] = useState(isActive);
   const [feedback, setFeedback] = useState(gradedResult?.feedback || '');
@@ -114,7 +121,6 @@ export default function QuestionCard({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
       onGrade?.({
         feedback,
         points,
@@ -185,14 +191,70 @@ export default function QuestionCard({
             </div>
           )}
 
-          {/* AI Answer */}
+          {/* AI Answer - with loading and error states */}
           <div className="bg-indigo-50 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <Bot className="h-4 w-4 text-indigo-500" />
-              <span className="text-sm font-medium text-indigo-700">AI Answer (from course content)</span>
+              <span className="text-sm font-medium text-indigo-700">
+                {loadingAIAnswer ? 'Loading AI Answer...' : 'Correct Answer'}
+              </span>
             </div>
-            <p className="text-gray-700 whitespace-pre-wrap">{question.aiAnswer}</p>
+            
+            {loadingAIAnswer ? (
+              <div className="flex items-center gap-2 text-indigo-600 py-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Fetching answer from AI...</span>
+              </div>
+            ) : errorAIAnswer ? (
+              <div className="flex items-start gap-2 text-red-600 bg-red-50 rounded-lg p-3">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="text-sm font-medium">Failed to load AI answer</span>
+                  <p className="text-xs mt-1">{errorAIAnswer}</p>
+                </div>
+              </div>
+            ) : question.aiAnswer || question.correctAnswer ? (
+              <p className="text-gray-700 whitespace-pre-wrap">
+                {question.aiAnswer || question.correctAnswer}
+              </p>
+            ) : (
+              <p className="text-gray-500 italic">No correct answer available</p>
+            )}
           </div>
+
+          {/* Multiple Choice Options - Show if available */}
+          {question.type === 'multiple-choice' && question.options && (
+            <div className="bg-blue-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="h-4 w-4 text-blue-500" />
+                <span className="text-sm font-medium text-blue-700">Options</span>
+              </div>
+              <div className="space-y-2">
+                {question.options.map((option, i) => {
+                  const isCorrect = question.correctAnswer === option;
+                  return (
+                    <div 
+                      key={i}
+                      className={`flex items-center gap-3 p-2 rounded-lg border ${
+                        isCorrect 
+                          ? 'bg-green-50 border-green-300' 
+                          : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                        isCorrect ? 'border-green-500 bg-green-500' : 'border-gray-300'
+                      }`}>
+                        {isCorrect && <CheckCircle className="h-3 w-3 text-white" />}
+                      </div>
+                      <span className={isCorrect ? 'text-green-700 font-medium' : 'text-gray-700'}>
+                        {option}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Internet Reference */}
           {question.internetReference && (
@@ -321,6 +383,7 @@ export default function QuestionCard({
                     >
                       {saving ? (
                         <span className="flex items-center">
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                           Saving...
                         </span>
                       ) : (

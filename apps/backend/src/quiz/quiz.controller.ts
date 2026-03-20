@@ -93,4 +93,52 @@ export class QuizController {
   deleteQuestion(@Param('questionId') questionId: string, @Request() req) {
     return this.quizService.deleteQuestion(questionId, req.user);
   }
+
+  // Quiz Attempt endpoints - for students taking quizzes
+  @Post(':id/start')
+  startQuiz(@Param('id') id: string, @Request() req) {
+    return this.quizService.startQuizAttempt(id, req.user);
+  }
+
+  @Post(':id/submit')
+  submitQuiz(
+    @Param('id') id: string,
+    @Body() body: { answers: { questionId: string; answer: string | string[] }[]; timeSpent: number },
+    @Request() req,
+  ) {
+    return this.quizService.submitQuizAttempt(id, req.user, body.answers, body.timeSpent);
+  }
+
+  @Get(':id/attempts')
+  getQuizAttempts(@Param('id') id: string, @Request() req) {
+    return this.quizService.getQuizAttempts(id, req.user);
+  }
+
+  @Get(':id/attempts/:attemptId')
+  getQuizAttempt(
+    @Param('id') id: string,
+    @Param('attemptId') attemptId: string,
+    @Request() req,
+  ) {
+    return this.quizService.getQuizAttempt(id, attemptId, req.user);
+  }
+
+  // Get all submissions for a quiz (for teachers)
+  @Get(':id/submissions')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
+  getQuizSubmissions(@Param('id') id: string) {
+    return this.quizService.getQuizSubmissions(id);
+  }
+
+  // Grade a quiz attempt (for teachers)
+  @Post(':id/attempts/:attemptId/grade')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
+  gradeQuizAttempt(
+    @Param('id') id: string,
+    @Param('attemptId') attemptId: string,
+    @Body() body: { grades: Record<string, { points: number; feedback: string }> },
+    @Request() req,
+  ) {
+    return this.quizService.gradeQuizAttempt(id, attemptId, body.grades, req.user);
+  }
 }

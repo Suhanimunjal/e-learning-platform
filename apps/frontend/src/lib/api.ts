@@ -363,13 +363,25 @@ export const grading = {
     return res.data;
   },
   
-  // Student submissions
+  // Student submissions (for teachers - get pending submissions)
   getSubmissions: async (quizId: string) => {
     const res = await api.get(`/quizzes/${quizId}/submissions`);
     return res.data;
   },
   
-  // AI Grading
+  // AI Grading for quiz attempts
+  gradeQuizAttempt: async (attemptId: string) => {
+    const res = await api.post(`/ai/grade-quiz/${attemptId}`);
+    return res.data;
+  },
+  
+  // Get quiz grading status
+  getQuizGradingStatus: async (attemptId: string) => {
+    const res = await api.get(`/ai/grade-quiz/${attemptId}/status`);
+    return res.data;
+  },
+  
+  // AI Grading for assignment submissions
   gradeSubmission: async (submissionId: string) => {
     const res = await api.post(`/ai/grade/${submissionId}`);
     return res.data;
@@ -390,12 +402,12 @@ export const grading = {
     return res.data;
   },
   
-  // Save all grades
-  saveGrades: async (submissionId: string, grades: Record<string, {
+  // Save all grades for a quiz attempt
+  saveGrades: async (quizId: string, attemptId: string, grades: Record<string, {
     points: number;
     feedback: string;
   }>) => {
-    const res = await api.post(`/submissions/${submissionId}/grades`, grades);
+    const res = await api.post(`/quizzes/${quizId}/attempts/${attemptId}/grade`, { grades });
     return res.data;
   },
   
@@ -480,6 +492,31 @@ export const quizzes = {
   },
   deleteQuestion: async (questionId: string) => {
     const res = await api.delete(`/quizzes/questions/${questionId}`);
+    return res.data;
+  },
+  // Quiz attempt endpoints
+  startQuiz: async (quizId: string) => {
+    const res = await api.post(`/quizzes/${quizId}/start`);
+    return res.data;
+  },
+  submitQuiz: async (quizId: string, data: { answers: { questionId: string; answer: string | string[] }[]; timeSpent: number }) => {
+    const res = await api.post(`/quizzes/${quizId}/submit`, data);
+    return res.data;
+  },
+  getQuizAttempts: async (quizId: string) => {
+    const res = await api.get(`/quizzes/${quizId}/attempts`);
+    return res.data;
+  },
+  getQuizAttempt: async (quizId: string, attemptId: string) => {
+    const res = await api.get(`/quizzes/${quizId}/attempts/${attemptId}`);
+    return res.data;
+  },
+  getQuizSubmissions: async (quizId: string) => {
+    const res = await api.get(`/quizzes/${quizId}/submissions`);
+    return res.data;
+  },
+  gradeQuizAttempt: async (quizId: string, attemptId: string, grades: Record<string, { points: number; feedback: string }>) => {
+    const res = await api.post(`/quizzes/${quizId}/attempts/${attemptId}/grade`, { grades });
     return res.data;
   },
 };

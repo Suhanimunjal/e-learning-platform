@@ -225,6 +225,152 @@ Provide a detailed grading response in JSON format:
     }
   }
 
+  async gradeQuizAttempt(attemptId: string, user: any): Promise<any> {
+    const attempt = await this.prisma.quizAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        quiz: {
+          include: {
+            questions: {
+              orderBy: { order: 'asc' },
+            },
+            module: {
+              include: {
+                section: {
+                  include: {
+                    course: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        user: true,
+      },
+    });
+
+    if (!attempt) {
+      throw new BadRequestException('Quiz attempt not found');
+    }
+
+    if (!attempt.quiz.published) {
+      throw new BadRequestException('Quiz is not published');
+    }
+
+    const quiz = attempt.quiz;
+    const answers = attempt.answers as Record<string, { answer: string | string[] }>;
+    const grades: Record<string, { points: number; feedback: string; confidence: number }> = {};
+    let totalScore = 0;
+    let maxScore = 0;
+
+    for (const question of quiz.questions) {
+      maxScore += question.points;
+      const studentAnswer = answers[question.id]?.answer || '';
+      maxScore += question.points;
+      
+      // Grade each question using AI
+      const gradingPrompt = `You are grading a ${question.type} question.
+
+Question: ${question.text}
+${question.type === 'multiple_choice' && question.options ? `Options: ${JSON.stringify(question.options)}` : ''}
+Correct Answer: ${question.correctAnswer}
+Student's Answer: ${studentAnswer}
+Max Points: ${question.points}
+
+Provide a detailed grading response in JSON format:
+{
+  "earnedPoints": number (0-${question.points}),
+  "confidence": number (0-100),
+  "feedback": "explanation of why points were awarded or deducted",
+  "isCorrect": boolean
+}`;
+
+      try {
+        const result = await this.anthropicService.generateStructuredResponse(gradingPrompt);
+        
+        const earnedPoints = Math.min(Math.max(0, result.earnedPoints || 0), question.points);
+        totalScore += earnedPoints;
+        
+        grades[question.id] = {
+          points: earnedPoints,
+          feedback: result.feedback || '',
+          confidence: result.confidence || 50,
+        };
+      } catch (error) {
+        this.logger.error(`Failed to grade question ${question.id}:`, error);
+        // On error, set points to 0 with error feedback
+        grades[question.id] = {
+          points: 0,
+          feedback: 'Failed to grade automatically. Please review manually.',
+          confidence: 0,
+        };
+      }
+    }
+
+    const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+    const passed = percentage >= quiz.passingScore;
+
+    // Update the attempt with grades
+    await this.prisma.quizAttempt.update({
+      where: { id: attemptId },
+      data: {
+        answers: {
+          ...answers,
+          teacherGrades: grades,
+        } as any,
+        score: totalScore,
+        percentage: Math.round(percentage * 100) / 100,
+        passed,
+      },
+    });
+
+    return {
+      success: true,
+      attemptId,
+      quizId: quiz.id,
+      studentName: attempt.user.name,
+      totalScore,
+      maxScore,
+      percentage: Math.round(percentage * 100) / 100,
+      passingScore: quiz.passingScore,
+      passed,
+      grades,
+      gradedAt: new Date().toISOString(),
+    };
+  }
+
+  async getQuizGradingStatus(attemptId: string): Promise<any> {
+    const attempt = await this.prisma.quizAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        quiz: {
+          include: {
+            questions: true,
+          },
+        },
+      },
+    });
+
+    if (!attempt) {
+      throw new BadRequestException('Quiz attempt not found');
+    }
+
+    const answers = attempt.answers as Record<string, any>;
+    const grades = answers?.teacherGrades || {};
+    const gradedCount = Object.keys(grades).length;
+    const totalQuestions = attempt.quiz.questions.length;
+
+    return {
+      attemptId,
+      status: gradedCount === totalQuestions ? 'completed' : 'in_progress',
+      gradedCount,
+      totalQuestions,
+      score: attempt.score,
+      percentage: attempt.percentage,
+      passed: attempt.passed,
+    };
+  }
+
   async getGradingFeedback(submissionId: string): Promise<any> {
     const submission = await this.prisma.submission.findUnique({
       where: { id: submissionId },
@@ -586,14 +732,8 @@ Return JSON:
 
     const suggestions = courses.map(c => c.title);
     
-    if (suggestions.length < 5) {
-      suggestions.push(`${query} tutorial`);
-      suggestions.push(`${query} examples`);
-      suggestions.push(`learn ${query}`);
-      suggestions.push(`${query} for beginners`);
-    }
-
-    return { success: true, data: suggestions.slice(0, 5) };
+    // Only return actual database results - no fake suggestions
+    return { success: true, data: suggestions };
   }
 
   async chat(message: string, sessionId?: string, courseId?: string): Promise<any> {

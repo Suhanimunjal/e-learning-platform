@@ -442,4 +442,400 @@ export class QuizService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async startQuizAttempt(quizId: string, user: User) {
+    const quiz = await this.prisma.quiz.findUnique({
+      where: { id: quizId },
+      include: {
+        questions: true,
+        module: {
+          include: {
+            section: {
+              include: {
+                course: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!quiz) {
+      throw new NotFoundException('Quiz not found');
+    }
+
+    if (user.role === Role.STUDENT && !quiz.published) {
+      throw new ForbiddenException('This quiz is not available');
+    }
+
+    // Check if user is enrolled (for students)
+    if (user.role === Role.STUDENT) {
+      const enrollment = await this.prisma.enrollment.findFirst({
+        where: {
+          userId: user.id,
+          courseId: quiz.module.section.course.id,
+        },
+      });
+
+      if (!enrollment) {
+        throw new ForbiddenException('You must be enrolled in this course to take the quiz');
+      }
+    }
+
+    // Check max attempts
+    const existingAttempts = await this.prisma.quizAttempt.count({
+      where: {
+        userId: user.id,
+        quizId: quizId,
+      },
+    });
+
+    if (existingAttempts >= quiz.maxAttempts) {
+      throw new BadRequestException(`You have reached the maximum number of attempts (${quiz.maxAttempts}) for this quiz`);
+    }
+
+    // Create a new attempt
+    const attempt = await this.prisma.quizAttempt.create({
+      data: {
+        userId: user.id,
+        quizId: quizId,
+        answers: {},
+        startedAt: new Date(),
+      },
+    });
+
+    return {
+      attemptId: attempt.id,
+      quizId: quiz.id,
+      title: quiz.title,
+      questions: quiz.questions.map(q => ({
+        id: q.id,
+        type: q.type,
+        text: q.text,
+        options: q.options,
+        points: q.points,
+      })),
+      timeLimit: quiz.timeLimit,
+      maxAttempts: quiz.maxAttempts,
+      currentAttempt: existingAttempts + 1,
+      startedAt: attempt.startedAt,
+    };
+  }
+
+  async submitQuizAttempt(
+    quizId: string,
+    user: User,
+    answers: { questionId: string; answer: string | string[] }[],
+    timeSpent: number,
+  ) {
+    const quiz = await this.prisma.quiz.findUnique({
+      where: { id: quizId },
+      include: {
+        questions: true,
+        module: {
+          include: {
+            section: {
+              include: {
+                course: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!quiz) {
+      throw new NotFoundException('Quiz not found');
+    }
+
+    // Find the user's latest attempt
+    const attempt = await this.prisma.quizAttempt.findFirst({
+      where: {
+        userId: user.id,
+        quizId: quizId,
+        completedAt: null,
+      },
+      orderBy: {
+        startedAt: 'desc',
+      },
+    });
+
+    if (!attempt) {
+      throw new NotFoundException('No active quiz attempt found. Please start the quiz first.');
+    }
+
+    // Calculate score
+    let totalScore = 0;
+    let maxScore = 0;
+    const gradedAnswers: Record<string, { earned: number; max: number; correct: boolean }> = {};
+
+    for (const question of quiz.questions) {
+      maxScore += question.points;
+      const answer = answers.find(a => a.questionId === question.id);
+      
+      if (answer) {
+        let isCorrect = false;
+        
+        if (question.type === 'multiple_choice') {
+          isCorrect = answer.answer === question.correctAnswer;
+        } else if (question.type === 'short_answer' || question.type === 'essay') {
+          // For short answer/essay, we'll mark as pending teacher grading
+          // or use AI grading later
+          isCorrect = false; // Needs manual/AI grading
+        }
+
+        const earnedPoints = isCorrect ? question.points : 0;
+        totalScore += earnedPoints;
+        
+        gradedAnswers[question.id] = {
+          earned: earnedPoints,
+          max: question.points,
+          correct: isCorrect,
+        };
+      }
+    }
+
+    const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+    const passed = percentage >= quiz.passingScore;
+
+    // Update the attempt
+    const updatedAttempt = await this.prisma.quizAttempt.update({
+      where: { id: attempt.id },
+      data: {
+        answers: answers as any,
+        score: totalScore,
+        percentage: Math.round(percentage * 100) / 100,
+        passed,
+        completedAt: new Date(),
+      },
+    });
+
+    return {
+      attemptId: updatedAttempt.id,
+      score: totalScore,
+      maxScore,
+      percentage: Math.round(percentage * 100) / 100,
+      passed,
+      passingScore: quiz.passingScore,
+      completedAt: updatedAttempt.completedAt,
+      gradedAnswers,
+      timeSpent,
+    };
+  }
+
+  async getQuizAttempts(quizId: string, user: User) {
+    const quiz = await this.prisma.quiz.findUnique({
+      where: { id: quizId },
+      include: {
+        module: {
+          include: {
+            section: {
+              include: {
+                course: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!quiz) {
+      throw new NotFoundException('Quiz not found');
+    }
+
+    // For students, only return their own attempts
+    // For teachers/admins, return all attempts
+    const whereClause: any = { quizId };
+    
+    if (user.role === Role.STUDENT) {
+      whereClause.userId = user.id;
+    } else {
+      // Check if teacher owns the course
+      if (user.role === Role.TEACHER && quiz.module.section.course.instructorId !== user.id) {
+        whereClause.userId = user.id;
+      }
+    }
+
+    const attempts = await this.prisma.quizAttempt.findMany({
+      where: whereClause,
+      orderBy: { startedAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return attempts;
+  }
+
+  async getQuizAttempt(quizId: string, attemptId: string, user: User) {
+    const attempt = await this.prisma.quizAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        quiz: {
+          include: {
+            questions: {
+              orderBy: { order: 'asc' },
+            },
+            module: {
+              include: {
+                section: {
+                  include: {
+                    course: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!attempt) {
+      throw new NotFoundException('Quiz attempt not found');
+    }
+
+    if (attempt.quizId !== quizId) {
+      throw new NotFoundException('Quiz attempt does not belong to this quiz');
+    }
+
+    // Students can only view their own attempts
+    if (user.role === Role.STUDENT && attempt.userId !== user.id) {
+      throw new ForbiddenException('You can only view your own quiz attempts');
+    }
+
+    // Teachers can only view attempts for their courses
+    if (user.role === Role.TEACHER) {
+      if (attempt.userId !== user.id && attempt.quiz.module.section.course.instructorId !== user.id) {
+        throw new ForbiddenException('You do not have access to this quiz attempt');
+      }
+    }
+
+    return attempt;
+  }
+
+  async getQuizSubmissions(quizId: string) {
+    const quiz = await this.prisma.quiz.findUnique({
+      where: { id: quizId },
+      include: {
+        questions: {
+          orderBy: { order: 'asc' },
+        },
+        module: {
+          include: {
+            section: {
+              include: {
+                course: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!quiz) {
+      throw new NotFoundException('Quiz not found');
+    }
+
+    // Get all completed attempts
+    const attempts = await this.prisma.quizAttempt.findMany({
+      where: {
+        quizId,
+        completedAt: { not: null },
+      },
+      orderBy: { completedAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    // Group by student, keeping only the latest attempt per student
+    const latestAttemptsByStudent = new Map<string, any>();
+    for (const attempt of attempts) {
+      if (!latestAttemptsByStudent.has(attempt.userId)) {
+        latestAttemptsByStudent.set(attempt.userId, attempt);
+      }
+    }
+
+    // Format submissions for grading dashboard
+    const submissions = Array.from(latestAttemptsByStudent.values()).map(attempt => ({
+      id: attempt.id,
+      studentId: attempt.user.id,
+      studentName: attempt.user.name,
+      studentEmail: attempt.user.email,
+      quizTitle: quiz.title,
+      courseName: quiz.module.section.course.title,
+      questions: quiz.questions.map(q => ({
+        id: q.id,
+        type: q.type,
+        questionText: q.text,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        points: q.points,
+      })),
+      studentAnswers: Object.entries(attempt.answers as Record<string, { answer: string | string[] }> || {}).map(([questionId, answerData]) => ({
+        id: questionId,
+        answer: answerData.answer,
+      })),
+      submittedAt: attempt.completedAt,
+      score: attempt.score,
+      percentage: attempt.percentage,
+      passed: attempt.passed,
+      status: attempt.passed ? 'graded' : 'pending',
+    }));
+
+    return {
+      quiz,
+      submissions,
+      totalSubmissions: submissions.length,
+      gradedCount: submissions.filter(s => s.passed).length,
+      pendingCount: submissions.filter(s => !s.passed).length,
+    };
+  }
+
+  async gradeQuizAttempt(
+    quizId: string,
+    attemptId: string,
+    grades: Record<string, { points: number; feedback: string }>,
+    user: User,
+  ) {
+    const attempt = await this.getQuizAttempt(quizId, attemptId, user);
+
+    // Update the attempt with the grades
+    const updatedAttempt = await this.prisma.quizAttempt.update({
+      where: { id: attemptId },
+      data: {
+        answers: {
+          ...(attempt.answers as object),
+          teacherGrades: grades,
+        } as any,
+        score: Object.values(grades).reduce((sum, g) => sum + g.points, 0),
+      },
+    });
+
+    return {
+      success: true,
+      attemptId: updatedAttempt.id,
+      grades,
+      finalScore: updatedAttempt.score,
+    };
+  }
 }

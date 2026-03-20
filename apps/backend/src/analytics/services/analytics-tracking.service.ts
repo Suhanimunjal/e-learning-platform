@@ -126,13 +126,16 @@ export class AnalyticsTrackingService {
     quizId: string,
     score: number,
     maxScore: number,
+    passingScore: number = 50,
   ) {
-    const passed = score >= maxScore * 0.5; // 50% passing score
+    const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
+    const passed = score >= (maxScore * passingScore / 100);
     return this.trackEvent(userId, AnalyticsEventType.QUIZ_COMPLETED, {
       courseId,
       quizId,
       score,
       maxScore,
+      passingScore,
       passed,
     });
   }

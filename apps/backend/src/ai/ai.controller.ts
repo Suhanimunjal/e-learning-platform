@@ -74,6 +74,20 @@ export class AiController {
     return this.aiService.gradeSubmission(submissionId);
   }
 
+  @Post('grade-quiz/:attemptId')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
+  async gradeQuizAttempt(
+    @Param('attemptId') attemptId: string,
+    @Request() req,
+  ) {
+    return this.aiService.gradeQuizAttempt(attemptId, req.user);
+  }
+
+  @Get('grade-quiz/:attemptId/status')
+  async getQuizGradingStatus(@Param('attemptId') attemptId: string) {
+    return this.aiService.getQuizGradingStatus(attemptId);
+  }
+
   @Get('grade/:submissionId/feedback')
   async getFeedback(@Param('submissionId') submissionId: string) {
     return this.aiService.getGradingFeedback(submissionId);

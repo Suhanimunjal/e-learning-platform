@@ -307,11 +307,19 @@ export class AnalyticsReportingService {
     const scores = events
       .map(e => {
         const meta = e.metadata as any;
-        return meta.score / meta.maxScore * 100;
+        const passingScore = meta.passingScore || 50; // Use quiz's passingScore, default to 50
+        return {
+          score: meta.score || 0,
+          maxScore: meta.maxScore || 100,
+          passingScore,
+        };
       })
-      .filter(s => !isNaN(s));
+      .filter(s => s.maxScore > 0);
 
-    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    if (scores.length === 0) return 0;
+
+    const avgPercentage = scores.reduce((sum, s) => sum + (s.score / s.maxScore) * 100, 0) / scores.length;
+    return Math.round(avgPercentage);
   }
 
   private async getTotalTimeSpent(userId: string, courseId: string) {
