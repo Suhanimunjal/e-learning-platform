@@ -3,7 +3,7 @@
 ## Status: PARTIALLY FIXED (March 20, 2026)
 
 ## Overview
-This document catalogs all hardcoded/mock values and missing implementations found in the e-learning platform backend (`apps/backend/src`) and frontend teacher portal (`apps/frontend/src`).
+This document catalogs all hardcoded/mock values and missing implementations found in the e-learning platform backend (`backend/src`) and frontend teacher portal (`frontend/src`).
 
 ---
 
@@ -12,7 +12,7 @@ This document catalogs all hardcoded/mock values and missing implementations fou
 ### ✅ Backend Fixes Applied
 
 #### 1. Quiz Attempt Endpoints Added
-**File**: `apps/backend/src/quiz/quiz.controller.ts` & `quiz.service.ts`
+**File**: `backend/src/quiz/quiz.controller.ts` & `quiz.service.ts`
 
 Added endpoints:
 - `POST /quizzes/:id/start` - Start a quiz attempt
@@ -23,7 +23,7 @@ Added endpoints:
 - `POST /quizzes/:id/attempts/:attemptId/grade` - Grade a quiz attempt
 
 #### 2. AI Quiz Grading Added
-**File**: `apps/backend/src/ai/ai.controller.ts` & `services/ai.service.ts`
+**File**: `backend/src/ai/ai.controller.ts` & `services/ai.service.ts`
 
 Added:
 - `POST /ai/grade-quiz/:attemptId` - AI grade a quiz attempt
@@ -32,19 +32,19 @@ Added:
 - `getQuizGradingStatus()` method - Track grading progress
 
 #### 3. Fixed Hardcoded Pass Rate
-**File**: `apps/backend/src/analytics/services/analytics-reporting.service.ts`
+**File**: `backend/src/analytics/services/analytics-reporting.service.ts`
 
 Changed from hardcoded `50%` to use `quiz.passingScore` field.
 
 #### 4. Fixed Search Suggestions Fake Fallback
-**File**: `apps/backend/src/ai/services/ai.service.ts`
+**File**: `backend/src/ai/services/ai.service.ts`
 
 Removed fake suggestions when database returns < 5 results.
 
 ### ✅ Frontend Fixes Applied
 
 #### 1. Grading Dashboard Now Fetches Real Data
-**File**: `apps/frontend/src/app/dashboard/teacher/grading/page.tsx`
+**File**: `frontend/src/app/dashboard/teacher/grading/page.tsx`
 
 - Removed all mock data (`MOCK_QUESTIONS`, `MOCK_STUDENT_ANSWERS`, `MOCK_SUBMISSIONS`)
 - Now fetches quizzes and submissions from API
@@ -52,14 +52,14 @@ Removed fake suggestions when database returns < 5 results.
 - Quiz selection dropdown populated from API
 
 #### 2. AI Auto-Grade Connected to API
-**File**: `apps/frontend/src/app/dashboard/teacher/grading/page.tsx`
+**File**: `frontend/src/app/dashboard/teacher/grading/page.tsx`
 
 - `handleAutoGrade()` now calls `grading.gradeQuizAttempt()`
 - Shows loading state during grading
 - Updates UI with graded results
 
 #### 3. QuestionCard Has Loading/Error States
-**File**: `apps/frontend/src/components/grading/QuestionCard.tsx`
+**File**: `frontend/src/components/grading/QuestionCard.tsx`
 
 - Added `loadingAIAnswer` prop
 - Added `errorAIAnswer` prop
@@ -67,20 +67,20 @@ Removed fake suggestions when database returns < 5 results.
 - Shows error message if API call fails
 
 #### 4. GradingPanel Updated
-**File**: `apps/frontend/src/components/grading/GradingPanel.tsx`
+**File**: `frontend/src/components/grading/GradingPanel.tsx`
 
 - Props updated to include `onAutoGrade`, `gradingLoading`, `gradingAttemptId`
 - AI grading button triggers real API call
 - Loading states properly managed
 
 #### 5. SubmissionList Updated
-**File**: `apps/frontend/src/components/grading/SubmissionList.tsx`
+**File**: `frontend/src/components/grading/SubmissionList.tsx`
 
 - Uses real status values from API
 - Shows actual scores from data
 
 #### 6. QuizGenerator Fetches Real Courses/Quizzes
-**File**: `apps/frontend/src/components/grading/QuizGenerator.tsx`
+**File**: `frontend/src/components/grading/QuizGenerator.tsx`
 
 - Removed mock `MOCK_COURSES` and `MOCK_QUIZZES`
 - Fetches courses from `GET /courses`
@@ -88,13 +88,13 @@ Removed fake suggestions when database returns < 5 results.
 - Generates quiz via `POST /quizzes`
 
 #### 7. PreviewModal Fixed
-**File**: `apps/frontend/src/components/grading/PreviewModal.tsx`
+**File**: `frontend/src/components/grading/PreviewModal.tsx`
 
 - Fixed `useState` callback bug
 - Removed mock delays
 
 #### 8. API Client Updated
-**File**: `apps/frontend/src/lib/api.ts`
+**File**: `frontend/src/lib/api.ts`
 
 Added new endpoints:
 - `quizzes.startQuiz()`

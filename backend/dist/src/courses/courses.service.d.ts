@@ -1,0 +1,241 @@
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateCourseDto } from './dto/create-course.dto';
+import { UpdateCourseDto } from './dto/update-course.dto';
+import { User } from '@prisma/client';
+export declare class CoursesService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    create(createCourseDto: CreateCourseDto, user: User): Promise<{
+        id: string;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        organizationId: string | null;
+        rejectionReason: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string;
+        slug: string;
+        title: string;
+        thumbnail: string | null;
+        videoIntro: string | null;
+        price: number;
+        approvedBy: string | null;
+        instructorId: string;
+    }>;
+    findAll(user: User): Promise<({
+        instructor: {
+            id: string;
+            email: string;
+            name: string;
+        };
+        sections: ({
+            modules: {
+                id: string;
+                rejectionReason: string | null;
+                title: string;
+                approvedBy: string | null;
+                order: number;
+                type: import(".prisma/client").$Enums.ModuleType;
+                videoUrl: string | null;
+                textContent: string | null;
+                content: import("@prisma/client/runtime/client").JsonValue | null;
+                duration: number | null;
+                isPreview: boolean;
+                hasVideo: boolean;
+                videoGenId: string | null;
+                topic: string | null;
+                generatedContent: import("@prisma/client/runtime/client").JsonValue | null;
+                contentStatus: import(".prisma/client").$Enums.ContentStatus;
+                videoStatus: import(".prisma/client").$Enums.VideoStatus;
+                audioUrl: string | null;
+                transcript: string | null;
+                voiceId: string | null;
+                approvedAt: Date | null;
+                contentGeneratedAt: Date | null;
+                videoGeneratedAt: Date | null;
+                retryCount: number;
+                sectionId: string;
+            }[];
+        } & {
+            id: string;
+            title: string;
+            order: number;
+            courseId: string;
+        })[];
+    } & {
+        id: string;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        organizationId: string | null;
+        rejectionReason: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string;
+        slug: string;
+        title: string;
+        thumbnail: string | null;
+        videoIntro: string | null;
+        price: number;
+        approvedBy: string | null;
+        instructorId: string;
+    })[]>;
+    findOne(id: string, user: any): Promise<{
+        isEnrolled: boolean;
+        previewOnly: boolean;
+        message: string;
+        enrollments: {
+            id: string;
+            createdAt: Date;
+            userId: string;
+            courseId: string;
+            accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
+        }[];
+        instructor: {
+            id: string;
+            email: string;
+            name: string;
+        };
+        sections: ({
+            modules: {
+                id: string;
+                rejectionReason: string | null;
+                title: string;
+                approvedBy: string | null;
+                order: number;
+                type: import(".prisma/client").$Enums.ModuleType;
+                videoUrl: string | null;
+                textContent: string | null;
+                content: import("@prisma/client/runtime/client").JsonValue | null;
+                duration: number | null;
+                isPreview: boolean;
+                hasVideo: boolean;
+                videoGenId: string | null;
+                topic: string | null;
+                generatedContent: import("@prisma/client/runtime/client").JsonValue | null;
+                contentStatus: import(".prisma/client").$Enums.ContentStatus;
+                videoStatus: import(".prisma/client").$Enums.VideoStatus;
+                audioUrl: string | null;
+                transcript: string | null;
+                voiceId: string | null;
+                approvedAt: Date | null;
+                contentGeneratedAt: Date | null;
+                videoGeneratedAt: Date | null;
+                retryCount: number;
+                sectionId: string;
+            }[];
+        } & {
+            id: string;
+            title: string;
+            order: number;
+            courseId: string;
+        })[];
+        id: string;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        organizationId: string | null;
+        rejectionReason: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string;
+        slug: string;
+        title: string;
+        thumbnail: string | null;
+        videoIntro: string | null;
+        price: number;
+        approvedBy: string | null;
+        instructorId: string;
+    } | {
+        isEnrolled: boolean;
+        isInstructor: boolean;
+        isAdmin: boolean;
+        enrollments: {
+            id: string;
+            createdAt: Date;
+            userId: string;
+            courseId: string;
+            accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
+        }[];
+        instructor: {
+            id: string;
+            email: string;
+            name: string;
+        };
+        sections: ({
+            modules: {
+                id: string;
+                rejectionReason: string | null;
+                title: string;
+                approvedBy: string | null;
+                order: number;
+                type: import(".prisma/client").$Enums.ModuleType;
+                videoUrl: string | null;
+                textContent: string | null;
+                content: import("@prisma/client/runtime/client").JsonValue | null;
+                duration: number | null;
+                isPreview: boolean;
+                hasVideo: boolean;
+                videoGenId: string | null;
+                topic: string | null;
+                generatedContent: import("@prisma/client/runtime/client").JsonValue | null;
+                contentStatus: import(".prisma/client").$Enums.ContentStatus;
+                videoStatus: import(".prisma/client").$Enums.VideoStatus;
+                audioUrl: string | null;
+                transcript: string | null;
+                voiceId: string | null;
+                approvedAt: Date | null;
+                contentGeneratedAt: Date | null;
+                videoGeneratedAt: Date | null;
+                retryCount: number;
+                sectionId: string;
+            }[];
+        } & {
+            id: string;
+            title: string;
+            order: number;
+            courseId: string;
+        })[];
+        id: string;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        organizationId: string | null;
+        rejectionReason: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string;
+        slug: string;
+        title: string;
+        thumbnail: string | null;
+        videoIntro: string | null;
+        price: number;
+        approvedBy: string | null;
+        instructorId: string;
+    }>;
+    update(id: string, updateCourseDto: UpdateCourseDto, user: User): Promise<{
+        id: string;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        organizationId: string | null;
+        rejectionReason: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string;
+        slug: string;
+        title: string;
+        thumbnail: string | null;
+        videoIntro: string | null;
+        price: number;
+        approvedBy: string | null;
+        instructorId: string;
+    }>;
+    remove(id: string, user: User): Promise<{
+        id: string;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        organizationId: string | null;
+        rejectionReason: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string;
+        slug: string;
+        title: string;
+        thumbnail: string | null;
+        videoIntro: string | null;
+        price: number;
+        approvedBy: string | null;
+        instructorId: string;
+    }>;
+}
