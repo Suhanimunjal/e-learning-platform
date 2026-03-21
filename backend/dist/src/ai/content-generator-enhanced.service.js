@@ -23,8 +23,8 @@ let ContentGeneratorEnhancedService = class ContentGeneratorEnhancedService {
             throw new Error('GEMINI_API_KEY environment variable is required. Please set it in your .env file.');
         }
     }
-    async generateFullContent(topic, moduleTitle) {
-        const prompt = this.buildContentPrompt(topic, moduleTitle);
+    async generateFullContent(topic, moduleTitle, difficulty = 'intermediate') {
+        const prompt = this.buildContentPrompt(topic, moduleTitle, difficulty);
         try {
             const response = await axios_1.default.post(`${this.baseUrl}?key=${this.apiKey}`, {
                 contents: [
@@ -72,11 +72,73 @@ let ContentGeneratorEnhancedService = class ContentGeneratorEnhancedService {
             throw new Error(error?.response?.data?.error?.message || 'Failed to generate content with AI');
         }
     }
-    buildContentPrompt(topic, moduleTitle) {
+    async generateCourseOutline(courseName, difficulty, moduleCount) {
+        const prompt = `Generate a course outline in strict JSON.
+
+Course name: ${courseName}
+Difficulty: ${difficulty}
+Required modules: ${moduleCount}
+
+Rules:
+- Return at least ${moduleCount} modules.
+- Each module must contain 2 to 3 lesson titles.
+- Keep titles specific, practical, and progressively ordered.
+- Output must be valid JSON only.
+
+JSON shape:
+{
+  "courseTitle": "${courseName}",
+  "difficulty": "${difficulty}",
+  "modules": [
+    {
+      "title": "Module title",
+      "description": "Short description",
+      "lessons": ["Lesson 1", "Lesson 2", "Lesson 3"]
+    }
+  ]
+}`;
+        try {
+            const response = await axios_1.default.post(`${this.baseUrl}?key=${this.apiKey}`, {
+                contents: [
+                    {
+                        parts: [
+                            {
+                                text: prompt,
+                            },
+                        ],
+                    },
+                ],
+                generationConfig: {
+                    temperature: 0.3,
+                    maxOutputTokens: 4096,
+                    responseMimeType: 'application/json',
+                },
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!content) {
+                throw new Error('Failed to generate outline - no response from API');
+            }
+            const parsed = JSON.parse(content);
+            if (!Array.isArray(parsed?.modules)) {
+                throw new Error('Generated outline is missing modules array');
+            }
+            return parsed;
+        }
+        catch (error) {
+            console.error('Course outline generation error:', error?.response?.data || error?.message || error);
+            throw new Error(error?.response?.data?.error?.message || 'Failed to generate course outline with AI');
+        }
+    }
+    buildContentPrompt(topic, moduleTitle, difficulty = 'intermediate') {
         return `You are an expert course creator building a COMPLETE lesson module.
 
 Topic: ${topic}
 ${moduleTitle ? `Module Title: ${moduleTitle}` : ''}
+Difficulty: ${difficulty}
 
 Generate a detailed, structured lesson with the following sections (MINIMUM 800-1200 words total):
 

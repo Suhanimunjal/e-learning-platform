@@ -8,6 +8,8 @@ import Button from '@/components/ui/Button';
 import { BookOpen, Loader2, Eye, Edit, Trash2, Plus, FileText, CheckSquare, Video, Sparkles, Users, Award } from 'lucide-react';
 import Link from 'next/link';
 import { usePlugins } from '@/contexts/PluginContext';
+import { admin } from '@/lib/api';
+import { apiBaseUrl } from '@/lib/runtime-config';
 
 interface CourseData {
   id: string;
@@ -19,10 +21,32 @@ interface CourseData {
   _count?: { enrollments: number };
 }
 
+interface GenerationJob {
+  id: string;
+  status: string;
+  error?: string | null;
+  output?: {
+    courseId?: string;
+    progress?: {
+      totalModules: number;
+      generatedModules: number;
+      percent: number;
+    };
+  };
+}
+
 export default function AdminCoursesPage() {
   const { isPluginEnabled } = usePlugins();
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generationLoading, setGenerationLoading] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationJob, setGenerationJob] = useState<GenerationJob | null>(null);
+  const [formData, setFormData] = useState({
+    courseName: '',
+    difficulty: 'intermediate',
+    moduleCount: 10,
+  });
 
   const hasAdvancedAssignments = isPluginEnabled('advanced-assignments');
   const hasAdvancedQuizzes = isPluginEnabled('advanced-quizzes');
@@ -35,11 +59,39 @@ export default function AdminCoursesPage() {
     loadCourses();
   }, []);
 
+  useEffect(() => {
+    if (!generationJob?.id) {
+      return;
+    }
+
+    if (generationJob.status === 'completed' || generationJob.status === 'failed') {
+      if (generationJob.status === 'completed') {
+        loadCourses();
+      }
+      return;
+    }
+
+    const intervalId = window.setInterval(async () => {
+      try {
+        const latestJob = await admin.getGenerationJob(generationJob.id);
+        setGenerationJob(latestJob);
+
+        if (latestJob.status === 'completed') {
+          await loadCourses();
+        }
+      } catch (error: any) {
+        setGenerationError(error?.response?.data?.message || error?.message || 'Failed to poll generation job');
+      }
+    }, 3000);
+
+    return () => window.clearInterval(intervalId);
+  }, [generationJob?.id, generationJob?.status]);
+
   const loadCourses = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3001/api/courses', {
+      const res = await fetch(`${apiBaseUrl}/courses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -50,6 +102,36 @@ export default function AdminCoursesPage() {
       console.error('Failed to load courses:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startGeneration = async () => {
+    setGenerationError(null);
+
+    if (!formData.courseName.trim()) {
+      setGenerationError('Course name is required');
+      return;
+    }
+
+    if (formData.moduleCount < 10) {
+      setGenerationError('Module count must be at least 10');
+      return;
+    }
+
+    setGenerationLoading(true);
+    try {
+      const result = await admin.generateAiCourse({
+        courseName: formData.courseName.trim(),
+        difficulty: formData.difficulty,
+        moduleCount: Number(formData.moduleCount),
+      });
+
+      const latestJob = await admin.getGenerationJob(result.jobId);
+      setGenerationJob(latestJob);
+    } catch (error: any) {
+      setGenerationError(error?.response?.data?.message || error?.message || 'Failed to start AI generation');
+    } finally {
+      setGenerationLoading(false);
     }
   };
 
@@ -168,6 +250,85 @@ export default function AdminCoursesPage() {
               </Button>
             )}
           </div>
+        </div>
+
+        <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-indigo-600" />
+            <h2 className="text-sm font-semibold text-gray-900">AI Course Generator</h2>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-4">
+            <input
+              type="text"
+              placeholder="Course name"
+              value={formData.courseName}
+              onChange={(e) => setFormData((prev) => ({ ...prev, courseName: e.target.value }))}
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            />
+
+            <select
+              value={formData.difficulty}
+              onChange={(e) => setFormData((prev) => ({ ...prev, difficulty: e.target.value }))}
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            >
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+
+            <input
+              type="number"
+              min={10}
+              max={30}
+              value={formData.moduleCount}
+              onChange={(e) => setFormData((prev) => ({ ...prev, moduleCount: Number(e.target.value) }))}
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            />
+
+            <Button onClick={startGeneration} disabled={generationLoading}>
+              {generationLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate
+                </>
+              )}
+            </Button>
+          </div>
+
+          {generationError && (
+            <p className="mt-3 text-sm text-red-600">{generationError}</p>
+          )}
+
+          {generationJob && (
+            <div className="mt-4 rounded-md bg-white p-3 text-sm">
+              <p className="font-medium text-gray-900">Job: {generationJob.id}</p>
+              <p className="text-gray-600">Status: {generationJob.status}</p>
+              <p className="text-gray-600">
+                Progress: {generationJob.output?.progress?.generatedModules || 0}/
+                {generationJob.output?.progress?.totalModules || formData.moduleCount} modules
+                ({generationJob.output?.progress?.percent || 0}%)
+              </p>
+
+              {generationJob.status === 'completed' && generationJob.output?.courseId && (
+                <Link
+                  href={`/courses/${generationJob.output.courseId}`}
+                  className="mt-2 inline-block text-indigo-600 hover:underline"
+                >
+                  Open generated course
+                </Link>
+              )}
+
+              {generationJob.status === 'failed' && generationJob.error && (
+                <p className="mt-2 text-red-600">{generationJob.error}</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Plugin Quick Actions Bar */}

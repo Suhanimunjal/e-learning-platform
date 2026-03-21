@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Loader2, GraduationCap, Eye, EyeOff } from 'lucide-react';
+import { apiBaseUrl } from '@/lib/runtime-config';
 
 export default function StudentRegisterPage() {
   const router = useRouter();
@@ -99,7 +100,7 @@ export default function StudentRegisterPage() {
         role: 'STUDENT',
       };
 
-      const res = await fetch('http://localhost:3001/api/auth/register', {
+      const res = await fetch(`${apiBaseUrl}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -111,7 +112,7 @@ export default function StudentRegisterPage() {
         throw new Error(data.message || 'Registration failed');
       }
 
-      setSubmitSuccess('Registration successful! Please wait for admin approval.');
+      setSubmitSuccess('Registration successful! You can now log in.');
       setTimeout(() => {
         router.push('/student-login');
       }, 2000);
@@ -363,10 +364,6 @@ export default function StudentRegisterPage() {
                 </div>
                 {errors.confirmPassword && <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p>}
               </div>
-            </div>
-
-            <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-              <strong>Note:</strong> Your account requires admin approval before you can login.
             </div>
 
             <button

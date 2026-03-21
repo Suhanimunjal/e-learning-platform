@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, ForbiddenException, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
@@ -40,8 +40,18 @@ export class AuthService {
     private activityLogService: ActivityLogService,
   ) {}
 
+  private toSlug(value: string): string {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, name, role, phone, rollNo, year, branch, course } = registerDto;
+    const { email, password, name, role } = registerDto;
 
     // Only allow STUDENT registration via public registration
     if (role === Role.TEACHER || role === Role.ADMIN) {
@@ -58,20 +68,15 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // All new students start with PENDING_APPROVAL status
-    // They need admin approval to become active
+    // New students are active immediately.
     const user = await this.prisma.user.create({
       data: {
         email,
         name,
         password: hashedPassword,
         role: Role.STUDENT,
-        status: UserStatus.PENDING_APPROVAL,
-        phone,
-        rollNo,
-        year,
-        branch,
-        course,
+        status: UserStatus.ACTIVE,
+
       },
     });
 
@@ -90,6 +95,82 @@ export class AuthService {
     return {
       accessToken,
       user: this.excludePassword(user),
+    };
+  }
+
+  async registerTeacher(input: {
+    name: string;
+    email: string;
+    password: string;
+    phone: string;
+    organizationName: string;
+    expertise: string;
+    idProofPath: string;
+  }) {
+    const { name, email, password, phone, organizationName, expertise, idProofPath } = input;
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    let organization = await this.prisma.organization.findFirst({
+      where: { name: organizationName },
+    });
+
+    if (!organization) {
+      const baseSlug = this.toSlug(organizationName) || 'organization';
+      let slug = baseSlug;
+      let suffix = 1;
+
+      // Ensure slug uniqueness without relying on fallback behavior.
+      while (await this.prisma.organization.findUnique({ where: { slug } })) {
+        slug = `${baseSlug}-${suffix}`;
+        suffix += 1;
+      }
+
+      organization = await this.prisma.organization.create({
+        data: {
+          name: organizationName,
+          slug,
+        },
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const teacher = await this.prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: Role.TEACHER,
+        status: UserStatus.PENDING_APPROVAL,
+        organizationId: organization.id,
+      },
+    });
+
+    await this.activityLogService.log({
+      action: 'TEACHER_CREATED',
+      entityType: 'USER',
+      entityId: teacher.id,
+      targetUserId: teacher.id,
+      metadata: {
+        email: teacher.email,
+        name: teacher.name,
+        phone,
+        organizationName,
+        expertise,
+        idProofPath,
+      },
+    });
+
+    return {
+      message: 'Teacher registration submitted. Please wait for admin approval.',
+      user: this.excludePassword(teacher),
     };
   }
 
@@ -138,6 +219,10 @@ export class AuthService {
     return attempt && attempt.count >= MAX_LOGIN_ATTEMPTS;
   }
 
+  private isOtpEnabled(): boolean {
+    return process.env.AUTH_ENABLE_OTP === 'true';
+  }
+
   async initiateLogin(loginDto: LoginDto): Promise<{ requiresOtp: boolean; message?: string }> {
     const { email, password } = loginDto;
 
@@ -155,13 +240,29 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Check if user is approved (only students require approval)
-    if (user.role === Role.STUDENT && user.status !== 'ACTIVE') {
-      throw new ForbiddenException(`Your account is ${user.status.toLowerCase().replace('_', ' ')}. Please contact administrator for approval.`);
+    if (user.role === Role.TEACHER && user.status === UserStatus.PENDING_APPROVAL) {
+      throw new ForbiddenException('Your teacher account is pending admin approval.');
     }
 
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // Block explicitly rejected accounts.
+    if (user.status === UserStatus.REJECTED) {
+      throw new ForbiddenException('Your account has been rejected. Please contact administrator.');
+    }
+
+    // Guard against accounts without a password hash and malformed stored hashes.
+    // In both cases we should return an auth error, not a 500.
+    if (!user.password) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    let isPasswordValid = false;
+    try {
+      isPasswordValid = await bcrypt.compare(password, user.password);
+    } catch (error) {
+      this.logger.warn(`Password hash validation failed for ${email}`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
     if (!isPasswordValid) {
       const attempts = this.recordFailedAttempt(email);
       const remaining = MAX_LOGIN_ATTEMPTS - attempts;
@@ -169,12 +270,15 @@ export class AuthService {
       if (remaining > 0) {
         throw new UnauthorizedException(`Invalid credentials. ${remaining} attempts remaining before OTP verification required.`);
       } else {
-        throw new ForbiddenException('Too many failed attempts. OTP verification required for login.');
+        if (this.isOtpEnabled()) {
+          throw new ForbiddenException('Too many failed attempts. OTP verification required for login.');
+        }
+        throw new ForbiddenException('Too many failed attempts. Account temporarily locked.');
       }
     }
 
     // Password is valid - check if we need OTP due to failed attempts
-    if (user.role === Role.STUDENT && this.requiresOtpDueToFailedAttempts(email)) {
+    if (this.isOtpEnabled() && user.role === Role.STUDENT && this.requiresOtpDueToFailedAttempts(email)) {
       // Reset attempts on successful password entry
       this.resetLoginAttempts(email);
       
@@ -183,6 +287,11 @@ export class AuthService {
       this.logger.log(`Student ${email} requires OTP due to failed attempts. Sending OTP: ${otp}`);
       const emailSent = await this.emailService.sendLoginOTP(email, user.name, otp);
       this.logger.log(`Email send result for ${email}: ${emailSent}`);
+
+      if (!emailSent) {
+        this.otpService.deleteOTP(email);
+        throw new ServiceUnavailableException('Unable to deliver OTP email. Please contact support or try again later.');
+      }
 
       // Store pending login
       this.pendingLogins.set(email, {
@@ -212,11 +321,23 @@ export class AuthService {
       };
     }
 
+    if (!this.isOtpEnabled()) {
+      return {
+        requiresOtp: false,
+        message: 'Login successful',
+      };
+    }
+
     // For TEACHERs and ADMINs - require OTP verification
     const otp = this.otpService.generateOTP(email);
     this.logger.log(`Teacher/Admin ${email} requires OTP. Sending OTP: ${otp}`);
     const emailSent = await this.emailService.sendLoginOTP(email, user.name, otp);
     this.logger.log(`Email send result for ${email}: ${emailSent}`);
+
+    if (!emailSent) {
+      this.otpService.deleteOTP(email);
+      throw new ServiceUnavailableException('Unable to deliver OTP email. Please contact support or try again later.');
+    }
 
     // Store pending login
     this.pendingLogins.set(email, {
@@ -296,7 +417,12 @@ export class AuthService {
 
     // Generate new OTP
     const otp = this.otpService.generateOTP(email);
-    await this.emailService.sendLoginOTP(email, user.name, otp);
+    const emailSent = await this.emailService.sendLoginOTP(email, user.name, otp);
+
+    if (!emailSent) {
+      this.otpService.deleteOTP(email);
+      throw new ServiceUnavailableException('Unable to deliver OTP email. Please contact support or try again later.');
+    }
 
     // Update pending login expiry
     this.pendingLogins.set(email, {

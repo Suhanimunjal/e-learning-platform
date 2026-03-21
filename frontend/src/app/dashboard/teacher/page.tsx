@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { courses, enrollments } from '@/lib/api';
+import { apiBaseUrl } from '@/lib/runtime-config';
 
 interface PendingEnrollment {
   id: string;
@@ -74,12 +75,12 @@ export default function TeacherDashboard() {
       setMyCourses(teacherCourses);
 
       // Fetch pending enrollments for teacher's courses
-      const pendingRes = await fetch('http://localhost:3001/api/enrollments/pending', { headers });
+      const pendingRes = await fetch(`${apiBaseUrl}/enrollments/pending`, { headers });
       const pendingData = await pendingRes.json();
       setPendingEnrollments(Array.isArray(pendingData) ? pendingData : []);
 
       // Fetch pending quiz submissions
-      const quizzesRes = await fetch('http://localhost:3001/api/quiz/submissions/pending', { headers });
+      const quizzesRes = await fetch(`${apiBaseUrl}/quiz/submissions/pending`, { headers });
       const quizzesData = await quizzesRes.json();
       setPendingQuizzes(Array.isArray(quizzesData) ? quizzesData : []);
 
@@ -105,7 +106,7 @@ export default function TeacherDashboard() {
     setActionLoading(enrollmentId);
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:3001/api/enrollments/${enrollmentId}/approve`, {
+      await fetch(`${apiBaseUrl}/enrollments/${enrollmentId}/approve`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -121,7 +122,7 @@ export default function TeacherDashboard() {
     setActionLoading(enrollmentId);
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:3001/api/enrollments/${enrollmentId}/reject`, {
+      await fetch(`${apiBaseUrl}/enrollments/${enrollmentId}/reject`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });

@@ -22,12 +22,21 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const otp_service_1 = require("../common/services/otp.service");
 const email_service_1 = require("../common/services/email.service");
 const activity_log_service_1 = require("../common/services/activity-log.service");
+const generate_ai_course_dto_1 = require("./dto/generate-ai-course.dto");
+const admin_course_generation_service_1 = require("./services/admin-course-generation.service");
 let AdminController = class AdminController {
-    constructor(prisma, otpService, emailService, activityLogService) {
+    constructor(prisma, otpService, emailService, activityLogService, adminCourseGenerationService) {
         this.prisma = prisma;
         this.otpService = otpService;
         this.emailService = emailService;
         this.activityLogService = activityLogService;
+        this.adminCourseGenerationService = adminCourseGenerationService;
+    }
+    async generateAiCourse(body, req) {
+        return this.adminCourseGenerationService.startGeneration(body, req.user.id);
+    }
+    async getGenerationJob(jobId) {
+        return this.adminCourseGenerationService.getJob(jobId);
     }
     async getActivityLogs(limit, offset) {
         return this.activityLogService.getRecentLogs(Number(limit) || 50, Number(offset) || 0);
@@ -67,7 +76,7 @@ let AdminController = class AdminController {
         return this.prisma.user.findMany({
             where: {
                 status: client_1.UserStatus.PENDING_APPROVAL,
-                role: client_1.Role.STUDENT,
+                role: client_1.Role.TEACHER,
             },
             select: {
                 id: true,
@@ -217,17 +226,15 @@ let AdminController = class AdminController {
         });
     }
     async getStats() {
-        const [pendingStudents, pendingEnrollments, totalUsers, totalTeachers, totalStudents, totalCourses] = await Promise.all([
-            this.prisma.user.count({ where: { status: client_1.UserStatus.PENDING_APPROVAL, role: client_1.Role.STUDENT } }),
-            this.prisma.enrollment.count({ where: { accessStatus: 'PENDING' } }),
+        const [pendingApprovals, totalUsers, totalTeachers, totalStudents, totalCourses] = await Promise.all([
+            this.prisma.user.count({ where: { status: client_1.UserStatus.PENDING_APPROVAL, role: client_1.Role.TEACHER } }),
             this.prisma.user.count(),
             this.prisma.user.count({ where: { role: client_1.Role.TEACHER } }),
             this.prisma.user.count({ where: { role: client_1.Role.STUDENT } }),
             this.prisma.course.count(),
         ]);
         return {
-            pendingStudents,
-            pendingEnrollments,
+            pendingApprovals,
             totalUsers,
             totalTeachers,
             totalStudents,
@@ -236,6 +243,21 @@ let AdminController = class AdminController {
     }
 };
 exports.AdminController = AdminController;
+__decorate([
+    (0, common_1.Post)('courses/generate-ai'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [generate_ai_course_dto_1.GenerateAiCourseDto, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "generateAiCourse", null);
+__decorate([
+    (0, common_1.Get)('courses/generation-jobs/:jobId'),
+    __param(0, (0, common_1.Param)('jobId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getGenerationJob", null);
 __decorate([
     (0, common_1.Get)('logs'),
     __param(0, (0, common_1.Query)('limit')),
@@ -339,6 +361,7 @@ exports.AdminController = AdminController = __decorate([
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         otp_service_1.OtpService,
         email_service_1.EmailService,
-        activity_log_service_1.ActivityLogService])
+        activity_log_service_1.ActivityLogService,
+        admin_course_generation_service_1.AdminCourseGenerationService])
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

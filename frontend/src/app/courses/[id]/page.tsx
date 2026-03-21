@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useParams } from 'next/navigation';
 import { enrollments, payments } from '@/lib/api';
 import { usePlugins } from '@/contexts/PluginContext';
+import { apiBaseUrl } from '@/lib/runtime-config';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { 
@@ -56,7 +57,7 @@ export default function CourseDetailPage() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
       
-      const res = await fetch(`http://localhost:3001/api/courses/${courseId}`, { 
+      const res = await fetch(`${apiBaseUrl}/courses/${courseId}`, {
         headers,
         signal: controller.signal 
       });

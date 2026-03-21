@@ -11,13 +11,14 @@ const common_1 = require("@nestjs/common");
 const courses_service_1 = require("./courses.service");
 const courses_controller_1 = require("./courses.controller");
 const prisma_service_1 = require("../prisma/prisma.service");
+const activity_log_service_1 = require("../common/services/activity-log.service");
 let CoursesModule = class CoursesModule {
 };
 exports.CoursesModule = CoursesModule;
 exports.CoursesModule = CoursesModule = __decorate([
     (0, common_1.Module)({
         controllers: [courses_controller_1.CoursesController],
-        providers: [courses_service_1.CoursesService, prisma_service_1.PrismaService],
+        providers: [courses_service_1.CoursesService, prisma_service_1.PrismaService, activity_log_service_1.ActivityLogService],
     })
 ], CoursesModule);
 //# sourceMappingURL=courses.module.js.map

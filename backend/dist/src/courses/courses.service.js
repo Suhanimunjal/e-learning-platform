@@ -13,9 +13,11 @@ exports.CoursesService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
+const activity_log_service_1 = require("../common/services/activity-log.service");
 let CoursesService = class CoursesService {
-    constructor(prisma) {
+    constructor(prisma, activityLogService) {
         this.prisma = prisma;
+        this.activityLogService = activityLogService;
     }
     async create(createCourseDto, user) {
         const data = {
@@ -25,9 +27,18 @@ let CoursesService = class CoursesService {
         if (user.role === client_1.Role.TEACHER || user.role === client_1.Role.MANAGER) {
             data.organizationId = user.organizationId;
         }
-        return this.prisma.course.create({
+        const course = await this.prisma.course.create({
             data,
         });
+        await this.activityLogService.log({
+            action: 'COURSE_CREATED',
+            entityType: 'COURSE',
+            entityId: course.id,
+            userId: user.id,
+            targetUserId: user.id,
+            metadata: { title: course.title },
+        });
+        return course;
     }
     async findAll(user) {
         const where = {};
@@ -105,12 +116,30 @@ let CoursesService = class CoursesService {
         const isInstructor = user && course.instructorId === user.id;
         const isAdmin = user && user.role === client_1.Role.ADMIN;
         if (user && !isEnrolled && !isInstructor && !isAdmin && user.role === client_1.Role.STUDENT) {
+            await this.activityLogService.log({
+                action: 'COURSE_ACCESSED',
+                entityType: 'COURSE',
+                entityId: course.id,
+                userId: user.id,
+                targetUserId: course.instructorId,
+                metadata: { title: course.title, previewOnly: true },
+            });
             return {
                 ...course,
                 isEnrolled: false,
                 previewOnly: true,
                 message: 'Please enroll to access full course content',
             };
+        }
+        if (user) {
+            await this.activityLogService.log({
+                action: 'COURSE_ACCESSED',
+                entityType: 'COURSE',
+                entityId: course.id,
+                userId: user.id,
+                targetUserId: course.instructorId,
+                metadata: { title: course.title, previewOnly: false },
+            });
         }
         return {
             ...course,
@@ -152,6 +181,7 @@ let CoursesService = class CoursesService {
 exports.CoursesService = CoursesService;
 exports.CoursesService = CoursesService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        activity_log_service_1.ActivityLogService])
 ], CoursesService);
 //# sourceMappingURL=courses.service.js.map

@@ -23,6 +23,7 @@ import {
   Check,
   X,
 } from 'lucide-react';
+import { apiBaseUrl } from '@/lib/runtime-config';
 
 interface PendingStudent {
   id: string;
@@ -96,10 +97,10 @@ export default function AdminDashboard() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [statsRes, studentsRes, logsRes, teachersRes] = await Promise.all([
-        fetch('http://localhost:3001/api/admin/stats', { headers }),
-        fetch('http://localhost:3001/api/admin/users/pending', { headers }),
-        fetch('http://localhost:3001/api/admin/logs?limit=50', { headers }),
-        fetch('http://localhost:3001/api/admin/teachers', { headers }),
+        fetch(`${apiBaseUrl}/admin/stats`, { headers }),
+        fetch(`${apiBaseUrl}/admin/users/pending`, { headers }),
+        fetch(`${apiBaseUrl}/admin/logs?limit=50`, { headers }),
+        fetch(`${apiBaseUrl}/admin/teachers`, { headers }),
       ]);
 
       const [statsData, studentsData, logsData, teachersData] = await Promise.all([
@@ -108,6 +109,10 @@ export default function AdminDashboard() {
         logsRes.json(),
         teachersRes.json(),
       ]);
+
+      if (!statsRes.ok || !studentsRes.ok || !logsRes.ok || !teachersRes.ok) {
+        throw new Error('One or more admin dashboard endpoints failed to load.');
+      }
 
       setStats(statsData);
       setPendingStudents(Array.isArray(studentsData) ? studentsData : []);
@@ -125,7 +130,7 @@ export default function AdminDashboard() {
     setActionLoading(userId);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:3001/api/admin/users/${userId}/approve`, {
+      const res = await fetch(`${apiBaseUrl}/admin/users/${userId}/approve`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -152,7 +157,7 @@ export default function AdminDashboard() {
     setActionLoading(userId);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:3001/api/admin/users/${userId}/reject`, {
+      const res = await fetch(`${apiBaseUrl}/admin/users/${userId}/reject`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -185,7 +190,7 @@ export default function AdminDashboard() {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3001/api/admin/teachers/register', {
+      const res = await fetch(`${apiBaseUrl}/admin/teachers/register`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -226,6 +231,8 @@ export default function AdminDashboard() {
       case 'USER_APPROVED': return <UserCheck className="h-4 w-4 text-green-500" />;
       case 'USER_REJECTED': return <UserX className="h-4 w-4 text-red-500" />;
       case 'TEACHER_CREATED': return <UserPlus className="h-4 w-4 text-purple-500" />;
+      case 'COURSE_CREATED': return <BookOpen className="h-4 w-4 text-emerald-500" />;
+      case 'COURSE_ACCESSED': return <Eye className="h-4 w-4 text-indigo-500" />;
       default: return <Activity className="h-4 w-4 text-gray-500" />;
     }
   };

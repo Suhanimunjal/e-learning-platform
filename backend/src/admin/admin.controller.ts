@@ -7,6 +7,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { OtpService } from '../common/services/otp.service';
 import { EmailService } from '../common/services/email.service';
 import { ActivityLogService } from '../common/services/activity-log.service';
+import { GenerateAiCourseDto } from './dto/generate-ai-course.dto';
+import { AdminCourseGenerationService } from './services/admin-course-generation.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -17,7 +19,18 @@ export class AdminController {
     private otpService: OtpService,
     private emailService: EmailService,
     private activityLogService: ActivityLogService,
+    private adminCourseGenerationService: AdminCourseGenerationService,
   ) {}
+
+  @Post('courses/generate-ai')
+  async generateAiCourse(@Body() body: GenerateAiCourseDto, @Request() req) {
+    return this.adminCourseGenerationService.startGeneration(body, req.user.id);
+  }
+
+  @Get('courses/generation-jobs/:jobId')
+  async getGenerationJob(@Param('jobId') jobId: string) {
+    return this.adminCourseGenerationService.getJob(jobId);
+  }
 
   // Activity Logs
   @Get('logs')
@@ -67,13 +80,13 @@ export class AdminController {
     };
   }
 
-  // User Management - Pending Student approvals only
+  // User Management - Pending Teacher approvals
   @Get('users/pending')
   async getPendingUsers() {
     return this.prisma.user.findMany({
       where: { 
         status: UserStatus.PENDING_APPROVAL,
-        role: Role.STUDENT, // Only students need admin approval
+        role: Role.TEACHER,
       },
       select: {
         id: true,
@@ -280,9 +293,8 @@ export class AdminController {
   // Statistics
   @Get('stats')
   async getStats() {
-    const [pendingStudents, pendingEnrollments, totalUsers, totalTeachers, totalStudents, totalCourses] = await Promise.all([
-      this.prisma.user.count({ where: { status: UserStatus.PENDING_APPROVAL, role: Role.STUDENT } }),
-      this.prisma.enrollment.count({ where: { accessStatus: 'PENDING' } }),
+    const [pendingApprovals, totalUsers, totalTeachers, totalStudents, totalCourses] = await Promise.all([
+      this.prisma.user.count({ where: { status: UserStatus.PENDING_APPROVAL, role: Role.TEACHER } }),
       this.prisma.user.count(),
       this.prisma.user.count({ where: { role: Role.TEACHER } }),
       this.prisma.user.count({ where: { role: Role.STUDENT } }),
@@ -290,8 +302,7 @@ export class AdminController {
     ]);
 
     return {
-      pendingStudents,
-      pendingEnrollments,
+      pendingApprovals,
       totalUsers,
       totalTeachers,
       totalStudents,

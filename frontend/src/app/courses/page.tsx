@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import { apiBaseUrl } from '@/lib/runtime-config';
 
 export default function CoursesPage() {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ export default function CoursesPage() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
       
-      const res = await fetch('http://localhost:3001/api/courses', { 
+      const res = await fetch(`${apiBaseUrl}/courses`, {
         headers,
         signal: controller.signal 
       });

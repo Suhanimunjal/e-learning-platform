@@ -148,18 +148,23 @@ let AnalyticsReportingService = AnalyticsReportingService_1 = class AnalyticsRep
     }
     async getPlatformAnalytics(startDate, endDate) {
         try {
-            const totalUsers = await this.prisma.user.count();
-            const totalCourses = await this.prisma.course.count();
-            const totalEnrollments = await this.prisma.enrollment.count();
-            const completedEnrollments = await this.prisma.analyticsEvent.count({
-                where: { type: 'course.completed' },
-            });
-            const totalRevenue = await this.prisma.order.aggregate({
-                where: { status: 'COMPLETED' },
-                _sum: { amount: true },
-            });
-            const topCourses = await this.getTopCourses(5);
-            const eventBreakdown = await this.getPlatformEventBreakdown();
+            const [totalUsers, totalCourses, totalEnrollments, completedEnrollments, totalRevenue, topCourses, eventBreakdown, enrollmentTrend, revenueTrend, growthMetrics,] = await Promise.all([
+                this.prisma.user.count(),
+                this.prisma.course.count(),
+                this.prisma.enrollment.count(),
+                this.prisma.analyticsEvent.count({
+                    where: { type: 'course.completed' },
+                }),
+                this.prisma.order.aggregate({
+                    where: { status: 'COMPLETED' },
+                    _sum: { amount: true },
+                }),
+                this.getTopCourses(5),
+                this.getPlatformEventBreakdown(),
+                this.getEnrollmentTrend(6),
+                this.getRevenueTrend(6),
+                this.getGrowthMetrics(),
+            ]);
             const completionRate = totalEnrollments > 0 ? (completedEnrollments / totalEnrollments) * 100 : 0;
             return {
                 totalUsers,
@@ -168,6 +173,11 @@ let AnalyticsReportingService = AnalyticsReportingService_1 = class AnalyticsRep
                 completedEnrollments,
                 completionRate: Math.round(completionRate),
                 totalRevenue: totalRevenue._sum.amount || 0,
+                enrollmentTrend,
+                revenueTrend,
+                userGrowthRate: growthMetrics.userGrowthRate,
+                revenueGrowthRate: growthMetrics.revenueGrowthRate,
+                enrollmentGrowthRate: growthMetrics.enrollmentGrowthRate,
                 topCourses,
                 eventBreakdown,
                 period: {
@@ -346,6 +356,156 @@ let AnalyticsReportingService = AnalyticsReportingService_1 = class AnalyticsRep
         });
         const uniqueDays = new Set(events.map(e => e.createdAt.toISOString().split('T')[0]));
         return uniqueDays.size;
+    }
+    async getEnrollmentTrend(monthCount = 6) {
+        const months = this._buildMonthBuckets(monthCount);
+        const start = months[0].start;
+        const end = months[months.length - 1].end;
+        const enrollments = await this.prisma.enrollment.findMany({
+            where: {
+                createdAt: {
+                    gte: start,
+                    lte: end,
+                },
+            },
+            select: {
+                createdAt: true,
+            },
+        });
+        const counts = {};
+        for (const month of months) {
+            counts[month.key] = 0;
+        }
+        for (const enrollment of enrollments) {
+            const key = this._toMonthKey(enrollment.createdAt);
+            if (key in counts) {
+                counts[key] += 1;
+            }
+        }
+        return months.map((month) => ({
+            month: month.label,
+            enrollments: counts[month.key] || 0,
+        }));
+    }
+    async getRevenueTrend(monthCount = 6) {
+        const months = this._buildMonthBuckets(monthCount);
+        const start = months[0].start;
+        const end = months[months.length - 1].end;
+        const orders = await this.prisma.order.findMany({
+            where: {
+                status: 'COMPLETED',
+                createdAt: {
+                    gte: start,
+                    lte: end,
+                },
+            },
+            select: {
+                createdAt: true,
+                amount: true,
+            },
+        });
+        const sums = {};
+        for (const month of months) {
+            sums[month.key] = 0;
+        }
+        for (const order of orders) {
+            const key = this._toMonthKey(order.createdAt);
+            if (key in sums) {
+                sums[key] += Number(order.amount || 0);
+            }
+        }
+        return months.map((month) => ({
+            month: month.label,
+            revenue: Math.round(sums[month.key] || 0),
+        }));
+    }
+    async getGrowthMetrics() {
+        const now = new Date();
+        const currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const previousStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const previousEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+        const [usersCurrent, usersPrevious, enrollmentsCurrent, enrollmentsPrevious, revenueCurrent, revenuePrevious,] = await Promise.all([
+            this.prisma.user.count({
+                where: {
+                    createdAt: {
+                        gte: currentStart,
+                        lte: now,
+                    },
+                },
+            }),
+            this.prisma.user.count({
+                where: {
+                    createdAt: {
+                        gte: previousStart,
+                        lte: previousEnd,
+                    },
+                },
+            }),
+            this.prisma.enrollment.count({
+                where: {
+                    createdAt: {
+                        gte: currentStart,
+                        lte: now,
+                    },
+                },
+            }),
+            this.prisma.enrollment.count({
+                where: {
+                    createdAt: {
+                        gte: previousStart,
+                        lte: previousEnd,
+                    },
+                },
+            }),
+            this.prisma.order.aggregate({
+                where: {
+                    status: 'COMPLETED',
+                    createdAt: {
+                        gte: currentStart,
+                        lte: now,
+                    },
+                },
+                _sum: { amount: true },
+            }),
+            this.prisma.order.aggregate({
+                where: {
+                    status: 'COMPLETED',
+                    createdAt: {
+                        gte: previousStart,
+                        lte: previousEnd,
+                    },
+                },
+                _sum: { amount: true },
+            }),
+        ]);
+        return {
+            userGrowthRate: this._calculateGrowthRate(usersCurrent, usersPrevious),
+            enrollmentGrowthRate: this._calculateGrowthRate(enrollmentsCurrent, enrollmentsPrevious),
+            revenueGrowthRate: this._calculateGrowthRate(Number(revenueCurrent._sum.amount || 0), Number(revenuePrevious._sum.amount || 0)),
+        };
+    }
+    _calculateGrowthRate(current, previous) {
+        if (previous === 0) {
+            return current > 0 ? 100 : 0;
+        }
+        return Math.round(((current - previous) / previous) * 100);
+    }
+    _buildMonthBuckets(monthCount) {
+        const months = [];
+        const now = new Date();
+        for (let i = monthCount - 1; i >= 0; i -= 1) {
+            const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const start = new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
+            const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+            const key = this._toMonthKey(start);
+            const label = start.toLocaleString('en-US', { month: 'short' });
+            months.push({ key, label, start, end });
+        }
+        return months;
+    }
+    _toMonthKey(date) {
+        const month = `${date.getMonth() + 1}`.padStart(2, '0');
+        return `${date.getFullYear()}-${month}`;
     }
 };
 exports.AnalyticsReportingService = AnalyticsReportingService;

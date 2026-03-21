@@ -40,12 +40,12 @@ export declare class AnalyticsReportingService {
         totalTimeSpent: any;
         recentEvents: {
             id: string;
-            createdAt: Date;
-            courseId: string | null;
-            type: string;
-            moduleId: string | null;
             userId: string;
+            courseId: string | null;
+            moduleId: string | null;
+            type: string;
             metadata: import("@prisma/client/runtime/client").JsonValue;
+            createdAt: Date;
         }[];
     }>;
     getPlatformAnalytics(startDate?: Date, endDate?: Date): Promise<{
@@ -55,6 +55,17 @@ export declare class AnalyticsReportingService {
         completedEnrollments: number;
         completionRate: number;
         totalRevenue: number;
+        enrollmentTrend: {
+            month: string;
+            enrollments: number;
+        }[];
+        revenueTrend: {
+            month: string;
+            revenue: number;
+        }[];
+        userGrowthRate: number;
+        revenueGrowthRate: number;
+        enrollmentGrowthRate: number;
         topCourses: {
             courseId: string;
             title: string;
@@ -87,4 +98,10 @@ export declare class AnalyticsReportingService {
     private _calculateAvgTimePerModule;
     private _calculateQuizPassRate;
     private _calculateActiveDays;
+    private getEnrollmentTrend;
+    private getRevenueTrend;
+    private getGrowthMetrics;
+    private _calculateGrowthRate;
+    private _buildMonthBuckets;
+    private _toMonthKey;
 }

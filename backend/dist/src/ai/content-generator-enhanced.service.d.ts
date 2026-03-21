@@ -114,7 +114,8 @@ export declare class ContentGeneratorEnhancedService {
     private readonly apiKey;
     private readonly baseUrl;
     constructor();
-    generateFullContent(topic: string, moduleTitle?: string): Promise<StructuredContent>;
+    generateFullContent(topic: string, moduleTitle?: string, difficulty?: string): Promise<StructuredContent>;
+    generateCourseOutline(courseName: string, difficulty: string, moduleCount: number): Promise<any>;
     private buildContentPrompt;
     generateIntroduction(topic: string): Promise<IntroductionSection>;
     generateQuiz(topic: string): Promise<QuizSection>;

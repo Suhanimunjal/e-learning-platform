@@ -23,7 +23,8 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-4 sm:px-6">
       <button
         onClick={onMenuClick}
-        className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 lg:hidden"
+        className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        aria-label="Toggle sidebar"
       >
         <Menu className="h-5 w-5" />
       </button>

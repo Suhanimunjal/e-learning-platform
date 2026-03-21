@@ -5,17 +5,27 @@ import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const frontendOriginsRaw = process.env.FRONTEND_ORIGINS;
+  if (!frontendOriginsRaw) {
+    throw new Error('FRONTEND_ORIGINS is required. No fallback origin is allowed.');
+  }
+
+  const allowedOrigins = frontendOriginsRaw
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (allowedOrigins.length === 0) {
+    throw new Error('FRONTEND_ORIGINS must contain at least one valid origin.');
+  }
   
   // Enable CORS for frontend
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-      'http://localhost:3001', // Allow backend access too
-    ],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
   
   // Serve static files (uploads)

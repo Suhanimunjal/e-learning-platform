@@ -16,11 +16,25 @@ export declare class AuthService {
     private pendingLogins;
     private loginAttempts;
     constructor(prisma: PrismaService, jwtService: JwtService, otpService: OtpService, emailService: EmailService, activityLogService: ActivityLogService);
+    private toSlug;
     register(registerDto: RegisterDto): Promise<AuthResponseDto>;
+    registerTeacher(input: {
+        name: string;
+        email: string;
+        password: string;
+        phone: string;
+        organizationName: string;
+        expertise: string;
+        idProofPath: string;
+    }): Promise<{
+        message: string;
+        user: any;
+    }>;
     private recordFailedAttempt;
     private resetLoginAttempts;
     private isLockedOut;
     private requiresOtpDueToFailedAttempts;
+    private isOtpEnabled;
     initiateLogin(loginDto: LoginDto): Promise<{
         requiresOtp: boolean;
         message?: string;

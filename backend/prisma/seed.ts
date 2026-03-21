@@ -1,4 +1,4 @@
-import { PrismaClient, Role, ModuleType, ContentStatus } from '@prisma/client';
+import { PrismaClient, Role, ModuleType, ContentStatus, UserStatus } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
@@ -63,10 +63,11 @@ async function main() {
 
   const admin = await prisma.user.create({
     data: {
-      email: 'admin@lms.com',
+      email: 'suhanimunjal97@gmail.com',
       name: 'System Admin',
       password: hashedPassword,
       role: Role.ADMIN,
+      status: UserStatus.ACTIVE,
       organizationId: org1.id,
     },
   });
@@ -77,6 +78,7 @@ async function main() {
       name: 'John Smith',
       password: hashedPassword,
       role: Role.TEACHER,
+      status: UserStatus.ACTIVE,
       organizationId: org1.id,
     },
   });
@@ -87,6 +89,7 @@ async function main() {
       name: 'Sarah Johnson',
       password: hashedPassword,
       role: Role.TEACHER,
+      status: UserStatus.ACTIVE,
       organizationId: org2.id,
     },
   });
@@ -97,6 +100,7 @@ async function main() {
       name: 'Alice Williams',
       password: hashedPassword,
       role: Role.STUDENT,
+      status: UserStatus.PENDING_APPROVAL,
       organizationId: org1.id,
     },
   });
@@ -107,6 +111,7 @@ async function main() {
       name: 'Bob Davis',
       password: hashedPassword,
       role: Role.STUDENT,
+      status: UserStatus.PENDING_APPROVAL,
       organizationId: org1.id,
     },
   });
@@ -117,6 +122,7 @@ async function main() {
       name: 'Carol Martinez',
       password: hashedPassword,
       role: Role.STUDENT,
+      status: UserStatus.PENDING_APPROVAL,
       organizationId: org2.id,
     },
   });
@@ -423,7 +429,7 @@ async function main() {
   console.log('DATABASE SEED COMPLETED SUCCESSFULLY!');
   console.log('==================================================');
   console.log('\nUsers:');
-  console.log('  Admin:    admin@lms.com / Test@123');
+  console.log('  Admin:    suhanimunjal97@gmail.com / Test@123');
   console.log('  Teacher:  teacher@example.com / Test@123');
   console.log('  Student:  student@lms.com / Test@123');
   console.log('==================================================\n');

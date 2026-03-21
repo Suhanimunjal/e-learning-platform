@@ -88,10 +88,11 @@ async function main() {
     const hashedPassword = await bcrypt.hash('Test@123', 10);
     const admin = await prisma.user.create({
         data: {
-            email: 'admin@lms.com',
+            email: 'suhanimunjal97@gmail.com',
             name: 'System Admin',
             password: hashedPassword,
             role: client_1.Role.ADMIN,
+            status: client_1.UserStatus.ACTIVE,
             organizationId: org1.id,
         },
     });
@@ -101,6 +102,7 @@ async function main() {
             name: 'John Smith',
             password: hashedPassword,
             role: client_1.Role.TEACHER,
+            status: client_1.UserStatus.ACTIVE,
             organizationId: org1.id,
         },
     });
@@ -110,6 +112,7 @@ async function main() {
             name: 'Sarah Johnson',
             password: hashedPassword,
             role: client_1.Role.TEACHER,
+            status: client_1.UserStatus.ACTIVE,
             organizationId: org2.id,
         },
     });
@@ -119,6 +122,7 @@ async function main() {
             name: 'Alice Williams',
             password: hashedPassword,
             role: client_1.Role.STUDENT,
+            status: client_1.UserStatus.PENDING_APPROVAL,
             organizationId: org1.id,
         },
     });
@@ -128,6 +132,7 @@ async function main() {
             name: 'Bob Davis',
             password: hashedPassword,
             role: client_1.Role.STUDENT,
+            status: client_1.UserStatus.PENDING_APPROVAL,
             organizationId: org1.id,
         },
     });
@@ -137,6 +142,7 @@ async function main() {
             name: 'Carol Martinez',
             password: hashedPassword,
             role: client_1.Role.STUDENT,
+            status: client_1.UserStatus.PENDING_APPROVAL,
             organizationId: org2.id,
         },
     });
@@ -404,7 +410,7 @@ async function main() {
     console.log('DATABASE SEED COMPLETED SUCCESSFULLY!');
     console.log('==================================================');
     console.log('\nUsers:');
-    console.log('  Admin:    admin@lms.com / Test@123');
+    console.log('  Admin:    suhanimunjal97@gmail.com / Test@123');
     console.log('  Teacher:  teacher@example.com / Test@123');
     console.log('  Student:  student@lms.com / Test@123');
     console.log('==================================================\n');

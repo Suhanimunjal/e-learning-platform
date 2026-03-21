@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { apiBaseUrl } from './runtime-config';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+  baseURL: apiBaseUrl,
   withCredentials: true,
 });
 
@@ -121,6 +122,17 @@ export const analytics = {
   },
   getEngagementMetrics: async () => {
     const res = await api.get('/analytics/platform/engagement');
+    return res.data;
+  },
+};
+
+export const admin = {
+  generateAiCourse: async (data: { courseName: string; difficulty: string; moduleCount: number }) => {
+    const res = await api.post('/admin/courses/generate-ai', data);
+    return res.data;
+  },
+  getGenerationJob: async (jobId: string) => {
+    const res = await api.get(`/admin/courses/generation-jobs/${jobId}`);
     return res.data;
   },
 };

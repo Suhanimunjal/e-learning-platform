@@ -86,7 +86,6 @@ export declare class SubscriptionsController {
         planId: string;
     }): Promise<{
         user: {
-            year: string | null;
             id: string;
             name: string;
             updatedAt: Date;
@@ -97,10 +96,6 @@ export declare class SubscriptionsController {
             status: import(".prisma/client").$Enums.UserStatus;
             avatar: string | null;
             rejectionReason: string | null;
-            phone: string | null;
-            rollNo: string | null;
-            branch: string | null;
-            course: string | null;
             organizationId: string | null;
         };
         plan: {
@@ -249,7 +244,6 @@ export declare class SubscriptionsController {
     }>;
     getSubscription(subscriptionId: string): Promise<{
         user: {
-            year: string | null;
             id: string;
             name: string;
             updatedAt: Date;
@@ -260,10 +254,6 @@ export declare class SubscriptionsController {
             status: import(".prisma/client").$Enums.UserStatus;
             avatar: string | null;
             rejectionReason: string | null;
-            phone: string | null;
-            rollNo: string | null;
-            branch: string | null;
-            course: string | null;
             organizationId: string | null;
         };
         plan: {
@@ -296,7 +286,6 @@ export declare class SubscriptionsController {
     }>;
     getAllSubscriptions(req: any): Promise<({
         user: {
-            year: string | null;
             id: string;
             name: string;
             updatedAt: Date;
@@ -307,10 +296,6 @@ export declare class SubscriptionsController {
             status: import(".prisma/client").$Enums.UserStatus;
             avatar: string | null;
             rejectionReason: string | null;
-            phone: string | null;
-            rollNo: string | null;
-            branch: string | null;
-            course: string | null;
             organizationId: string | null;
         };
         plan: {

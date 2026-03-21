@@ -12,12 +12,12 @@ export declare class AnalyticsController {
         totalTimeSpent: any;
         recentEvents: {
             id: string;
-            createdAt: Date;
-            courseId: string | null;
-            type: string;
-            moduleId: string | null;
             userId: string;
+            courseId: string | null;
+            moduleId: string | null;
+            type: string;
             metadata: import("@prisma/client/runtime/client").JsonValue;
+            createdAt: Date;
         }[];
     }>;
     getCourseAnalytics(courseId: string, req: any): Promise<{
@@ -56,6 +56,17 @@ export declare class AnalyticsController {
         completedEnrollments: number;
         completionRate: number;
         totalRevenue: number;
+        enrollmentTrend: {
+            month: string;
+            enrollments: number;
+        }[];
+        revenueTrend: {
+            month: string;
+            revenue: number;
+        }[];
+        userGrowthRate: number;
+        revenueGrowthRate: number;
+        enrollmentGrowthRate: number;
         topCourses: {
             courseId: string;
             title: string;

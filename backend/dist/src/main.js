@@ -39,15 +39,22 @@ const express = __importStar(require("express"));
 const path_1 = require("path");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    const frontendOriginsRaw = process.env.FRONTEND_ORIGINS;
+    if (!frontendOriginsRaw) {
+        throw new Error('FRONTEND_ORIGINS is required. No fallback origin is allowed.');
+    }
+    const allowedOrigins = frontendOriginsRaw
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean);
+    if (allowedOrigins.length === 0) {
+        throw new Error('FRONTEND_ORIGINS must contain at least one valid origin.');
+    }
     app.enableCors({
-        origin: [
-            'http://localhost:3000',
-            'http://127.0.0.1:3000',
-            'http://localhost:3001',
-        ],
+        origin: allowedOrigins,
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     });
     app.use('/uploads', express.static((0, path_1.join)(process.cwd(), 'uploads')));
     app.setGlobalPrefix('api');

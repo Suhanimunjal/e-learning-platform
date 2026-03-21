@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, Loader2, Shield } from 'lucide-react';
+import { apiBaseUrl } from '@/lib/runtime-config';
 
 interface UserData {
   id: string;
@@ -35,7 +36,7 @@ export default function AdminUsersPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3001/api/auth/users', {
+      const res = await fetch(`${apiBaseUrl}/auth/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -52,7 +53,7 @@ export default function AdminUsersPage() {
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:3001/api/auth/users/${userId}/role`, {
+      await fetch(`${apiBaseUrl}/auth/users/${userId}/role`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

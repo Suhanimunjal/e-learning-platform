@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Loader2, GraduationCap } from 'lucide-react';
+import { Loader2, GraduationCap, Eye, EyeOff } from 'lucide-react';
+import { apiBaseUrl } from '@/lib/runtime-config';
 
 export default function StudentLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,7 +34,7 @@ export default function StudentLoginPage() {
 
     try {
       if (!requiresOtp) {
-        const res = await fetch('http://localhost:3001/api/auth/login', {
+        const res = await fetch(`${apiBaseUrl}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
@@ -54,7 +56,7 @@ export default function StudentLoginPage() {
           router.push('/dashboard');
         }
       } else {
-        const res = await fetch('http://localhost:3001/api/auth/verify-otp', {
+        const res = await fetch(`${apiBaseUrl}/auth/verify-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, otp }),
@@ -88,7 +90,7 @@ export default function StudentLoginPage() {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:3001/api/auth/resend-otp', {
+      const res = await fetch(`${apiBaseUrl}/auth/resend-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -167,16 +169,26 @@ export default function StudentLoginPage() {
                   <label htmlFor="password" className="block text-sm font-medium text-gray-900">
                     Password
                   </label>
-                  <input
-                    id="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 placeholder:text-gray-400"
-                    placeholder="••••••••"
-                    style={{ color: '#171717' }}
-                  />
+                  <div className="relative mt-1">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-10 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 placeholder:text-gray-400"
+                      placeholder="••••••••"
+                      style={{ color: '#171717' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
               </>
             ) : (

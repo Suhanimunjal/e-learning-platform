@@ -11,7 +11,6 @@ export declare class SubscriptionsService {
         razorpaySubscriptionId?: string;
     }): Promise<{
         user: {
-            year: string | null;
             id: string;
             name: string;
             updatedAt: Date;
@@ -22,10 +21,6 @@ export declare class SubscriptionsService {
             status: import(".prisma/client").$Enums.UserStatus;
             avatar: string | null;
             rejectionReason: string | null;
-            phone: string | null;
-            rollNo: string | null;
-            branch: string | null;
-            course: string | null;
             organizationId: string | null;
         };
         plan: {
@@ -58,7 +53,6 @@ export declare class SubscriptionsService {
     }>;
     getSubscriptionById(subscriptionId: string): Promise<{
         user: {
-            year: string | null;
             id: string;
             name: string;
             updatedAt: Date;
@@ -69,10 +63,6 @@ export declare class SubscriptionsService {
             status: import(".prisma/client").$Enums.UserStatus;
             avatar: string | null;
             rejectionReason: string | null;
-            phone: string | null;
-            rollNo: string | null;
-            branch: string | null;
-            course: string | null;
             organizationId: string | null;
         };
         plan: {
@@ -237,7 +227,6 @@ export declare class SubscriptionsService {
         planId?: string;
     }): Promise<({
         user: {
-            year: string | null;
             id: string;
             name: string;
             updatedAt: Date;
@@ -248,10 +237,6 @@ export declare class SubscriptionsService {
             status: import(".prisma/client").$Enums.UserStatus;
             avatar: string | null;
             rejectionReason: string | null;
-            phone: string | null;
-            rollNo: string | null;
-            branch: string | null;
-            course: string | null;
             organizationId: string | null;
         };
         plan: {

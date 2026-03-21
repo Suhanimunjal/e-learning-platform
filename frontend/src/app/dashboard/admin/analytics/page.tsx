@@ -4,10 +4,9 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatCard from '@/components/ui/StatCard';
 import Badge from '@/components/ui/Badge';
+import { apiBaseUrl } from '@/lib/runtime-config';
 import { BarChart3, TrendingUp, Users, DollarSign, Loader2 } from 'lucide-react';
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   AreaChart,
@@ -19,8 +18,30 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
+interface TrendPoint {
+  month: string;
+  enrollments?: number;
+  revenue?: number;
+}
+
+interface PlatformAnalyticsData {
+  totalUsers: number;
+  totalRevenue: number;
+  totalCourses: number;
+  userGrowthRate?: number;
+  revenueGrowthRate?: number;
+  enrollmentGrowthRate?: number;
+  enrollmentTrend?: TrendPoint[];
+  revenueTrend?: TrendPoint[];
+  topCourses?: Array<{
+    courseId: string;
+    title: string;
+    enrollmentCount: number;
+  }>;
+}
+
 export default function AdminAnalyticsPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<PlatformAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,7 +52,7 @@ export default function AdminAnalyticsPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3001/api/analytics/platform', {
+      const res = await fetch(`${apiBaseUrl}/analytics/platform`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -56,23 +77,8 @@ export default function AdminAnalyticsPage() {
     );
   }
 
-  const enrollmentTrend = [
-    { month: 'Jan', enrollments: 120 },
-    { month: 'Feb', enrollments: 150 },
-    { month: 'Mar', enrollments: 180 },
-    { month: 'Apr', enrollments: 220 },
-    { month: 'May', enrollments: 280 },
-    { month: 'Jun', enrollments: 320 },
-  ];
-
-  const revenueData = [
-    { month: 'Jan', revenue: 45000 },
-    { month: 'Feb', revenue: 52000 },
-    { month: 'Mar', revenue: 48000 },
-    { month: 'Apr', revenue: 61000 },
-    { month: 'May', revenue: 55000 },
-    { month: 'Jun', revenue: 72000 },
-  ];
+  const enrollmentTrend = data?.enrollmentTrend || [];
+  const revenueData = data?.revenueTrend || [];
 
   return (
     <DashboardLayout>
@@ -88,14 +94,22 @@ export default function AdminAnalyticsPage() {
             value={data?.totalUsers || 0}
             icon={Users}
             color="indigo"
-            trend={{ value: 12, isPositive: true }}
+            trend={
+              typeof data?.userGrowthRate === 'number'
+                ? { value: Math.abs(data.userGrowthRate), isPositive: data.userGrowthRate >= 0 }
+                : undefined
+            }
           />
           <StatCard
             title="Total Revenue"
             value={`₹${((data?.totalRevenue) || 0).toLocaleString()}`}
             icon={DollarSign}
             color="green"
-            trend={{ value: 8, isPositive: true }}
+            trend={
+              typeof data?.revenueGrowthRate === 'number'
+                ? { value: Math.abs(data.revenueGrowthRate), isPositive: data.revenueGrowthRate >= 0 }
+                : undefined
+            }
           />
           <StatCard
             title="Active Courses"
@@ -104,11 +118,15 @@ export default function AdminAnalyticsPage() {
             color="purple"
           />
           <StatCard
-            title="Growth Rate"
-            value="24%"
+            title="Enrollment Growth"
+            value={`${data?.enrollmentGrowthRate ?? 0}%`}
             icon={TrendingUp}
             color="blue"
-            trend={{ value: 5, isPositive: true }}
+            trend={
+              typeof data?.enrollmentGrowthRate === 'number'
+                ? { value: Math.abs(data.enrollmentGrowthRate), isPositive: data.enrollmentGrowthRate >= 0 }
+                : undefined
+            }
           />
         </div>
 

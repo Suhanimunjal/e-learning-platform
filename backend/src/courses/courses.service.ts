@@ -3,10 +3,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { User, Role } from '@prisma/client';
+import { ActivityLogService } from '../common/services/activity-log.service';
 
 @Injectable()
 export class CoursesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private activityLogService: ActivityLogService,
+  ) {}
 
   async create(createCourseDto: CreateCourseDto, user: User) {
     const data: any = {
@@ -18,9 +22,20 @@ export class CoursesService {
       data.organizationId = user.organizationId;
     }
 
-    return this.prisma.course.create({
+    const course = await this.prisma.course.create({
       data,
     });
+
+    await this.activityLogService.log({
+      action: 'COURSE_CREATED',
+      entityType: 'COURSE',
+      entityId: course.id,
+      userId: user.id,
+      targetUserId: user.id,
+      metadata: { title: course.title },
+    });
+
+    return course;
   }
 
   async findAll(user: User) {
@@ -110,6 +125,15 @@ export class CoursesService {
 
     // For preview mode (logged in but not enrolled)
     if (user && !isEnrolled && !isInstructor && !isAdmin && user.role === Role.STUDENT) {
+      await this.activityLogService.log({
+        action: 'COURSE_ACCESSED',
+        entityType: 'COURSE',
+        entityId: course.id,
+        userId: user.id,
+        targetUserId: course.instructorId,
+        metadata: { title: course.title, previewOnly: true },
+      });
+
       // Return course with preview info
       return {
         ...course,
@@ -117,6 +141,17 @@ export class CoursesService {
         previewOnly: true,
         message: 'Please enroll to access full course content',
       };
+    }
+
+    if (user) {
+      await this.activityLogService.log({
+        action: 'COURSE_ACCESSED',
+        entityType: 'COURSE',
+        entityId: course.id,
+        userId: user.id,
+        targetUserId: course.instructorId,
+        metadata: { title: course.title, previewOnly: false },
+      });
     }
 
     return {

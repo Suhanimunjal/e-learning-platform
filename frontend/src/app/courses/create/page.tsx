@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Button from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
 import { usePlugins } from '@/contexts/PluginContext';
+import { backendOrigin } from '@/lib/runtime-config';
 import { courses, sections as sectionsApi, modules as modulesApi, quizzes as quizzesApi, grading } from '@/lib/api';
 import {
   ArrowLeft,
@@ -635,7 +636,7 @@ export default function CreateCoursePage() {
                                          <div className="bg-purple-50 border border-purple-200 rounded p-3">
                                            <p className="text-sm font-medium text-purple-900 mb-2">🎬 Video:</p>
                                            <video controls className="w-full max-w-md">
-                                             <source src={`http://localhost:3001${module.videoUrl}`} />
+                                             <source src={`${backendOrigin}${module.videoUrl}`} />
                                            </video>
                                          </div>
                                        )}
@@ -645,7 +646,7 @@ export default function CreateCoursePage() {
                                          <div className="bg-orange-50 border border-orange-200 rounded p-3">
                                            <p className="text-sm font-medium text-orange-900 mb-2">🔊 Audio:</p>
                                            <AudioPlayer
-                                             audioUrl={`http://localhost:3001${module.audioUrl}`}
+                                             audioUrl={`${backendOrigin}${module.audioUrl}`}
                                            />
                                          </div>
                                        )}

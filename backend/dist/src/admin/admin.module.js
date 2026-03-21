@@ -9,12 +9,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminModule = void 0;
 const common_1 = require("@nestjs/common");
 const admin_controller_1 = require("./admin.controller");
+const ai_module_1 = require("../ai/ai.module");
+const admin_course_generation_service_1 = require("./services/admin-course-generation.service");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
+        imports: [ai_module_1.AiModule],
         controllers: [admin_controller_1.AdminController],
+        providers: [admin_course_generation_service_1.AdminCourseGenerationService],
     })
 ], AdminModule);
 //# sourceMappingURL=admin.module.js.map
