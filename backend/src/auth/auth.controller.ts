@@ -26,6 +26,11 @@ export class AuthController {
     return this.authService.verifyLoginOTP(body.email, body.otp);
   }
 
+  @Post('resend-otp')
+  async resendOTP(@Body() body: { email: string }) {
+    return this.authService.resendLoginOTP(body.email);
+  }
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getProfile(@Request() req) {

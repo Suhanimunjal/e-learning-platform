@@ -12,6 +12,7 @@ export declare class AuthService {
     private otpService;
     private emailService;
     private activityLogService;
+    private readonly logger;
     private pendingLogins;
     private loginAttempts;
     constructor(prisma: PrismaService, jwtService: JwtService, otpService: OtpService, emailService: EmailService, activityLogService: ActivityLogService);
@@ -25,14 +26,18 @@ export declare class AuthService {
         message?: string;
     }>;
     verifyLoginOTP(email: string, otp: string): Promise<AuthResponseDto>;
+    resendLoginOTP(email: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
     login(loginDto: LoginDto): Promise<AuthResponseDto | {
         requiresOtp: boolean;
         message: string;
     }>;
     validateUser(userId: string): Promise<{
         id: string;
-        email: string;
         name: string;
+        email: string;
         role: import(".prisma/client").$Enums.Role;
         status: import(".prisma/client").$Enums.UserStatus;
         organizationId: string;

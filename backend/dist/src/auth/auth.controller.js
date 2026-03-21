@@ -34,6 +34,9 @@ let AuthController = class AuthController {
     async verifyOTP(body) {
         return this.authService.verifyLoginOTP(body.email, body.otp);
     }
+    async resendOTP(body) {
+        return this.authService.resendLoginOTP(body.email);
+    }
     async getProfile(req) {
         return req.user;
     }
@@ -63,6 +66,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyOTP", null);
+__decorate([
+    (0, common_1.Post)('resend-otp'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resendOTP", null);
 __decorate([
     (0, common_1.Get)('me'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

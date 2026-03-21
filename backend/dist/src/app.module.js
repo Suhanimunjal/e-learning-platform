@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const prisma_module_1 = require("./prisma/prisma.module");
 const health_controller_1 = require("./common/health.controller");
+const common_module_1 = require("./common/common.module");
 const auth_module_1 = require("./auth/auth.module");
 const courses_module_1 = require("./courses/courses.module");
 const sections_module_1 = require("./sections/sections.module");
@@ -36,6 +37,7 @@ exports.AppModule = AppModule = __decorate([
                 isGlobal: true,
             }),
             prisma_module_1.PrismaModule,
+            common_module_1.CommonModule,
             auth_module_1.AuthModule,
             courses_module_1.CoursesModule,
             sections_module_1.SectionsModule,

@@ -5,17 +5,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var OtpService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OtpService = void 0;
 const common_1 = require("@nestjs/common");
-let OtpService = class OtpService {
+let OtpService = OtpService_1 = class OtpService {
     constructor() {
+        this.logger = new common_1.Logger(OtpService_1.name);
         this.otps = new Map();
     }
     generateOTP(email, userId) {
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
         this.otps.set(email, { code, expiresAt, userId, email, verified: false });
+        this.logger.log(`OTP generated for ${email}: ${code} (expires in 10 minutes)`);
         return code;
     }
     verifyOTP(email, code) {
@@ -53,7 +56,7 @@ let OtpService = class OtpService {
     }
 };
 exports.OtpService = OtpService;
-exports.OtpService = OtpService = __decorate([
+exports.OtpService = OtpService = OtpService_1 = __decorate([
     (0, common_1.Injectable)()
 ], OtpService);
 //# sourceMappingURL=otp.service.js.map

@@ -1,11 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
+  private readonly logger = new Logger(EmailService.name);
   private transporter: nodemailer.Transporter;
 
   constructor() {
+    this.logger.log('EmailService initializing...');
+    this.logger.log(`SMTP Host: ${process.env.SMTP_HOST || 'smtp.gmail.com'}`);
+    this.logger.log(`SMTP Port: ${process.env.SMTP_PORT || '587'}`);
+    this.logger.log(`SMTP User: ${process.env.SMTP_USER}`);
+    this.logger.log(`SMTP Secure: ${process.env.SMTP_SECURE || 'false'}`);
+    
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
@@ -15,11 +22,13 @@ export class EmailService {
         pass: process.env.SMTP_PASS,
       },
     });
+    this.logger.log('EmailService initialized successfully');
   }
 
   async sendOTP(email: string, otp: string): Promise<boolean> {
+    this.logger.log(`Sending OTP email to ${email}`);
     try {
-      await this.transporter.sendMail({
+      const info = await this.transporter.sendMail({
         from: process.env.SMTP_FROM || 'E-Learning Platform <noreply@elearning.com>',
         to: email,
         subject: 'Your Teacher Account OTP - E-Learning Platform',
@@ -46,16 +55,18 @@ export class EmailService {
           </div>
         `,
       });
+      this.logger.log(`OTP email sent successfully to ${email}, Message ID: ${info.messageId}`);
       return true;
     } catch (error) {
-      console.error('Failed to send OTP email:', error);
+      this.logger.error(`Failed to send OTP email to ${email}:`, error);
       return false;
     }
   }
 
   async sendLoginOTP(email: string, name: string, otp: string): Promise<boolean> {
+    this.logger.log(`Sending login OTP to ${email} for user ${name}`);
     try {
-      await this.transporter.sendMail({
+      const info = await this.transporter.sendMail({
         from: process.env.SMTP_FROM || 'E-Learning Platform <noreply@elearning.com>',
         to: email,
         subject: 'Login OTP - E-Learning Platform',
@@ -85,16 +96,18 @@ export class EmailService {
           </div>
         `,
       });
+      this.logger.log(`Login OTP sent successfully to ${email}, Message ID: ${info.messageId}`);
       return true;
     } catch (error) {
-      console.error('Failed to send login OTP email:', error);
+      this.logger.error(`Failed to send login OTP to ${email}:`, error);
       return false;
     }
   }
 
   async sendTeacherApproved(email: string, name: string): Promise<boolean> {
+    this.logger.log(`Sending teacher approved email to ${email}`);
     try {
-      await this.transporter.sendMail({
+      const info = await this.transporter.sendMail({
         from: process.env.SMTP_FROM || 'E-Learning Platform <noreply@elearning.com>',
         to: email,
         subject: 'Teacher Account Approved - E-Learning Platform',
@@ -114,16 +127,18 @@ export class EmailService {
           </div>
         `,
       });
+      this.logger.log(`Teacher approved email sent to ${email}`);
       return true;
     } catch (error) {
-      console.error('Failed to send approval email:', error);
+      this.logger.error(`Failed to send teacher approved email to ${email}:`, error);
       return false;
     }
   }
 
   async sendTeacherRejected(email: string, name: string, reason?: string): Promise<boolean> {
+    this.logger.log(`Sending teacher rejected email to ${email}`);
     try {
-      await this.transporter.sendMail({
+      const info = await this.transporter.sendMail({
         from: process.env.SMTP_FROM || 'E-Learning Platform <noreply@elearning.com>',
         to: email,
         subject: 'Teacher Account Rejected - E-Learning Platform',
@@ -146,16 +161,18 @@ export class EmailService {
           </div>
         `,
       });
+      this.logger.log(`Teacher rejected email sent to ${email}`);
       return true;
     } catch (error) {
-      console.error('Failed to send rejection email:', error);
+      this.logger.error(`Failed to send teacher rejected email to ${email}:`, error);
       return false;
     }
   }
 
   async sendEnrollmentApproved(studentEmail: string, studentName: string, courseTitle: string): Promise<boolean> {
+    this.logger.log(`Sending enrollment approved email to ${studentEmail}`);
     try {
-      await this.transporter.sendMail({
+      const info = await this.transporter.sendMail({
         from: process.env.SMTP_FROM || 'E-Learning Platform <noreply@elearning.com>',
         to: studentEmail,
         subject: `Enrollment Approved - ${courseTitle}`,
@@ -175,9 +192,10 @@ export class EmailService {
           </div>
         `,
       });
+      this.logger.log(`Enrollment approved email sent to ${studentEmail}`);
       return true;
     } catch (error) {
-      console.error('Failed to send enrollment approved email:', error);
+      this.logger.error(`Failed to send enrollment approved email to ${studentEmail}:`, error);
       return false;
     }
   }

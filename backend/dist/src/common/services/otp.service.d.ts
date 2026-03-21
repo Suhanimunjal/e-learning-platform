@@ -6,6 +6,7 @@ interface OTP {
     verified: boolean;
 }
 export declare class OtpService {
+    private readonly logger;
     private otps;
     generateOTP(email: string, userId?: string): string;
     verifyOTP(email: string, code: string): boolean;

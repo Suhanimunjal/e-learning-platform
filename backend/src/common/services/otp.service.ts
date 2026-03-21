@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 interface OTP {
   code: string;
@@ -10,6 +10,7 @@ interface OTP {
 
 @Injectable()
 export class OtpService {
+  private readonly logger = new Logger(OtpService.name);
   private otps: Map<string, OTP> = new Map();
 
   generateOTP(email: string, userId?: string): string {
@@ -18,6 +19,7 @@ export class OtpService {
 
     this.otps.set(email, { code, expiresAt, userId, email, verified: false });
     
+    this.logger.log(`OTP generated for ${email}: ${code} (expires in 10 minutes)`);
     return code;
   }
 

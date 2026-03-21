@@ -6,15 +6,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminModule = void 0;
+exports.CommonModule = void 0;
 const common_1 = require("@nestjs/common");
-const admin_controller_1 = require("./admin.controller");
-let AdminModule = class AdminModule {
+const otp_service_1 = require("./services/otp.service");
+const email_service_1 = require("./services/email.service");
+const activity_log_service_1 = require("./services/activity-log.service");
+let CommonModule = class CommonModule {
 };
-exports.AdminModule = AdminModule;
-exports.AdminModule = AdminModule = __decorate([
+exports.CommonModule = CommonModule;
+exports.CommonModule = CommonModule = __decorate([
+    (0, common_1.Global)(),
     (0, common_1.Module)({
-        controllers: [admin_controller_1.AdminController],
+        providers: [otp_service_1.OtpService, email_service_1.EmailService, activity_log_service_1.ActivityLogService],
+        exports: [otp_service_1.OtpService, email_service_1.EmailService, activity_log_service_1.ActivityLogService],
     })
-], AdminModule);
-//# sourceMappingURL=admin.module.js.map
+], CommonModule);
+//# sourceMappingURL=common.module.js.map

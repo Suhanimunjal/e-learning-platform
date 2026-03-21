@@ -41,6 +41,7 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var AuthService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
@@ -53,13 +54,14 @@ const email_service_1 = require("../common/services/email.service");
 const activity_log_service_1 = require("../common/services/activity-log.service");
 const MAX_LOGIN_ATTEMPTS = 3;
 const LOCKOUT_DURATION = 15 * 60 * 1000;
-let AuthService = class AuthService {
+let AuthService = AuthService_1 = class AuthService {
     constructor(prisma, jwtService, otpService, emailService, activityLogService) {
         this.prisma = prisma;
         this.jwtService = jwtService;
         this.otpService = otpService;
         this.emailService = emailService;
         this.activityLogService = activityLogService;
+        this.logger = new common_1.Logger(AuthService_1.name);
         this.pendingLogins = new Map();
         this.loginAttempts = new Map();
     }
@@ -143,7 +145,7 @@ let AuthService = class AuthService {
         if (!user) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
-        if (user.status !== 'ACTIVE') {
+        if (user.role === client_1.Role.STUDENT && user.status !== 'ACTIVE') {
             throw new common_1.ForbiddenException(`Your account is ${user.status.toLowerCase().replace('_', ' ')}. Please contact administrator for approval.`);
         }
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -160,7 +162,9 @@ let AuthService = class AuthService {
         if (user.role === client_1.Role.STUDENT && this.requiresOtpDueToFailedAttempts(email)) {
             this.resetLoginAttempts(email);
             const otp = this.otpService.generateOTP(email);
-            await this.emailService.sendLoginOTP(email, user.name, otp);
+            this.logger.log(`Student ${email} requires OTP due to failed attempts. Sending OTP: ${otp}`);
+            const emailSent = await this.emailService.sendLoginOTP(email, user.name, otp);
+            this.logger.log(`Email send result for ${email}: ${emailSent}`);
             this.pendingLogins.set(email, {
                 userId: user.id,
                 email: user.email,
@@ -182,7 +186,9 @@ let AuthService = class AuthService {
             };
         }
         const otp = this.otpService.generateOTP(email);
-        await this.emailService.sendLoginOTP(email, user.name, otp);
+        this.logger.log(`Teacher/Admin ${email} requires OTP. Sending OTP: ${otp}`);
+        const emailSent = await this.emailService.sendLoginOTP(email, user.name, otp);
+        this.logger.log(`Email send result for ${email}: ${emailSent}`);
         this.pendingLogins.set(email, {
             userId: user.id,
             email: user.email,
@@ -223,6 +229,32 @@ let AuthService = class AuthService {
             user: this.excludePassword(user),
         };
     }
+    async resendLoginOTP(email) {
+        const pendingLogin = this.pendingLogins.get(email);
+        if (!pendingLogin) {
+            throw new common_1.UnauthorizedException('No pending login found. Please login first.');
+        }
+        if (new Date() > pendingLogin.expiresAt) {
+            this.pendingLogins.delete(email);
+            throw new common_1.UnauthorizedException('Login session expired. Please login again.');
+        }
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+        });
+        if (!user) {
+            throw new common_1.UnauthorizedException('User not found');
+        }
+        const otp = this.otpService.generateOTP(email);
+        await this.emailService.sendLoginOTP(email, user.name, otp);
+        this.pendingLogins.set(email, {
+            ...pendingLogin,
+            expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        });
+        return {
+            success: true,
+            message: 'OTP resent to your email',
+        };
+    }
     async login(loginDto) {
         const result = await this.initiateLogin(loginDto);
         if (!result.requiresOtp) {
@@ -256,7 +288,7 @@ let AuthService = class AuthService {
     }
 };
 exports.AuthService = AuthService;
-exports.AuthService = AuthService = __decorate([
+exports.AuthService = AuthService = AuthService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService,

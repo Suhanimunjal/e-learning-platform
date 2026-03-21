@@ -13,6 +13,12 @@ export declare class AuthController {
         email: string;
         otp: string;
     }): Promise<import("./dto/auth-response.dto").AuthResponseDto>;
+    resendOTP(body: {
+        email: string;
+    }): Promise<{
+        success: boolean;
+        message: string;
+    }>;
     getProfile(req: any): Promise<any>;
     adminOnly(): Promise<{
         message: string;

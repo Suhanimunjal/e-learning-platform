@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
@@ -28,6 +28,7 @@ const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private pendingLogins: Map<string, PendingLogin> = new Map();
   private loginAttempts: Map<string, LoginAttempt> = new Map();
 
@@ -149,8 +150,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Check if user is approved
-    if (user.status !== 'ACTIVE') {
+    // Check if user is approved (only students require approval)
+    if (user.role === Role.STUDENT && user.status !== 'ACTIVE') {
       throw new ForbiddenException(`Your account is ${user.status.toLowerCase().replace('_', ' ')}. Please contact administrator for approval.`);
     }
 
@@ -174,7 +175,9 @@ export class AuthService {
       
       // Send OTP
       const otp = this.otpService.generateOTP(email);
-      await this.emailService.sendLoginOTP(email, user.name, otp);
+      this.logger.log(`Student ${email} requires OTP due to failed attempts. Sending OTP: ${otp}`);
+      const emailSent = await this.emailService.sendLoginOTP(email, user.name, otp);
+      this.logger.log(`Email send result for ${email}: ${emailSent}`);
 
       // Store pending login
       this.pendingLogins.set(email, {
@@ -206,7 +209,9 @@ export class AuthService {
 
     // For TEACHERs and ADMINs - require OTP verification
     const otp = this.otpService.generateOTP(email);
-    await this.emailService.sendLoginOTP(email, user.name, otp);
+    this.logger.log(`Teacher/Admin ${email} requires OTP. Sending OTP: ${otp}`);
+    const emailSent = await this.emailService.sendLoginOTP(email, user.name, otp);
+    this.logger.log(`Email send result for ${email}: ${emailSent}`);
 
     // Store pending login
     this.pendingLogins.set(email, {
@@ -261,6 +266,42 @@ export class AuthService {
     return {
       accessToken,
       user: this.excludePassword(user),
+    };
+  }
+
+  async resendLoginOTP(email: string): Promise<{ success: boolean; message: string }> {
+    const pendingLogin = this.pendingLogins.get(email);
+
+    if (!pendingLogin) {
+      throw new UnauthorizedException('No pending login found. Please login first.');
+    }
+
+    if (new Date() > pendingLogin.expiresAt) {
+      this.pendingLogins.delete(email);
+      throw new UnauthorizedException('Login session expired. Please login again.');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Generate new OTP
+    const otp = this.otpService.generateOTP(email);
+    await this.emailService.sendLoginOTP(email, user.name, otp);
+
+    // Update pending login expiry
+    this.pendingLogins.set(email, {
+      ...pendingLogin,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    });
+
+    return {
+      success: true,
+      message: 'OTP resent to your email',
     };
   }
 

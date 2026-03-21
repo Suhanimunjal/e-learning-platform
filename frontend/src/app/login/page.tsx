@@ -1,227 +1,82 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { useState } from 'react';
+import Link from 'next/link';
+import { GraduationCap, Users, Shield, ChevronRight } from 'lucide-react';
 
-function LoginContent() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [requiresOtp, setRequiresOtp] = useState(false);
-  const { login } = useAuth();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    if (searchParams.get('registered') === 'true') {
-      setSuccess('Account created successfully! Please sign in.');
-    }
-  }, [searchParams]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
-
-    try {
-      if (!requiresOtp) {
-        // First step: login with email/password
-        const res = await fetch('http://localhost:3001/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.message || 'Login failed. Please try again.');
-        }
-
-        if (data.requiresOtp) {
-          // Teacher/Admin login - needs OTP
-          setRequiresOtp(true);
-          setSuccess('OTP sent to your email. Please enter it below.');
-        } else {
-          // Student login - successful
-          await login(email, password);
-          router.push('/dashboard');
-        }
-      } else {
-        // Second step: verify OTP
-        const res = await fetch('http://localhost:3001/api/auth/verify-otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, otp }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.message || 'OTP verification failed.');
-        }
-
-        // Store token and login
-        localStorage.setItem('token', data.accessToken);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        router.push('/dashboard');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Login failed. Please try again.');
-      if (err.message?.includes('OTP') || err.message?.includes('Invalid')) {
-        setRequiresOtp(false);
-        setOtp('');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBack = () => {
-    setRequiresOtp(false);
-    setOtp('');
-    setError('');
-  };
-
+export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="rounded-lg bg-white p-8 shadow-lg">
-          <h2 className="mb-6 text-center text-3xl font-bold text-gray-900">
-            {requiresOtp ? 'Enter OTP' : 'Sign in to your account'}
-          </h2>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4 py-12">
+      <div className="w-full max-w-4xl">
+        <div className="text-center mb-12">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600">
+            <GraduationCap className="h-10 w-10 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">Welcome to E-Learning Platform</h1>
+          <p className="mt-2 text-gray-600">Select your role to continue</p>
+        </div>
 
-          {success && (
-            <div className="mb-4 rounded-md bg-green-50 p-3 text-sm text-green-600">
-              {success}
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* Student Login */}
+          <div className="rounded-xl bg-white p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow flex flex-col">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+              <Users className="h-7 w-7 text-green-600" />
             </div>
-          )}
-
-          {error && (
-            <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600">
-              {error}
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Student</h2>
+            <p className="text-sm text-gray-500 mb-6 flex-grow">
+              New students can register. Existing students login with email and password.
+            </p>
+            <div className="space-y-2">
+              <Link 
+                href="/student-login"
+                className="flex items-center justify-center gap-2 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
+              >
+                Student Login <ChevronRight className="h-4 w-4" />
+              </Link>
+              <Link 
+                href="/student-register"
+                className="flex items-center justify-center gap-2 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Register as Student
+              </Link>
             </div>
-          )}
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!requiresOtp ? (
-              <>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                    Email address
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    placeholder="you@example.com"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    placeholder="••••••••"
-                  />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="rounded-lg bg-blue-50 p-4 mb-4">
-                  <p className="text-sm text-blue-800">
-                    An OTP has been sent to <strong>{email}</strong>
-                  </p>
-                </div>
-
-                <div>
-                  <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
-                    Enter OTP
-                  </label>
-                  <input
-                    id="otp"
-                    type="text"
-                    required
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center text-2xl tracking-widest"
-                    placeholder="------"
-                    maxLength={6}
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="text-sm text-indigo-600 hover:text-indigo-800"
-                >
-                  ← Back to login
-                </button>
-              </>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+          {/* Teacher Login */}
+          <div className="rounded-xl bg-white p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow flex flex-col">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-100">
+              <GraduationCap className="h-7 w-7 text-purple-600" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Teacher</h2>
+            <p className="text-sm text-gray-500 mb-6 flex-grow">
+              Login with your credentials. Teachers are added by the administrator.
+            </p>
+            <Link 
+              href="/teacher-login"
+              className="flex items-center justify-center gap-2 w-full rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-purple-700"
             >
-              {loading ? 'Please wait...' : requiresOtp ? 'Verify OTP' : 'Sign in'}
-            </button>
-          </form>
+              Teacher Login <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
 
-          <p className="mt-4 text-center text-sm text-gray-600">
-            Contact administrator for access
-          </p>
-
-          <div className="mt-6 rounded-md bg-gray-50 p-4">
-            <p className="text-xs font-medium text-gray-700 mb-2">Demo Credentials (password: Test@123):</p>
-            <div className="space-y-1">
-              <button 
-                onClick={() => { setEmail('admin@lms.com'); setPassword('Test@123'); }}
-                className="block w-full text-left text-xs text-indigo-600 hover:text-indigo-800"
-              >
-                Admin: admin@lms.com (requires OTP)
-              </button>
-              <button 
-                onClick={() => { setEmail('teacher@example.com'); setPassword('Test@123'); }}
-                className="block w-full text-left text-xs text-indigo-600 hover:text-indigo-800"
-              >
-                Teacher: teacher@example.com (requires OTP)
-              </button>
-              <button 
-                onClick={() => { setEmail('student@lms.com'); setPassword('Test@123'); }}
-                className="block w-full text-left text-xs text-indigo-600 hover:text-indigo-800"
-              >
-                Student: student@lms.com (no OTP)
-              </button>
+          {/* Admin Login */}
+          <div className="rounded-xl bg-white p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow flex flex-col">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100">
+              <Shield className="h-7 w-7 text-indigo-600" />
             </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Administrator</h2>
+            <p className="text-sm text-gray-500 mb-6 flex-grow">
+              Login to manage users, courses, and platform settings.
+            </p>
+            <Link 
+              href="/admin-login"
+              className="flex items-center justify-center gap-2 w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              Admin Login <ChevronRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <LoginContent />
-    </Suspense>
   );
 }
