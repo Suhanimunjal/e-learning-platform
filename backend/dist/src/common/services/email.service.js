@@ -1,0 +1,249 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var EmailService_1;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EmailService = void 0;
+const common_1 = require("@nestjs/common");
+const nodemailer = __importStar(require("nodemailer"));
+let EmailService = EmailService_1 = class EmailService {
+    constructor() {
+        this.logger = new common_1.Logger(EmailService_1.name);
+        this.logger.log('EmailService initializing...');
+        this.logger.log(`SMTP Host: ${process.env.SMTP_HOST || 'smtp.gmail.com'}`);
+        this.logger.log(`SMTP Port: ${process.env.SMTP_PORT || '587'}`);
+        this.logger.log(`SMTP User: ${process.env.SMTP_USER}`);
+        this.logger.log(`SMTP Secure: ${process.env.SMTP_SECURE || 'false'}`);
+        this.transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: parseInt(process.env.SMTP_PORT || '587'),
+            secure: process.env.SMTP_SECURE === 'true',
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS,
+            },
+        });
+        this.logger.log('EmailService initialized successfully');
+    }
+    async sendOTP(email, otp) {
+        this.logger.log(`Sending OTP email to ${email}`);
+        try {
+            const info = await this.transporter.sendMail({
+                from: process.env.SMTP_FROM || 'E-Learning Platform <noreply@elearning.com>',
+                to: email,
+                subject: 'Your Teacher Account OTP - E-Learning Platform',
+                html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #4F46E5, #7C3AED); padding: 20px; text-align: center;">
+              <h1 style="color: white; margin: 0;">E-Learning Platform</h1>
+            </div>
+            <div style="padding: 30px; background: #f9fafb;">
+              <h2 style="color: #1f2937; margin-top: 0;">Verify Your Teacher Account</h2>
+              <p style="color: #6b7280; font-size: 16px;">
+                Your One-Time Password (OTP) is:
+              </p>
+              <div style="background: #e5e7eb; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #4F46E5;">${otp}</span>
+              </div>
+              <p style="color: #6b7280; font-size: 14px;">
+                This OTP will expire in 10 minutes.
+              </p>
+              <p style="color: #dc2626; font-size: 12px; margin-top: 20px;">
+                If you didn't request this OTP, please ignore this email.
+              </p>
+            </div>
+          </div>
+        `,
+            });
+            this.logger.log(`OTP email sent successfully to ${email}, Message ID: ${info.messageId}`);
+            return true;
+        }
+        catch (error) {
+            this.logger.error(`Failed to send OTP email to ${email}:`, error);
+            return false;
+        }
+    }
+    async sendLoginOTP(email, name, otp) {
+        this.logger.log(`Sending login OTP to ${email} for user ${name}`);
+        try {
+            const info = await this.transporter.sendMail({
+                from: process.env.SMTP_FROM || 'E-Learning Platform <noreply@elearning.com>',
+                to: email,
+                subject: 'Login OTP - E-Learning Platform',
+                html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #4F46E5, #7C3AED); padding: 20px; text-align: center;">
+              <h1 style="color: white; margin: 0;">E-Learning Platform</h1>
+            </div>
+            <div style="padding: 30px; background: #f9fafb;">
+              <h2 style="color: #1f2937; margin-top: 0;">Login Verification</h2>
+              <p style="color: #6b7280; font-size: 16px;">
+                Hello ${name},
+              </p>
+              <p style="color: #6b7280; font-size: 16px;">
+                Your One-Time Password (OTP) for login is:
+              </p>
+              <div style="background: #e5e7eb; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #4F46E5;">${otp}</span>
+              </div>
+              <p style="color: #6b7280; font-size: 14px;">
+                This OTP will expire in 5 minutes.
+              </p>
+              <p style="color: #dc2626; font-size: 12px; margin-top: 20px;">
+                If you didn't attempt to login, please ignore this email or contact support immediately.
+              </p>
+            </div>
+          </div>
+        `,
+            });
+            this.logger.log(`Login OTP sent successfully to ${email}, Message ID: ${info.messageId}`);
+            return true;
+        }
+        catch (error) {
+            this.logger.error(`Failed to send login OTP to ${email}:`, error);
+            return false;
+        }
+    }
+    async sendTeacherApproved(email, name) {
+        this.logger.log(`Sending teacher approved email to ${email}`);
+        try {
+            const info = await this.transporter.sendMail({
+                from: process.env.SMTP_FROM || 'E-Learning Platform <noreply@elearning.com>',
+                to: email,
+                subject: 'Teacher Account Approved - E-Learning Platform',
+                html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #4F46E5, #7C3AED); padding: 20px; text-align: center;">
+              <h1 style="color: white; margin: 0;">Congratulations ${name}!</h1>
+            </div>
+            <div style="padding: 30px; background: #f9fafb;">
+              <p style="color: #1f2937; font-size: 16px;">
+                Your teacher account has been approved by the administrator.
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+                You can now log in and start creating courses.
+              </p>
+            </div>
+          </div>
+        `,
+            });
+            this.logger.log(`Teacher approved email sent to ${email}`);
+            return true;
+        }
+        catch (error) {
+            this.logger.error(`Failed to send teacher approved email to ${email}:`, error);
+            return false;
+        }
+    }
+    async sendTeacherRejected(email, name, reason) {
+        this.logger.log(`Sending teacher rejected email to ${email}`);
+        try {
+            const info = await this.transporter.sendMail({
+                from: process.env.SMTP_FROM || 'E-Learning Platform <noreply@elearning.com>',
+                to: email,
+                subject: 'Teacher Account Rejected - E-Learning Platform',
+                html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #DC2626, #991B1B); padding: 20px; text-align: center;">
+              <h1 style="color: white; margin: 0;">Application Rejected</h1>
+            </div>
+            <div style="padding: 30px; background: #f9fafb;">
+              <p style="color: #1f2937; font-size: 16px;">
+                Hello ${name},
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+                ${reason || 'Your teacher account application has been rejected by the administrator.'}
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+                If you believe this is a mistake, please contact support.
+              </p>
+            </div>
+          </div>
+        `,
+            });
+            this.logger.log(`Teacher rejected email sent to ${email}`);
+            return true;
+        }
+        catch (error) {
+            this.logger.error(`Failed to send teacher rejected email to ${email}:`, error);
+            return false;
+        }
+    }
+    async sendEnrollmentApproved(studentEmail, studentName, courseTitle) {
+        this.logger.log(`Sending enrollment approved email to ${studentEmail}`);
+        try {
+            const info = await this.transporter.sendMail({
+                from: process.env.SMTP_FROM || 'E-Learning Platform <noreply@elearning.com>',
+                to: studentEmail,
+                subject: `Enrollment Approved - ${courseTitle}`,
+                html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #4F46E5, #7C3AED); padding: 20px; text-align: center;">
+              <h1 style="color: white; margin: 0;">Enrollment Approved!</h1>
+            </div>
+            <div style="padding: 30px; background: #f9fafb;">
+              <p style="color: #1f2937; font-size: 16px;">
+                Hello ${studentName},
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+                Your enrollment in <strong>${courseTitle}</strong> has been approved. You can now access all course materials.
+              </p>
+            </div>
+          </div>
+        `,
+            });
+            this.logger.log(`Enrollment approved email sent to ${studentEmail}`);
+            return true;
+        }
+        catch (error) {
+            this.logger.error(`Failed to send enrollment approved email to ${studentEmail}:`, error);
+            return false;
+        }
+    }
+};
+exports.EmailService = EmailService;
+exports.EmailService = EmailService = EmailService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [])
+], EmailService);
+//# sourceMappingURL=email.service.js.map

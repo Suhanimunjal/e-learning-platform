@@ -1,0 +1,15 @@
+
+> frontend@0.1.0 dev
+> set NEXT_DISABLE_TURBOPACK=1 && next dev
+
+   ▲ Next.js 15.5.14
+   - Local:        http://localhost:3000
+   - Network:      http://172.16.20.7:3000
+
+ ✓ Starting...
+ ✓ Ready in 1724ms
+ ○ Compiling / ...
+ ✓ Compiled / in 2.7s (781 modules)
+ GET / 200 in 3065ms
+   Reload env: .env.local
+ ✓ Compiled in 1251ms (309 modules)
