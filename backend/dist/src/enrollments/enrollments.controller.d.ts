@@ -5,9 +5,9 @@ export declare class EnrollmentsController {
     enroll(courseId: string, req: any): Promise<{
         message: string;
         id: string;
-        userId: string;
         createdAt: Date;
         courseId: string;
+        userId: string;
         accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
     }>;
     getMyCourses(req: any): Promise<({
@@ -24,7 +24,6 @@ export declare class EnrollmentsController {
                     title: string;
                     approvedBy: string | null;
                     order: number;
-                    sectionId: string;
                     type: import(".prisma/client").$Enums.ModuleType;
                     videoUrl: string | null;
                     textContent: string | null;
@@ -44,67 +43,68 @@ export declare class EnrollmentsController {
                     contentGeneratedAt: Date | null;
                     videoGeneratedAt: Date | null;
                     retryCount: number;
+                    sectionId: string;
                 }[];
             } & {
                 id: string;
                 title: string;
-                courseId: string;
                 order: number;
+                courseId: string;
             })[];
         } & {
             id: string;
+            description: string;
+            updatedAt: Date;
+            slug: string;
             createdAt: Date;
             status: import(".prisma/client").$Enums.CourseStatus;
             rejectionReason: string | null;
-            updatedAt: Date;
             organizationId: string | null;
-            slug: string;
             title: string;
-            description: string;
             thumbnail: string | null;
             videoIntro: string | null;
             price: number;
-            instructorId: string;
             approvedBy: string | null;
+            instructorId: string;
         };
     } & {
         id: string;
-        userId: string;
         createdAt: Date;
         courseId: string;
+        userId: string;
         accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
     })[]>;
     getPendingEnrollments(req: any): Promise<({
+        course: {
+            id: string;
+            title: string;
+        };
         user: {
             id: string;
             name: string;
             email: string;
         };
-        course: {
-            id: string;
-            title: string;
-        };
     } & {
         id: string;
-        userId: string;
         createdAt: Date;
         courseId: string;
+        userId: string;
         accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
     })[]>;
     approveEnrollment(enrollmentId: string, req: any): Promise<{
         id: string;
-        userId: string;
         createdAt: Date;
         courseId: string;
+        userId: string;
         accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
     }>;
     rejectEnrollment(enrollmentId: string, body: {
         reason?: string;
     }, req: any): Promise<{
         id: string;
-        userId: string;
         createdAt: Date;
         courseId: string;
+        userId: string;
         accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
     }>;
     getCourseStudents(courseId: string, req: any): Promise<({
@@ -115,9 +115,9 @@ export declare class EnrollmentsController {
         };
     } & {
         id: string;
-        userId: string;
         createdAt: Date;
         courseId: string;
+        userId: string;
         accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
     })[]>;
 }

@@ -30,30 +30,13 @@ let AdminController = class AdminController {
         this.activityLogService = activityLogService;
     }
     async getActivityLogs(limit, offset) {
-        return this.activityLogService.getRecentLogs(limit || 50, offset || 0);
+        return this.activityLogService.getRecentLogs(Number(limit) || 50, Number(offset) || 0);
     }
     async registerTeacher(body, req) {
         const { name, email, password } = body;
         const existing = await this.prisma.user.findUnique({ where: { email } });
         if (existing) {
             return { success: false, message: 'User with this email already exists' };
-        }
-        const otp = this.otpService.generateOTP(email);
-        const sent = await this.emailService.sendOTP(email, otp);
-        if (!sent) {
-            return { success: false, message: 'Failed to send OTP. Check email configuration.' };
-        }
-        return {
-            success: true,
-            message: 'OTP sent to teacher email. Teacher must verify OTP to complete registration.',
-            email,
-        };
-    }
-    async verifyTeacherOTP(body, req) {
-        const { email, otp, name, password } = body;
-        const isValid = this.otpService.verifyOTP(email, otp);
-        if (!isValid) {
-            return { success: false, message: 'Invalid or expired OTP' };
         }
         const bcrypt = require('bcrypt');
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -66,7 +49,6 @@ let AdminController = class AdminController {
                 status: client_1.UserStatus.ACTIVE,
             },
         });
-        this.otpService.deleteOTP(email);
         await this.activityLogService.log({
             action: 'TEACHER_CREATED',
             entityType: 'USER',
@@ -77,13 +59,16 @@ let AdminController = class AdminController {
         });
         return {
             success: true,
-            message: 'Teacher registered successfully',
+            message: 'Teacher account created successfully',
             teacher: { id: teacher.id, email: teacher.email, name: teacher.name, role: teacher.role },
         };
     }
     async getPendingUsers() {
         return this.prisma.user.findMany({
-            where: { status: client_1.UserStatus.PENDING_APPROVAL },
+            where: {
+                status: client_1.UserStatus.PENDING_APPROVAL,
+                role: client_1.Role.STUDENT,
+            },
             select: {
                 id: true,
                 email: true,
@@ -217,22 +202,36 @@ let AdminController = class AdminController {
         });
         return { success: true, enrollment };
     }
+    async getTeachers() {
+        return this.prisma.user.findMany({
+            where: { role: client_1.Role.TEACHER },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                role: true,
+                status: true,
+                createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
     async getStats() {
-        const [pendingUsers, pendingCourses, pendingEnrollments, totalUsers, totalTeachers, totalStudents] = await Promise.all([
-            this.prisma.user.count({ where: { status: client_1.UserStatus.PENDING_APPROVAL } }),
-            this.prisma.course.count({ where: { status: 'PENDING_APPROVAL' } }),
+        const [pendingStudents, pendingEnrollments, totalUsers, totalTeachers, totalStudents, totalCourses] = await Promise.all([
+            this.prisma.user.count({ where: { status: client_1.UserStatus.PENDING_APPROVAL, role: client_1.Role.STUDENT } }),
             this.prisma.enrollment.count({ where: { accessStatus: 'PENDING' } }),
             this.prisma.user.count(),
             this.prisma.user.count({ where: { role: client_1.Role.TEACHER } }),
             this.prisma.user.count({ where: { role: client_1.Role.STUDENT } }),
+            this.prisma.course.count(),
         ]);
         return {
-            pendingUsers,
-            pendingCourses,
+            pendingStudents,
             pendingEnrollments,
             totalUsers,
             totalTeachers,
             totalStudents,
+            totalCourses,
         };
     }
 };
@@ -242,7 +241,7 @@ __decorate([
     __param(0, (0, common_1.Query)('limit')),
     __param(1, (0, common_1.Query)('offset')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getActivityLogs", null);
 __decorate([
@@ -253,14 +252,6 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "registerTeacher", null);
-__decorate([
-    (0, common_1.Post)('teachers/verify-otp'),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Request)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], AdminController.prototype, "verifyTeacherOTP", null);
 __decorate([
     (0, common_1.Get)('users/pending'),
     __metadata("design:type", Function),
@@ -329,6 +320,12 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "rejectEnrollment", null);
+__decorate([
+    (0, common_1.Get)('teachers'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getTeachers", null);
 __decorate([
     (0, common_1.Get)('stats'),
     __metadata("design:type", Function),

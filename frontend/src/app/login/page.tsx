@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { GraduationCap, Users, Shield, ChevronRight } from 'lucide-react';
 
@@ -24,22 +23,14 @@ export default function LoginPage() {
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Student</h2>
             <p className="text-sm text-gray-500 mb-6 flex-grow">
-              New students can register. Existing students login with email and password.
+              Login or register to access courses and start learning.
             </p>
-            <div className="space-y-2">
-              <Link 
-                href="/student-login"
-                className="flex items-center justify-center gap-2 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
-              >
-                Student Login <ChevronRight className="h-4 w-4" />
-              </Link>
-              <Link 
-                href="/student-register"
-                className="flex items-center justify-center gap-2 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Register as Student
-              </Link>
-            </div>
+            <Link 
+              href="/student-login"
+              className="flex items-center justify-center gap-2 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
+            >
+              Student Login <ChevronRight className="h-4 w-4" />
+            </Link>
           </div>
 
           {/* Teacher Login */}
@@ -66,7 +57,7 @@ export default function LoginPage() {
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Administrator</h2>
             <p className="text-sm text-gray-500 mb-6 flex-grow">
-              Login to manage users, courses, and platform settings.
+              Manage platform settings and approve student registrations.
             </p>
             <Link 
               href="/admin-login"

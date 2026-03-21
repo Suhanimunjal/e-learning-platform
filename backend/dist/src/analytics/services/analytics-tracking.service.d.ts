@@ -35,127 +35,127 @@ export declare class AnalyticsTrackingService {
     }): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackCourseViewed(userId: string, courseId: string): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackCourseEnrolled(userId: string, courseId: string): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackCourseCompleted(userId: string, courseId: string): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackModuleViewed(userId: string, courseId: string, moduleId: string): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackModuleCompleted(userId: string, courseId: string, moduleId: string): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackModuleTimeSpent(userId: string, courseId: string, moduleId: string, duration: number): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackQuizStarted(userId: string, courseId: string, quizId: string): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackQuizCompleted(userId: string, courseId: string, quizId: string, score: number, maxScore: number, passingScore?: number): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackAssignmentSubmitted(userId: string, courseId: string, assignmentId: string): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackAssignmentGraded(userId: string, courseId: string, assignmentId: string, grade: number, maxGrade: number): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackCertificateEarned(userId: string, courseId: string): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackPaymentCompleted(userId: string, courseId: string, amount: number): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
     trackSubscriptionCreated(userId: string, planId: string, amount: number): Promise<{
         id: string;
         createdAt: Date;
-        userId: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue;
         courseId: string | null;
         type: string;
         moduleId: string | null;
+        userId: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue;
     }>;
 }

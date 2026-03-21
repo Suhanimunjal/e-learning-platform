@@ -67,8 +67,8 @@ export declare class QuizController {
         }[];
         attempts: {
             id: string;
-            userId: string;
             quizId: string;
+            userId: string;
             answers: import("@prisma/client/runtime/client").JsonValue;
             score: number | null;
             percentage: number | null;
@@ -102,8 +102,8 @@ export declare class QuizController {
         }[];
         attempts: {
             id: string;
-            userId: string;
             quizId: string;
+            userId: string;
             answers: import("@prisma/client/runtime/client").JsonValue;
             score: number | null;
             percentage: number | null;
@@ -171,8 +171,8 @@ export declare class QuizController {
         }[];
         attempts: {
             id: string;
-            userId: string;
             quizId: string;
+            userId: string;
             answers: import("@prisma/client/runtime/client").JsonValue;
             score: number | null;
             percentage: number | null;
@@ -257,8 +257,8 @@ export declare class QuizController {
         }[];
         attempts: {
             id: string;
-            userId: string;
             quizId: string;
+            userId: string;
             answers: import("@prisma/client/runtime/client").JsonValue;
             score: number | null;
             percentage: number | null;
@@ -433,14 +433,14 @@ export declare class QuizController {
     }>;
     getQuizAttempts(id: string, req: any): Promise<({
         user: {
+            name: string;
             id: string;
             email: string;
-            name: string;
         };
     } & {
         id: string;
-        userId: string;
         quizId: string;
+        userId: string;
         answers: import("@prisma/client/runtime/client").JsonValue;
         score: number | null;
         percentage: number | null;
@@ -450,9 +450,9 @@ export declare class QuizController {
     })[]>;
     getQuizAttempt(id: string, attemptId: string, req: any): Promise<{
         user: {
+            name: string;
             id: string;
             email: string;
-            name: string;
         };
         quiz: {
             module: {
@@ -531,8 +531,8 @@ export declare class QuizController {
         };
     } & {
         id: string;
-        userId: string;
         quizId: string;
+        userId: string;
         answers: import("@prisma/client/runtime/client").JsonValue;
         score: number | null;
         percentage: number | null;
@@ -643,6 +643,24 @@ export declare class QuizController {
         }[];
         totalSubmissions: number;
         gradedCount: number;
+        pendingCount: number;
+    }>;
+    getAllPendingSubmissions(req: any): Promise<{
+        submissions: {
+            id: string;
+            quizId: string;
+            quizTitle: string;
+            courseId: string;
+            courseTitle: string;
+            userId: string;
+            userName: string;
+            userEmail: string;
+            score: number;
+            percentage: number;
+            completedAt: Date;
+            status: string;
+        }[];
+        total: number;
         pendingCount: number;
     }>;
     gradeQuizAttempt(id: string, attemptId: string, body: {

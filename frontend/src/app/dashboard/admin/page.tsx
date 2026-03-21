@@ -8,63 +8,42 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePlugins } from '@/contexts/PluginContext';
 import {
   Users,
   BookOpen,
-  DollarSign,
-  CreditCard,
-  Download,
-  ChevronDown,
   Loader2,
-  Brain,
-  BarChart3,
   Activity,
-  TrendingUp,
   AlertTriangle,
-  FileText,
   CheckCircle,
   XCircle,
   UserPlus,
-  Book,
   UserCheck,
   UserX,
-  LogOut,
-  Plus,
+  Eye,
+  Check,
+  X,
 } from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts';
 
-interface PendingUser {
+interface PendingStudent {
   id: string;
   name: string;
   email: string;
   role: string;
   status: string;
   createdAt: string;
-  organization?: { name: string };
+  phone?: string;
+  rollNo?: string;
+  year?: string;
+  branch?: string;
+  course?: string;
 }
 
-interface PendingCourse {
+interface Teacher {
   id: string;
-  title: string;
-  description: string;
-  price: number;
+  name: string;
+  email: string;
+  role: string;
   status: string;
-  instructor?: { id: string; name: string; email: string };
 }
 
 interface ActivityLog {
@@ -81,25 +60,29 @@ interface ActivityLog {
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'pending' | 'teachers' | 'logs'>('overview');
-  const [platformAnalytics, setPlatformAnalytics] = useState<any>(null);
-  const [allCourses, setAllCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState('Last 30 days');
   
-  // Pending data
-  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
-  const [pendingCourses, setPendingCourses] = useState<PendingCourse[]>([]);
+  // Data states
+  const [pendingStudents, setPendingStudents] = useState<PendingStudent[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   
-  // Teacher registration modal
+  // Loading states for actions
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [processedIds, setProcessedIds] = useState<Set<string>>(new Set());
+  
+  // Modal states
   const [showTeacherModal, setShowTeacherModal] = useState(false);
   const [teacherForm, setTeacherForm] = useState({ name: '', email: '', password: '' });
-  const [teacherStep, setTeacherStep] = useState<'form' | 'otp'>('form');
-  const [teacherOtp, setTeacherOtp] = useState('');
-  const [teacherEmail, setTeacherEmail] = useState('');
   const [teacherLoading, setTeacherLoading] = useState(false);
   const [teacherMessage, setTeacherMessage] = useState('');
+  const [teacherSuccess, setTeacherSuccess] = useState(false);
+  
+  // Detail modal
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailData, setDetailData] = useState<any>(null);
 
   useEffect(() => {
     loadData();
@@ -109,31 +92,27 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       setError(null);
-
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [statsRes, coursesRes, pendingUsersRes, pendingCoursesRes, logsRes] = await Promise.all([
+      const [statsRes, studentsRes, logsRes, teachersRes] = await Promise.all([
         fetch('http://localhost:3001/api/admin/stats', { headers }),
-        fetch('http://localhost:3001/api/courses', { headers }),
         fetch('http://localhost:3001/api/admin/users/pending', { headers }),
-        fetch('http://localhost:3001/api/admin/courses/pending', { headers }),
         fetch('http://localhost:3001/api/admin/logs?limit=50', { headers }),
+        fetch('http://localhost:3001/api/admin/teachers', { headers }),
       ]);
 
-      const [stats, courses, pUsers, pCourses, logs] = await Promise.all([
+      const [statsData, studentsData, logsData, teachersData] = await Promise.all([
         statsRes.json(),
-        coursesRes.json(),
-        pendingUsersRes.json(),
-        pendingCoursesRes.json(),
+        studentsRes.json(),
         logsRes.json(),
+        teachersRes.json(),
       ]);
 
-      setPlatformAnalytics(stats);
-      setAllCourses(courses || []);
-      setPendingUsers(pUsers || []);
-      setPendingCourses(pCourses || []);
-      setActivityLogs(logs || []);
+      setStats(statsData);
+      setPendingStudents(Array.isArray(studentsData) ? studentsData : []);
+      setActivityLogs(Array.isArray(logsData) ? logsData : []);
+      setTeachers(Array.isArray(teachersData) ? teachersData : []);
     } catch (err: any) {
       console.error('Error loading dashboard data:', err);
       setError('Failed to load some data. Please try again.');
@@ -143,123 +122,102 @@ export default function AdminDashboard() {
   };
 
   const handleApproveUser = async (userId: string) => {
+    setActionLoading(userId);
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:3001/api/admin/users/${userId}/approve`, {
+      const res = await fetch(`http://localhost:3001/api/admin/users/${userId}/approve`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
-      loadData();
+      
+      if (res.ok) {
+        setProcessedIds(prev => new Set([...prev, userId]));
+        setTimeout(() => {
+          setPendingStudents(prev => prev.filter(s => s.id !== userId));
+          setProcessedIds(prev => {
+            const next = new Set(prev);
+            next.delete(userId);
+            return next;
+          });
+        }, 500);
+      }
     } catch (err) {
       console.error('Failed to approve user:', err);
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const handleRejectUser = async (userId: string, reason?: string) => {
+  const handleRejectUser = async (userId: string) => {
+    setActionLoading(userId);
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:3001/api/admin/users/${userId}/reject`, {
+      const res = await fetch(`http://localhost:3001/api/admin/users/${userId}/reject`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify({ reason }),
+        body: JSON.stringify({}),
       });
-      loadData();
+      
+      if (res.ok) {
+        setProcessedIds(prev => new Set([...prev, userId]));
+        setTimeout(() => {
+          setPendingStudents(prev => prev.filter(s => s.id !== userId));
+          setProcessedIds(prev => {
+            const next = new Set(prev);
+            next.delete(userId);
+            return next;
+          });
+        }, 500);
+      }
     } catch (err) {
       console.error('Failed to reject user:', err);
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const handleApproveCourse = async (courseId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      await fetch(`http://localhost:3001/api/admin/courses/${courseId}/approve`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      loadData();
-    } catch (err) {
-      console.error('Failed to approve course:', err);
-    }
-  };
-
-  const handleRejectCourse = async (courseId: string, reason?: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      await fetch(`http://localhost:3001/api/admin/courses/${courseId}/reject`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ reason }),
-      });
-      loadData();
-    } catch (err) {
-      console.error('Failed to reject course:', err);
-    }
-  };
-
-  const handleRegisterTeacher = async () => {
+  const handleCreateTeacher = async () => {
     setTeacherLoading(true);
     setTeacherMessage('');
     
     try {
       const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:3001/api/admin/teachers/register', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(teacherForm),
+      });
       
-      if (teacherStep === 'form') {
-        const res = await fetch('http://localhost:3001/api/admin/teachers/register', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}` 
-          },
-          body: JSON.stringify(teacherForm),
-        });
-        
-        const data = await res.json();
-        
-        if (!res.ok) {
-          throw new Error(data.message || 'Failed to send OTP');
-        }
-        
-        setTeacherStep('otp');
-        setTeacherEmail(teacherForm.email);
-        setTeacherMessage('OTP sent to teacher email');
-      } else {
-        const res = await fetch('http://localhost:3001/api/admin/teachers/verify-otp', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}` 
-          },
-          body: JSON.stringify({ 
-            email: teacherEmail, 
-            otp: teacherOtp, 
-            name: teacherForm.name, 
-            password: teacherForm.password 
-          }),
-        });
-        
-        const data = await res.json();
-        
-        if (!res.ok) {
-          throw new Error(data.message || 'OTP verification failed');
-        }
-        
-        setShowTeacherModal(false);
-        setTeacherStep('form');
-        setTeacherForm({ name: '', email: '', password: '' });
-        setTeacherOtp('');
-        loadData();
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to create teacher');
       }
+      
+      setTeacherSuccess(true);
+      setTimeout(() => {
+        setShowTeacherModal(false);
+        setTeacherForm({ name: '', email: '', password: '' });
+        setTeacherMessage('');
+        setTeacherSuccess(false);
+        loadData();
+      }, 1500);
     } catch (err: any) {
       setTeacherMessage(err.message);
     } finally {
       setTeacherLoading(false);
     }
+  };
+
+  const showUserDetail = (student: PendingStudent) => {
+    setDetailData(student);
+    setShowDetailModal(true);
   };
 
   const getActionIcon = (action: string) => {
@@ -268,12 +226,6 @@ export default function AdminDashboard() {
       case 'USER_APPROVED': return <UserCheck className="h-4 w-4 text-green-500" />;
       case 'USER_REJECTED': return <UserX className="h-4 w-4 text-red-500" />;
       case 'TEACHER_CREATED': return <UserPlus className="h-4 w-4 text-purple-500" />;
-      case 'COURSE_CREATED': return <Book className="h-4 w-4 text-blue-500" />;
-      case 'COURSE_APPROVED': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'COURSE_REJECTED': return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'ENROLLMENT_REQUESTED': return <UserPlus className="h-4 w-4 text-yellow-500" />;
-      case 'ENROLLMENT_APPROVED': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'ENROLLMENT_REJECTED': return <XCircle className="h-4 w-4 text-red-500" />;
       default: return <Activity className="h-4 w-4 text-gray-500" />;
     }
   };
@@ -282,79 +234,80 @@ export default function AdminDashboard() {
     return action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const userColumns = [
+  const studentColumns = [
     {
       key: 'name',
-      label: 'User',
-      render: (u: PendingUser) => (
+      label: 'Student',
+      render: (s: PendingStudent) => (
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-medium">
-            {u.name.charAt(0).toUpperCase()}
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 font-medium">
+            {s.name.charAt(0).toUpperCase()}
           </div>
           <div>
-            <p className="font-medium text-gray-900">{u.name}</p>
-            <p className="text-sm text-gray-500">{u.email}</p>
+            <p className="font-medium text-gray-900">{s.name}</p>
+            <p className="text-sm text-gray-500">{s.email}</p>
           </div>
         </div>
       ),
     },
     {
-      key: 'role',
-      label: 'Role',
-      render: (u: PendingUser) => (
-        <Badge variant={u.role === 'TEACHER' ? 'warning' : 'info'}>{u.role}</Badge>
-      ),
+      key: 'phone',
+      label: 'Phone',
+      render: (s: PendingStudent) => s.phone || '-',
+    },
+    {
+      key: 'rollNo',
+      label: 'Roll No',
+      render: (s: PendingStudent) => s.rollNo || '-',
     },
     {
       key: 'createdAt',
-      label: 'Registered',
-      render: (u: PendingUser) => new Date(u.createdAt).toLocaleDateString(),
+      label: 'Registered On',
+      render: (s: PendingStudent) => new Date(s.createdAt).toLocaleDateString(),
     },
     {
       key: 'actions',
       label: 'Actions',
-      render: (u: PendingUser) => (
-        <div className="flex gap-2">
-          <Button size="sm" onClick={() => handleApproveUser(u.id)}>
-            <CheckCircle className="h-4 w-4 mr-1" /> Approve
-          </Button>
-          <Button size="sm" variant="danger" onClick={() => handleRejectUser(u.id)}>
-            <XCircle className="h-4 w-4 mr-1" /> Reject
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
-  const courseColumns = [
-    {
-      key: 'title',
-      label: 'Course',
-      render: (c: PendingCourse) => (
-        <div>
-          <p className="font-medium text-gray-900">{c.title}</p>
-          <p className="text-sm text-gray-500">{c.instructor?.name || 'Unknown'}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'price',
-      label: 'Price',
-      render: (c: PendingCourse) => c.price > 0 ? `₹${c.price}` : 'Free',
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      render: (c: PendingCourse) => (
-        <div className="flex gap-2">
-          <Button size="sm" onClick={() => handleApproveCourse(c.id)}>
-            <CheckCircle className="h-4 w-4 mr-1" /> Approve
-          </Button>
-          <Button size="sm" variant="danger" onClick={() => handleRejectCourse(c.id)}>
-            <XCircle className="h-4 w-4 mr-1" /> Reject
-          </Button>
-        </div>
-      ),
+      render: (s: PendingStudent) => {
+        const isProcessed = processedIds.has(s.id);
+        const isLoading = actionLoading === s.id;
+        return (
+          <div className={`flex items-center gap-2 transition-all duration-500 ${isProcessed ? 'opacity-50 translate-x-4' : ''}`}>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => showUserDetail(s)}
+              disabled={isLoading}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={() => handleApproveUser(s.id)}
+              disabled={isLoading}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isLoading && actionLoading === s.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4" />
+              )}
+            </Button>
+            <Button 
+              size="sm" 
+              variant="danger" 
+              onClick={() => handleRejectUser(s.id)}
+              disabled={isLoading}
+            >
+              {isLoading && actionLoading === s.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -376,7 +329,7 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-500">Manage users, courses, and approvals</p>
+            <p className="text-gray-500">Manage student registrations and platform users</p>
           </div>
         </div>
 
@@ -401,10 +354,10 @@ export default function AdminDashboard() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Pending Approvals
-              {(pendingUsers.length + pendingCourses.length) > 0 && (
+              Student Approvals
+              {pendingStudents.length > 0 && (
                 <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
-                  {pendingUsers.length + pendingCourses.length}
+                  {pendingStudents.length}
                 </span>
               )}
             </button>
@@ -416,11 +369,11 @@ export default function AdminDashboard() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Teacher Management
+              Teachers ({teachers.length})
             </button>
             <button
               onClick={() => setActiveTab('logs')}
-              className={`pb-4 px-2 font-medium text-sm border-b-2 flex items-center gap-2 ${
+              className={`pb-4 px-2 font-medium text-sm border-b-2 ${
                 activeTab === 'logs'
                   ? 'border-indigo-500 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -434,140 +387,114 @@ export default function AdminDashboard() {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <>
-            {/* Stats Grid */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
-                title="Total Users"
-                value={platformAnalytics?.totalUsers || 0}
+                title="Total Students"
+                value={stats?.totalStudents || 0}
                 icon={Users}
                 color="indigo"
               />
               <StatCard
-                title="Pending Users"
-                value={platformAnalytics?.pendingUsers || 0}
+                title="Total Teachers"
+                value={stats?.totalTeachers || 0}
+                icon={BookOpen}
+                color="purple"
+              />
+              <StatCard
+                title="Pending Approvals"
+                value={pendingStudents.length}
                 icon={AlertTriangle}
                 color="yellow"
               />
               <StatCard
-                title="Pending Courses"
-                value={platformAnalytics?.pendingCourses || 0}
+                title="Total Courses"
+                value={stats?.totalCourses || 0}
                 icon={BookOpen}
-                color="yellow"
-              />
-              <StatCard
-                title="Total Enrollments"
-                value={platformAnalytics?.totalEnrollments || 0}
-                icon={CreditCard}
-                color="purple"
+                color="green"
               />
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* Pending Users Summary */}
+            {/* Pending Students Quick View */}
+            {pendingStudents.length > 0 && (
               <div className="rounded-lg bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Pending Users</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Pending Student Registrations</h3>
                   <Button size="sm" variant="outline" onClick={() => setActiveTab('pending')}>
                     View All
                   </Button>
                 </div>
-                {pendingUsers.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No pending users</p>
-                ) : (
-                  <div className="space-y-3">
-                    {pendingUsers.slice(0, 3).map((u) => (
-                      <div key={u.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 text-sm font-medium">
-                            {u.name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{u.name}</p>
-                            <p className="text-xs text-gray-500">{u.role}</p>
-                          </div>
+                <div className="space-y-3">
+                  {pendingStudents.slice(0, 5).map((s) => (
+                    <div key={s.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 font-medium">
+                          {s.name.charAt(0).toUpperCase()}
                         </div>
-                        <Button size="sm" onClick={() => handleApproveUser(u.id)}>
-                          Approve
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Pending Courses Summary */}
-              <div className="rounded-lg bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Pending Courses</h3>
-                  <Button size="sm" variant="outline" onClick={() => setActiveTab('pending')}>
-                    View All
-                  </Button>
-                </div>
-                {pendingCourses.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No pending courses</p>
-                ) : (
-                  <div className="space-y-3">
-                    {pendingCourses.slice(0, 3).map((c) => (
-                      <div key={c.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
-                          <p className="font-medium text-gray-900">{c.title}</p>
-                          <p className="text-xs text-gray-500">{c.instructor?.name}</p>
+                          <p className="font-medium text-gray-900">{s.name}</p>
+                          <p className="text-sm text-gray-500">{s.email}</p>
                         </div>
-                        <Button size="sm" onClick={() => handleApproveCourse(c.id)}>
-                          Approve
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleApproveUser(s.id)}>
+                          <CheckCircle className="h-4 w-4 mr-1" /> Approve
+                        </Button>
+                        <Button size="sm" variant="danger" onClick={() => handleRejectUser(s.id)}>
+                          <XCircle className="h-4 w-4 mr-1" /> Reject
                         </Button>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
 
-        {/* Pending Approvals Tab */}
+        {/* Student Approvals Tab */}
         {activeTab === 'pending' && (
-          <div className="space-y-6">
-            {/* Pending Users */}
-            <div className="rounded-lg bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Pending User Registrations</h3>
-              {pendingUsers.length === 0 ? (
-                <p className="text-gray-500 text-sm">No pending users</p>
-              ) : (
-                <DataTable data={pendingUsers} columns={userColumns} />
-              )}
-            </div>
-
-            {/* Pending Courses */}
-            <div className="rounded-lg bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Pending Course Approvals</h3>
-              {pendingCourses.length === 0 ? (
-                <p className="text-gray-500 text-sm">No pending courses</p>
-              ) : (
-                <DataTable data={pendingCourses} columns={courseColumns} />
-              )}
-            </div>
+          <div className="rounded-lg bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Pending Student Registrations</h3>
+            {pendingStudents.length === 0 ? (
+              <p className="text-gray-500 text-sm py-8 text-center">No pending student registrations</p>
+            ) : (
+              <DataTable data={pendingStudents} columns={studentColumns} />
+            )}
           </div>
         )}
 
-        {/* Teacher Management Tab */}
+        {/* Teachers Tab */}
         {activeTab === 'teachers' && (
-          <div className="space-y-6">
-            <div className="rounded-lg bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Teacher Accounts</h3>
-                  <p className="text-sm text-gray-500">Add new teachers - they will receive an OTP to complete registration</p>
-                </div>
-                <Button onClick={() => setShowTeacherModal(true)}>
-                  <Plus className="h-4 w-4 mr-2" /> Add Teacher
-                </Button>
+          <div className="rounded-lg bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Teacher Accounts</h3>
+                <p className="text-sm text-gray-500">Add new teachers - they will receive an OTP to complete registration</p>
               </div>
-              
-              {/* Teachers list would go here */}
-              <p className="text-gray-500 text-sm">Teacher list coming soon...</p>
+              <Button onClick={() => setShowTeacherModal(true)}>
+                <UserPlus className="h-4 w-4 mr-2" /> Add Teacher
+              </Button>
             </div>
+            {teachers.length === 0 ? (
+              <p className="text-gray-500 text-sm py-8 text-center">No teachers added yet</p>
+            ) : (
+              <div className="space-y-3">
+                {teachers.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 text-purple-600 text-lg font-medium">
+                        {t.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{t.name}</p>
+                        <p className="text-sm text-gray-500">{t.email}</p>
+                      </div>
+                    </div>
+                    <Badge variant="success">Active</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -576,18 +503,18 @@ export default function AdminDashboard() {
           <div className="rounded-lg bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
             {activityLogs.length === 0 ? (
-              <p className="text-gray-500 text-sm">No activity logs</p>
+              <p className="text-gray-500 text-sm py-8 text-center">No activity logs</p>
             ) : (
               <div className="space-y-3">
                 {activityLogs.map((log) => (
-                  <div key={log.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div key={log.id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
                     <div className="mt-1">
                       {getActionIcon(log.action)}
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-gray-900">{formatAction(log.action)}</p>
                       <p className="text-sm text-gray-500">
-                        {log.entityType} {log.entityId.slice(0, 8)}...
+                        {log.entityType}
                         {log.metadata?.courseTitle && ` - ${log.metadata.courseTitle}`}
                         {log.metadata?.email && ` - ${log.metadata.email}`}
                       </p>
@@ -615,86 +542,133 @@ export default function AdminDashboard() {
           isOpen={showTeacherModal}
           onClose={() => {
             setShowTeacherModal(false);
-            setTeacherStep('form');
             setTeacherForm({ name: '', email: '', password: '' });
-            setTeacherOtp('');
+            setTeacherMessage('');
+            setTeacherSuccess(false);
           }}
-          title={teacherStep === 'form' ? 'Add New Teacher' : 'Verify Teacher OTP'}
+          title="Add New Teacher"
         >
           <div className="space-y-4">
-            {teacherMessage && (
-              <div className={`rounded-lg p-3 text-sm ${teacherMessage.includes('sent') || teacherMessage.includes('OTP') ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
+            {teacherMessage && !teacherSuccess && (
+              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
                 {teacherMessage}
               </div>
             )}
-
-            {teacherStep === 'form' ? (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                  <input
-                    type="text"
-                    value={teacherForm.name}
-                    onChange={(e) => setTeacherForm({ ...teacherForm, name: e.target.value })}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    placeholder="John Smith"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <input
-                    type="email"
-                    value={teacherForm.email}
-                    onChange={(e) => setTeacherForm({ ...teacherForm, email: e.target.value })}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    placeholder="teacher@example.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Password</label>
-                  <input
-                    type="password"
-                    value={teacherForm.password}
-                    onChange={(e) => setTeacherForm({ ...teacherForm, password: e.target.value })}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    placeholder="••••••••"
-                  />
-                </div>
-                <Button onClick={handleRegisterTeacher} disabled={teacherLoading} className="w-full">
-                  {teacherLoading ? 'Sending OTP...' : 'Send OTP to Teacher'}
-                </Button>
-              </>
-            ) : (
-              <>
-                <div className="rounded-lg bg-blue-50 p-4">
-                  <p className="text-sm text-blue-800">
-                    OTP sent to <strong>{teacherEmail}</strong>
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Enter OTP</label>
-                  <input
-                    type="text"
-                    value={teacherOtp}
-                    onChange={(e) => setTeacherOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center text-2xl tracking-widest"
-                    placeholder="------"
-                    maxLength={6}
-                  />
-                </div>
-                <Button onClick={handleRegisterTeacher} disabled={teacherLoading} className="w-full">
-                  {teacherLoading ? 'Verifying...' : 'Verify and Create Teacher'}
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => setTeacherStep('form')}
-                  className="w-full text-sm text-gray-500 hover:text-gray-700"
-                >
-                  ← Back
-                </button>
-              </>
+            {teacherSuccess && (
+              <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600">
+                Teacher created successfully!
+              </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Full Name</label>
+              <input
+                type="text"
+                value={teacherForm.name}
+                onChange={(e) => setTeacherForm({ ...teacherForm, name: e.target.value })}
+                disabled={teacherSuccess}
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100"
+                placeholder="John Smith"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Email</label>
+              <input
+                type="email"
+                value={teacherForm.email}
+                onChange={(e) => setTeacherForm({ ...teacherForm, email: e.target.value })}
+                disabled={teacherSuccess}
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 placeholder:text-gray-400"
+                placeholder="teacher@example.com"
+                style={{ color: '#171717' }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <input
+                type="password"
+                value={teacherForm.password}
+                onChange={(e) => setTeacherForm({ ...teacherForm, password: e.target.value })}
+                disabled={teacherSuccess}
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 placeholder:text-gray-400"
+                placeholder="••••••••"
+                style={{ color: '#171717' }}
+              />
+            </div>
+            <Button onClick={handleCreateTeacher} disabled={teacherLoading || teacherSuccess} className="w-full">
+              {teacherLoading ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating...</>
+              ) : (
+                'Create Teacher Account'
+              )}
+            </Button>
           </div>
+        </Modal>
+
+        {/* Student Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title="Student Details"
+        >
+          {detailData && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 text-xl font-medium">
+                  {detailData.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-gray-900">{detailData.name}</p>
+                  <p className="text-gray-500">{detailData.email}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Phone Number</p>
+                  <p className="font-medium text-gray-900">{detailData.phone || 'Not provided'}</p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Roll Number</p>
+                  <p className="font-medium text-gray-900">{detailData.rollNo || 'Not provided'}</p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Year</p>
+                  <p className="font-medium text-gray-900">{detailData.year || 'Not provided'}</p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Branch</p>
+                  <p className="font-medium text-gray-900">{detailData.branch || 'Not provided'}</p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg col-span-2">
+                  <p className="text-xs text-gray-500 mb-1">Course</p>
+                  <p className="font-medium text-gray-900">{detailData.course || 'Not provided'}</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 mt-6">
+                <Button 
+                  onClick={() => {
+                    handleApproveUser(detailData.id);
+                    setShowDetailModal(false);
+                  }} 
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" /> Approve
+                </Button>
+                <Button 
+                  variant="danger" 
+                  onClick={() => {
+                    handleRejectUser(detailData.id);
+                    setShowDetailModal(false);
+                  }}
+                  className="flex-1"
+                >
+                  <XCircle className="h-4 w-4 mr-2" /> Reject
+                </Button>
+              </div>
+            </div>
+          )}
         </Modal>
       </div>
     </DashboardLayout>

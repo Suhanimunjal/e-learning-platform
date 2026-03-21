@@ -21,11 +21,11 @@ export class AdminController {
 
   // Activity Logs
   @Get('logs')
-  async getActivityLogs(@Query('limit') limit?: number, @Query('offset') offset?: number) {
-    return this.activityLogService.getRecentLogs(limit || 50, offset || 0);
+  async getActivityLogs(@Query('limit') limit?: string, @Query('offset') offset?: string) {
+    return this.activityLogService.getRecentLogs(Number(limit) || 50, Number(offset) || 0);
   }
 
-  // Teacher Registration by Admin (with OTP verification)
+  // Teacher Registration by Admin (direct creation, no OTP)
   @Post('teachers/register')
   async registerTeacher(@Body() body: { name: string; email: string; password: string }, @Request() req) {
     const { name, email, password } = body;
@@ -36,34 +36,7 @@ export class AdminController {
       return { success: false, message: 'User with this email already exists' };
     }
 
-    // Generate and send OTP
-    const otp = this.otpService.generateOTP(email);
-    const sent = await this.emailService.sendOTP(email, otp);
-    
-    if (!sent) {
-      return { success: false, message: 'Failed to send OTP. Check email configuration.' };
-    }
-
-    return { 
-      success: true, 
-      message: 'OTP sent to teacher email. Teacher must verify OTP to complete registration.',
-      email,
-    };
-  }
-
-  @Post('teachers/verify-otp')
-  async verifyTeacherOTP(
-    @Body() body: { email: string; otp: string; name: string; password: string },
-    @Request() req,
-  ) {
-    const { email, otp, name, password } = body;
-
-    const isValid = this.otpService.verifyOTP(email, otp);
-    if (!isValid) {
-      return { success: false, message: 'Invalid or expired OTP' };
-    }
-
-    // Create teacher user
+    // Create teacher directly (no OTP verification needed)
     const bcrypt = require('bcrypt');
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -73,12 +46,9 @@ export class AdminController {
         name,
         password: hashedPassword,
         role: Role.TEACHER,
-        status: UserStatus.ACTIVE, // Admin-created teachers are auto-approved
+        status: UserStatus.ACTIVE,
       },
     });
-
-    // Clean up OTP
-    this.otpService.deleteOTP(email);
 
     // Log activity
     await this.activityLogService.log({
@@ -92,16 +62,19 @@ export class AdminController {
 
     return {
       success: true,
-      message: 'Teacher registered successfully',
+      message: 'Teacher account created successfully',
       teacher: { id: teacher.id, email: teacher.email, name: teacher.name, role: teacher.role },
     };
   }
 
-  // User Management - Pending approvals
+  // User Management - Pending Student approvals only
   @Get('users/pending')
   async getPendingUsers() {
     return this.prisma.user.findMany({
-      where: { status: UserStatus.PENDING_APPROVAL },
+      where: { 
+        status: UserStatus.PENDING_APPROVAL,
+        role: Role.STUDENT, // Only students need admin approval
+      },
       select: {
         id: true,
         email: true,
@@ -287,25 +260,42 @@ export class AdminController {
     return { success: true, enrollment };
   }
 
+  // Get all teachers
+  @Get('teachers')
+  async getTeachers() {
+    return this.prisma.user.findMany({
+      where: { role: Role.TEACHER },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   // Statistics
   @Get('stats')
   async getStats() {
-    const [pendingUsers, pendingCourses, pendingEnrollments, totalUsers, totalTeachers, totalStudents] = await Promise.all([
-      this.prisma.user.count({ where: { status: UserStatus.PENDING_APPROVAL } }),
-      this.prisma.course.count({ where: { status: 'PENDING_APPROVAL' } }),
+    const [pendingStudents, pendingEnrollments, totalUsers, totalTeachers, totalStudents, totalCourses] = await Promise.all([
+      this.prisma.user.count({ where: { status: UserStatus.PENDING_APPROVAL, role: Role.STUDENT } }),
       this.prisma.enrollment.count({ where: { accessStatus: 'PENDING' } }),
       this.prisma.user.count(),
       this.prisma.user.count({ where: { role: Role.TEACHER } }),
       this.prisma.user.count({ where: { role: Role.STUDENT } }),
+      this.prisma.course.count(),
     ]);
 
     return {
-      pendingUsers,
-      pendingCourses,
+      pendingStudents,
       pendingEnrollments,
       totalUsers,
       totalTeachers,
       totalStudents,
+      totalCourses,
     };
   }
 }

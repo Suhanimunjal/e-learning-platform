@@ -71,6 +71,9 @@ let QuizController = class QuizController {
     getQuizSubmissions(id) {
         return this.quizService.getQuizSubmissions(id);
     }
+    async getAllPendingSubmissions(req) {
+        return this.quizService.getAllPendingSubmissions(req.user);
+    }
     gradeQuizAttempt(id, attemptId, body, req) {
         return this.quizService.gradeQuizAttempt(id, attemptId, body.grades, req.user);
     }
@@ -217,6 +220,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], QuizController.prototype, "getQuizSubmissions", null);
+__decorate([
+    (0, common_1.Get)('submissions/pending'),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], QuizController.prototype, "getAllPendingSubmissions", null);
 __decorate([
     (0, common_1.Post)(':id/attempts/:attemptId/grade'),
     (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),

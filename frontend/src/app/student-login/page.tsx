@@ -148,7 +148,7 @@ export default function StudentLoginPage() {
             {!requiresOtp ? (
               <>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-900">
                     Email address
                   </label>
                   <input
@@ -157,13 +157,14 @@ export default function StudentLoginPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                    className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 placeholder:text-gray-400"
                     placeholder="student@example.com"
+                    style={{ color: '#171717' }}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-900">
                     Password
                   </label>
                   <input
@@ -172,8 +173,9 @@ export default function StudentLoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                    className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 placeholder:text-gray-400"
                     placeholder="••••••••"
+                    style={{ color: '#171717' }}
                   />
                 </div>
               </>
@@ -186,7 +188,7 @@ export default function StudentLoginPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="otp" className="block text-sm font-medium text-gray-900">
                     Enter OTP
                   </label>
                   <input
@@ -195,7 +197,8 @@ export default function StudentLoginPage() {
                     required
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 text-center text-2xl tracking-widest"
+                    className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 text-center text-2xl tracking-widest placeholder:text-gray-400"
+                    style={{ color: '#171717' }}
                     placeholder="------"
                     maxLength={6}
                   />
@@ -205,7 +208,7 @@ export default function StudentLoginPage() {
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="text-sm text-gray-500 hover:text-gray-700"
+                    className="text-sm text-gray-500 hover:text-gray-900"
                   >
                     ← Back
                   </button>
@@ -248,7 +251,7 @@ export default function StudentLoginPage() {
               </Link>
             </p>
             <p className="mt-2 text-sm text-gray-500">
-              <Link href="/login" className="font-medium text-gray-500 hover:text-gray-700">
+              <Link href="/login" className="font-medium text-gray-500 hover:text-gray-900">
                 ← Back to role selection
               </Link>
             </p>

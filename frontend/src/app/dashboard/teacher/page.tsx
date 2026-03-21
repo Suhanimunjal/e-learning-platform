@@ -6,6 +6,7 @@ import StatCard from '@/components/ui/StatCard';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import ProgressBar from '@/components/ui/ProgressBar';
+import Modal from '@/components/ui/Modal';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Users,
@@ -17,17 +18,40 @@ import {
   ChevronRight,
   FileText,
   Loader2,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
-import { courses, enrollments, analytics } from '@/lib/api';
+import { courses, enrollments } from '@/lib/api';
+
+interface PendingEnrollment {
+  id: string;
+  userId: string;
+  courseId: string;
+  user: { id: string; name: string; email: string; phone?: string };
+  course: { id: string; title: string };
+  createdAt: string;
+}
+
+interface QuizSubmission {
+  id: string;
+  quizId: string;
+  quiz: { title: string };
+  user: { name: string; email: string };
+  score?: number;
+  percentage?: number;
+  completedAt: string;
+}
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const [myCourses, setMyCourses] = useState<any[]>([]);
-  const [allCourses, setAllCourses] = useState<any[]>([]);
+  const [pendingEnrollments, setPendingEnrollments] = useState<PendingEnrollment[]>([]);
+  const [pendingQuizzes, setPendingQuizzes] = useState<QuizSubmission[]>([]);
   const [courseAnalytics, setCourseAnalytics] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -37,40 +61,75 @@ export default function TeacherDashboard() {
     try {
       setLoading(true);
       setError(null);
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
 
-      const [allCoursesData, enrollmentsData] = await Promise.all([
-        courses.getAll().catch(err => {
-          console.error('Courses error:', err);
-          return [];
-        }),
-        enrollments.getMyCourses().catch(err => {
-          console.error('Enrollments error:', err);
-          return [];
-        }),
+      const [coursesData, enrollmentsData] = await Promise.all([
+        courses.getAll().catch(() => []),
+        enrollments.getMyCourses().catch(() => []),
       ]);
 
-      setAllCourses(allCoursesData || []);
-      setMyCourses(allCoursesData?.filter((c: any) => c.instructorId === user?.id) || []);
+      // Filter teacher's own courses
+      const teacherCourses = coursesData?.filter((c: any) => c.instructorId === user?.id) || [];
+      setMyCourses(teacherCourses);
+
+      // Fetch pending enrollments for teacher's courses
+      const pendingRes = await fetch('http://localhost:3001/api/enrollments/pending', { headers });
+      const pendingData = await pendingRes.json();
+      setPendingEnrollments(Array.isArray(pendingData) ? pendingData : []);
+
+      // Fetch pending quiz submissions
+      const quizzesRes = await fetch('http://localhost:3001/api/quiz/submissions/pending', { headers });
+      const quizzesData = await quizzesRes.json();
+      setPendingQuizzes(Array.isArray(quizzesData) ? quizzesData : []);
 
       // Calculate stats
       const totalStudents = enrollmentsData?.length || 0;
-      const activeCourses = allCoursesData?.filter((c: any) => c.published && c.instructorId === user?.id).length || 0;
-      
-      // Mock pending grading count
-      const pendingGrading = Math.floor(Math.random() * 10) + 5;
-      
-      // Store for stats
+      const activeCourses = teacherCourses.filter((c: any) => c.status === 'APPROVED').length || 0;
+
       setCourseAnalytics({
         totalStudents,
         activeCourses,
-        pendingGrading,
-        avgRating: 4.5 + Math.random(),
+        pendingGrading: Array.isArray(quizzesData) ? quizzesData.length : 0,
+        pendingEnrollments: Array.isArray(pendingData) ? pendingData.length : 0,
       });
     } catch (err: any) {
       console.error('Error loading dashboard data:', err);
       setError('Failed to load some data. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApproveEnrollment = async (enrollmentId: string) => {
+    setActionLoading(enrollmentId);
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`http://localhost:3001/api/enrollments/${enrollmentId}/approve`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      loadData();
+    } catch (err) {
+      console.error('Failed to approve enrollment:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRejectEnrollment = async (enrollmentId: string) => {
+    setActionLoading(enrollmentId);
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`http://localhost:3001/api/enrollments/${enrollmentId}/reject`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      loadData();
+    } catch (err) {
+      console.error('Failed to reject enrollment:', err);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -84,31 +143,6 @@ export default function TeacherDashboard() {
       </DashboardLayout>
     );
   }
-
-  // Calculate mock student data per course
-  const coursesWithStats = myCourses.map(course => ({
-    ...course,
-    studentCount: Math.floor(Math.random() * 50) + 10,
-    avgProgress: Math.floor(Math.random() * 40) + 30,
-  }));
-
-  // Mock pending submissions
-  const mockPendingSubmissions = [
-    {
-      id: '1',
-      studentName: 'Student 1',
-      assignmentTitle: 'Quiz 1',
-      submittedAt: '2 hours ago',
-      type: 'quiz',
-    },
-    {
-      id: '2',
-      studentName: 'Student 2',
-      assignmentTitle: 'Assignment 1',
-      submittedAt: '5 hours ago',
-      type: 'assignment',
-    },
-  ];
 
   return (
     <DashboardLayout>
@@ -154,85 +188,74 @@ export default function TeacherDashboard() {
             color="green"
           />
           <StatCard
+            title="Pending Enrollments"
+            value={courseAnalytics.pendingEnrollments || 0}
+            icon={Users}
+            color="yellow"
+          />
+          <StatCard
             title="Pending Grading"
             value={courseAnalytics.pendingGrading || 0}
             icon={CheckSquare}
             color="yellow"
           />
-          <StatCard
-            title="Avg Rating"
-            value={`${(courseAnalytics.avgRating || 0).toFixed(1)}/5`}
-            icon={Star}
-            color="purple"
-          />
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2">
-          {/* My Courses */}
+          {/* Pending Enrollments */}
           <section>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">My Courses</h2>
-              <Link href="/dashboard/teacher/courses">
-                <Button variant="ghost" size="sm">
-                  View All <ChevronRight className="ml-1 h-4 w-4" />
-                </Button>
-              </Link>
+              <h2 className="text-lg font-semibold text-gray-900">Pending Enrollment Requests</h2>
             </div>
 
-            {coursesWithStats.length === 0 ? (
+            {pendingEnrollments.length === 0 ? (
               <div className="rounded-lg bg-white p-8 text-center shadow-sm">
-                <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-4 text-lg font-medium text-gray-900">No courses yet</h3>
-                <p className="mt-2 text-gray-500">Create your first course to get started.</p>
-                <Link href="/courses/create" className="mt-4 inline-block">
-                  <Button>Create Course</Button>
-                </Link>
+                <Users className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-4 text-lg font-medium text-gray-900">No pending requests</h3>
+                <p className="mt-2 text-gray-500">All enrollment requests have been processed.</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {coursesWithStats.slice(0, 3).map((course) => (
+              <div className="space-y-3">
+                {pendingEnrollments.slice(0, 5).map((enrollment) => (
                   <div
-                    key={course.id}
-                    className="rounded-lg bg-white p-4 shadow-sm"
+                    key={enrollment.id}
+                    className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm"
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="h-16 w-24 flex-shrink-0 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600">
-                        <div className="flex h-full items-center justify-center">
-                          <BookOpen className="h-6 w-6 text-white opacity-50" />
-                        </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 font-medium">
+                        {enrollment.user?.name?.charAt(0).toUpperCase() || 'S'}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <Link
-                            href={`/courses/${course.id}`}
-                            className="font-medium text-gray-900 hover:text-indigo-600"
-                          >
-                            {course.title}
-                          </Link>
-                          <Badge variant={course.published ? 'success' : 'warning'}>
-                            {course.published ? 'Published' : 'Draft'}
-                          </Badge>
-                        </div>
-                        <p className="mt-1 text-sm text-gray-500 line-clamp-1">
-                          {course.description}
-                        </p>
-                        <div className="mt-3 flex items-center justify-between">
-                          <span className="flex items-center gap-1 text-sm text-gray-500">
-                            <Users className="h-4 w-4" />
-                            {course.studentCount} students
-                          </span>
-                          <span className="text-sm font-medium text-indigo-600">
-                            ₹{course.price}
-                          </span>
-                        </div>
-                        <div className="mt-2">
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>Avg Progress</span>
-                            <span>{course.avgProgress}%</span>
-                          </div>
-                          <ProgressBar value={course.avgProgress} size="sm" color="green" />
-                        </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{enrollment.user?.name || 'Student'}</p>
+                        <p className="text-sm text-gray-500">{enrollment.course?.title}</p>
+                        <p className="text-xs text-gray-400">{enrollment.user?.email}</p>
                       </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleApproveEnrollment(enrollment.id)}
+                        disabled={actionLoading === enrollment.id}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        {actionLoading === enrollment.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => handleRejectEnrollment(enrollment.id)}
+                        disabled={actionLoading === enrollment.id}
+                      >
+                        {actionLoading === enrollment.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -240,10 +263,10 @@ export default function TeacherDashboard() {
             )}
           </section>
 
-          {/* Grading Queue */}
+          {/* Pending Quiz Submissions */}
           <section>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Grading Queue</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Pending Grading</h2>
               <Link href="/dashboard/teacher/grading">
                 <Button variant="ghost" size="sm">
                   View All <ChevronRight className="ml-1 h-4 w-4" />
@@ -251,7 +274,7 @@ export default function TeacherDashboard() {
               </Link>
             </div>
 
-            {mockPendingSubmissions.length === 0 ? (
+            {pendingQuizzes.length === 0 ? (
               <div className="rounded-lg bg-white p-8 text-center shadow-sm">
                 <CheckSquare className="mx-auto h-12 w-12 text-green-400" />
                 <h3 className="mt-4 text-lg font-medium text-gray-900">All caught up!</h3>
@@ -259,38 +282,87 @@ export default function TeacherDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {mockPendingSubmissions.map((submission) => (
+                {pendingQuizzes.slice(0, 5).map((submission) => (
                   <div
                     key={submission.id}
                     className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                        {submission.type === 'quiz' ? (
-                          <CheckSquare className="h-5 w-5 text-indigo-600" />
-                        ) : (
-                          <FileText className="h-5 w-5 text-indigo-600" />
-                        )}
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100">
+                        <CheckSquare className="h-5 w-5 text-indigo-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{submission.studentName}</p>
-                        <p className="text-sm text-gray-500">
-                          {submission.assignmentTitle}
-                        </p>
+                        <p className="font-medium text-gray-900">{submission.user?.name || 'Student'}</p>
+                        <p className="text-sm text-gray-500">{submission.quiz?.title || 'Quiz'}</p>
                         <p className="text-xs text-gray-400">
-                          {submission.submittedAt}
+                          {new Date(submission.completedAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Grade
-                    </Button>
+                    <Link href="/dashboard/teacher/grading">
+                      <Button variant="outline" size="sm">
+                        Grade
+                      </Button>
+                    </Link>
                   </div>
                 ))}
               </div>
             )}
           </section>
         </div>
+
+        {/* My Courses */}
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">My Courses</h2>
+            <Link href="/dashboard/teacher/courses">
+              <Button variant="ghost" size="sm">
+                View All <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+
+          {myCourses.length === 0 ? (
+            <div className="rounded-lg bg-white p-8 text-center shadow-sm">
+              <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium text-gray-900">No courses yet</h3>
+              <p className="mt-2 text-gray-500">Create your first course to get started.</p>
+              <Link href="/courses/create" className="mt-4 inline-block">
+                <Button>Create Course</Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {myCourses.slice(0, 6).map((course) => (
+                <div
+                  key={course.id}
+                  className="rounded-lg bg-white p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-medium text-gray-900">{course.title}</h3>
+                      <p className="mt-1 text-sm text-gray-500 line-clamp-2">{course.description}</p>
+                    </div>
+                    <Badge variant={course.status === 'APPROVED' ? 'success' : 'warning'}>
+                      {course.status === 'APPROVED' ? 'Active' : 'Pending'}
+                    </Badge>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="flex items-center gap-1 text-sm text-gray-500">
+                      <Users className="h-4 w-4" />
+                      {course._count?.enrollments || 0} students
+                    </span>
+                    <Link href={`/courses/${course.id}`}>
+                      <Button variant="ghost" size="sm">
+                        View <ChevronRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* AI Tools */}
         <section>

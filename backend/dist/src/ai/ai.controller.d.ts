@@ -8,10 +8,10 @@ export declare class AiController {
     }): Promise<{
         error: string | null;
         id: string;
-        status: string;
-        createdAt: Date;
-        updatedAt: Date;
         version: string;
+        updatedAt: Date;
+        createdAt: Date;
+        status: string;
         type: string;
         retryCount: number;
         input: import("@prisma/client/runtime/client").JsonValue;
@@ -21,10 +21,10 @@ export declare class AiController {
     generateLessons(req: any, courseId: string): Promise<{
         error: string | null;
         id: string;
-        status: string;
-        createdAt: Date;
-        updatedAt: Date;
         version: string;
+        updatedAt: Date;
+        createdAt: Date;
+        status: string;
         type: string;
         retryCount: number;
         input: import("@prisma/client/runtime/client").JsonValue;
@@ -34,10 +34,10 @@ export declare class AiController {
     getJobStatus(jobId: string): Promise<{
         error: string | null;
         id: string;
-        status: string;
-        createdAt: Date;
-        updatedAt: Date;
         version: string;
+        updatedAt: Date;
+        createdAt: Date;
+        status: string;
         type: string;
         retryCount: number;
         input: import("@prisma/client/runtime/client").JsonValue;
@@ -47,10 +47,10 @@ export declare class AiController {
     generateQuiz(req: any, moduleId: string): Promise<{
         error: string | null;
         id: string;
-        status: string;
-        createdAt: Date;
-        updatedAt: Date;
         version: string;
+        updatedAt: Date;
+        createdAt: Date;
+        status: string;
         type: string;
         retryCount: number;
         input: import("@prisma/client/runtime/client").JsonValue;
@@ -60,10 +60,10 @@ export declare class AiController {
     generateFlashcards(req: any, moduleId: string): Promise<{
         error: string | null;
         id: string;
-        status: string;
-        createdAt: Date;
-        updatedAt: Date;
         version: string;
+        updatedAt: Date;
+        createdAt: Date;
+        status: string;
         type: string;
         retryCount: number;
         input: import("@prisma/client/runtime/client").JsonValue;

@@ -70,13 +70,13 @@ export declare class ModulesService {
         section: {
             course: {
                 id: string;
-                status: import(".prisma/client").$Enums.CourseStatus;
-                organizationId: string | null;
-                rejectionReason: string | null;
-                createdAt: Date;
-                updatedAt: Date;
                 description: string;
+                updatedAt: Date;
                 slug: string;
+                createdAt: Date;
+                status: import(".prisma/client").$Enums.CourseStatus;
+                rejectionReason: string | null;
+                organizationId: string | null;
                 title: string;
                 thumbnail: string | null;
                 videoIntro: string | null;

@@ -16,10 +16,10 @@ export declare class AiService implements OnModuleDestroy {
     generateCourseOutline(topic: string, userId: string): Promise<{
         error: string | null;
         id: string;
-        status: string;
-        createdAt: Date;
-        updatedAt: Date;
         version: string;
+        updatedAt: Date;
+        createdAt: Date;
+        status: string;
         type: string;
         retryCount: number;
         input: import("@prisma/client/runtime/client").JsonValue;
@@ -29,10 +29,10 @@ export declare class AiService implements OnModuleDestroy {
     generateLessons(courseId: string, userId: string): Promise<{
         error: string | null;
         id: string;
-        status: string;
-        createdAt: Date;
-        updatedAt: Date;
         version: string;
+        updatedAt: Date;
+        createdAt: Date;
+        status: string;
         type: string;
         retryCount: number;
         input: import("@prisma/client/runtime/client").JsonValue;
@@ -42,10 +42,10 @@ export declare class AiService implements OnModuleDestroy {
     generateQuiz(moduleId: string, userId: string): Promise<{
         error: string | null;
         id: string;
-        status: string;
-        createdAt: Date;
-        updatedAt: Date;
         version: string;
+        updatedAt: Date;
+        createdAt: Date;
+        status: string;
         type: string;
         retryCount: number;
         input: import("@prisma/client/runtime/client").JsonValue;
@@ -55,10 +55,10 @@ export declare class AiService implements OnModuleDestroy {
     generateFlashcards(moduleId: string, userId: string): Promise<{
         error: string | null;
         id: string;
-        status: string;
-        createdAt: Date;
-        updatedAt: Date;
         version: string;
+        updatedAt: Date;
+        createdAt: Date;
+        status: string;
         type: string;
         retryCount: number;
         input: import("@prisma/client/runtime/client").JsonValue;
@@ -68,10 +68,10 @@ export declare class AiService implements OnModuleDestroy {
     getJobStatus(jobId: string): Promise<{
         error: string | null;
         id: string;
-        status: string;
-        createdAt: Date;
-        updatedAt: Date;
         version: string;
+        updatedAt: Date;
+        createdAt: Date;
+        status: string;
         type: string;
         retryCount: number;
         input: import("@prisma/client/runtime/client").JsonValue;

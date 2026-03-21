@@ -19,9 +19,21 @@ export class RegisterDto {
 
   @IsOptional()
   @IsString()
-  organization?: string;
+  phone?: string;
 
   @IsOptional()
   @IsString()
-  subjects?: string;
+  rollNo?: string;
+
+  @IsOptional()
+  @IsString()
+  year?: string;
+
+  @IsOptional()
+  @IsString()
+  branch?: string;
+
+  @IsOptional()
+  @IsString()
+  course?: string;
 }

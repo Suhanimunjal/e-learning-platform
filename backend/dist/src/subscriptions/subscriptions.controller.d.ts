@@ -10,9 +10,9 @@ export declare class SubscriptionsController {
     createPlan(dto: CreateSubscriptionPlanDto): Promise<{
         id: string;
         name: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
         price: number;
         features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
@@ -25,9 +25,9 @@ export declare class SubscriptionsController {
     getAllPlans(req: any): Promise<{
         id: string;
         name: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
         price: number;
         features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
@@ -40,9 +40,9 @@ export declare class SubscriptionsController {
     getPlan(planId: string): Promise<{
         id: string;
         name: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
         price: number;
         features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
@@ -55,9 +55,9 @@ export declare class SubscriptionsController {
     updatePlan(planId: string, dto: UpdateSubscriptionPlanDto): Promise<{
         id: string;
         name: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
         price: number;
         features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
@@ -70,9 +70,9 @@ export declare class SubscriptionsController {
     deletePlan(planId: string): Promise<{
         id: string;
         name: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
         price: number;
         features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
@@ -86,24 +86,29 @@ export declare class SubscriptionsController {
         planId: string;
     }): Promise<{
         user: {
+            year: string | null;
             id: string;
-            email: string;
             name: string;
+            updatedAt: Date;
+            createdAt: Date;
+            email: string;
             password: string | null;
             role: import(".prisma/client").$Enums.Role;
             status: import(".prisma/client").$Enums.UserStatus;
             avatar: string | null;
-            organizationId: string | null;
             rejectionReason: string | null;
-            createdAt: Date;
-            updatedAt: Date;
+            phone: string | null;
+            rollNo: string | null;
+            branch: string | null;
+            course: string | null;
+            organizationId: string | null;
         };
         plan: {
             id: string;
             name: string;
-            createdAt: Date;
-            updatedAt: Date;
             description: string | null;
+            updatedAt: Date;
+            createdAt: Date;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
@@ -115,9 +120,9 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        status: string;
-        createdAt: Date;
         updatedAt: Date;
+        createdAt: Date;
+        status: string;
         userId: string;
         planId: string;
         currentPeriodStart: Date;
@@ -130,9 +135,9 @@ export declare class SubscriptionsController {
         plan: {
             id: string;
             name: string;
-            createdAt: Date;
-            updatedAt: Date;
             description: string | null;
+            updatedAt: Date;
+            createdAt: Date;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
@@ -144,9 +149,9 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        status: string;
-        createdAt: Date;
         updatedAt: Date;
+        createdAt: Date;
+        status: string;
         userId: string;
         planId: string;
         currentPeriodStart: Date;
@@ -159,9 +164,9 @@ export declare class SubscriptionsController {
         plan: {
             id: string;
             name: string;
-            createdAt: Date;
-            updatedAt: Date;
             description: string | null;
+            updatedAt: Date;
+            createdAt: Date;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
@@ -173,9 +178,9 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        status: string;
-        createdAt: Date;
         updatedAt: Date;
+        createdAt: Date;
+        status: string;
         userId: string;
         planId: string;
         currentPeriodStart: Date;
@@ -188,9 +193,9 @@ export declare class SubscriptionsController {
         plan: {
             id: string;
             name: string;
-            createdAt: Date;
-            updatedAt: Date;
             description: string | null;
+            updatedAt: Date;
+            createdAt: Date;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
@@ -202,9 +207,9 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        status: string;
-        createdAt: Date;
         updatedAt: Date;
+        createdAt: Date;
+        status: string;
         userId: string;
         planId: string;
         currentPeriodStart: Date;
@@ -217,9 +222,9 @@ export declare class SubscriptionsController {
         plan: {
             id: string;
             name: string;
-            createdAt: Date;
-            updatedAt: Date;
             description: string | null;
+            updatedAt: Date;
+            createdAt: Date;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
@@ -231,9 +236,9 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        status: string;
-        createdAt: Date;
         updatedAt: Date;
+        createdAt: Date;
+        status: string;
         userId: string;
         planId: string;
         currentPeriodStart: Date;
@@ -244,24 +249,29 @@ export declare class SubscriptionsController {
     }>;
     getSubscription(subscriptionId: string): Promise<{
         user: {
+            year: string | null;
             id: string;
-            email: string;
             name: string;
+            updatedAt: Date;
+            createdAt: Date;
+            email: string;
             password: string | null;
             role: import(".prisma/client").$Enums.Role;
             status: import(".prisma/client").$Enums.UserStatus;
             avatar: string | null;
-            organizationId: string | null;
             rejectionReason: string | null;
-            createdAt: Date;
-            updatedAt: Date;
+            phone: string | null;
+            rollNo: string | null;
+            branch: string | null;
+            course: string | null;
+            organizationId: string | null;
         };
         plan: {
             id: string;
             name: string;
-            createdAt: Date;
-            updatedAt: Date;
             description: string | null;
+            updatedAt: Date;
+            createdAt: Date;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
@@ -273,9 +283,9 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        status: string;
-        createdAt: Date;
         updatedAt: Date;
+        createdAt: Date;
+        status: string;
         userId: string;
         planId: string;
         currentPeriodStart: Date;
@@ -286,24 +296,29 @@ export declare class SubscriptionsController {
     }>;
     getAllSubscriptions(req: any): Promise<({
         user: {
+            year: string | null;
             id: string;
-            email: string;
             name: string;
+            updatedAt: Date;
+            createdAt: Date;
+            email: string;
             password: string | null;
             role: import(".prisma/client").$Enums.Role;
             status: import(".prisma/client").$Enums.UserStatus;
             avatar: string | null;
-            organizationId: string | null;
             rejectionReason: string | null;
-            createdAt: Date;
-            updatedAt: Date;
+            phone: string | null;
+            rollNo: string | null;
+            branch: string | null;
+            course: string | null;
+            organizationId: string | null;
         };
         plan: {
             id: string;
             name: string;
-            createdAt: Date;
-            updatedAt: Date;
             description: string | null;
+            updatedAt: Date;
+            createdAt: Date;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
@@ -315,9 +330,9 @@ export declare class SubscriptionsController {
         };
     } & {
         id: string;
-        status: string;
-        createdAt: Date;
         updatedAt: Date;
+        createdAt: Date;
+        status: string;
         userId: string;
         planId: string;
         currentPeriodStart: Date;

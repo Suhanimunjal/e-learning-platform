@@ -66,7 +66,7 @@ let AuthService = AuthService_1 = class AuthService {
         this.loginAttempts = new Map();
     }
     async register(registerDto) {
-        const { email, password, name, role, organization } = registerDto;
+        const { email, password, name, role, phone, rollNo, year, branch, course } = registerDto;
         if (role === client_1.Role.TEACHER || role === client_1.Role.ADMIN) {
             throw new common_1.ForbiddenException('Teachers and admins can only be created by administrators');
         }
@@ -84,6 +84,11 @@ let AuthService = AuthService_1 = class AuthService {
                 password: hashedPassword,
                 role: client_1.Role.STUDENT,
                 status: client_1.UserStatus.PENDING_APPROVAL,
+                phone,
+                rollNo,
+                year,
+                branch,
+                course,
             },
         });
         await this.activityLogService.log({

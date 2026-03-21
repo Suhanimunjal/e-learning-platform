@@ -130,6 +130,13 @@ export class QuizController {
     return this.quizService.getQuizSubmissions(id);
   }
 
+  // Get all pending quiz submissions for teacher across all their courses
+  @Get('submissions/pending')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
+  async getAllPendingSubmissions(@Request() req) {
+    return this.quizService.getAllPendingSubmissions(req.user);
+  }
+
   // Grade a quiz attempt (for teachers)
   @Post(':id/attempts/:attemptId/grade')
   @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)

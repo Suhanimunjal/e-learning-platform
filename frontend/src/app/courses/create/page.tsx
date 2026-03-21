@@ -479,7 +479,7 @@ export default function CreateCoursePage() {
                   value={courseData.title}
                   onChange={e => setCourseData({ ...courseData, title: e.target.value })}
                   placeholder="Enter course title"
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 bg-white"
                 />
               </div>
 
@@ -489,7 +489,7 @@ export default function CreateCoursePage() {
                   value={courseData.description}
                   onChange={e => setCourseData({ ...courseData, description: e.target.value })}
                   placeholder="Enter course description"
-                  className="w-full border rounded px-3 py-2 h-24"
+                  className="w-full border border-gray-300 rounded px-3 py-2 h-24 text-gray-900 bg-white"
                 />
               </div>
 
@@ -500,7 +500,7 @@ export default function CreateCoursePage() {
                   value={courseData.price}
                   onChange={e => setCourseData({ ...courseData, price: parseFloat(e.target.value) })}
                   placeholder="0"
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 bg-white"
                 />
               </div>
 

@@ -41,11 +41,11 @@ export declare class AnalyticsReportingService {
         recentEvents: {
             id: string;
             createdAt: Date;
-            userId: string;
-            metadata: import("@prisma/client/runtime/client").JsonValue;
             courseId: string | null;
             type: string;
             moduleId: string | null;
+            userId: string;
+            metadata: import("@prisma/client/runtime/client").JsonValue;
         }[];
     }>;
     getPlatformAnalytics(startDate?: Date, endDate?: Date): Promise<{

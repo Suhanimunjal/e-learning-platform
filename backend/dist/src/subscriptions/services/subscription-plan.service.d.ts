@@ -16,9 +16,9 @@ export declare class SubscriptionPlanService {
     }): Promise<{
         id: string;
         name: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
         price: number;
         features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
@@ -31,9 +31,9 @@ export declare class SubscriptionPlanService {
     getPlanById(planId: string): Promise<{
         id: string;
         name: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
         price: number;
         features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
@@ -46,9 +46,9 @@ export declare class SubscriptionPlanService {
     getAllPlans(onlyActive?: boolean): Promise<{
         id: string;
         name: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
         price: number;
         features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
@@ -70,9 +70,9 @@ export declare class SubscriptionPlanService {
     }>): Promise<{
         id: string;
         name: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
         price: number;
         features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;
@@ -85,9 +85,9 @@ export declare class SubscriptionPlanService {
     deletePlan(planId: string): Promise<{
         id: string;
         name: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
+        updatedAt: Date;
+        createdAt: Date;
         price: number;
         features: import("@prisma/client/runtime/client").JsonValue | null;
         billingCycle: string;

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 
 interface DashboardLayoutProps {
@@ -13,7 +12,6 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user } = useAuth();
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -31,15 +29,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar />
+      <Navbar onMenuClick={() => {}} />
 
-      <div className="lg:pl-64">
-        <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-
-        <main className="p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
-      </div>
+      <main className="p-4 sm:p-6 lg:p-8">
+        {children}
+      </main>
     </div>
   );
 }

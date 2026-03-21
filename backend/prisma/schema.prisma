@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -16,6 +17,11 @@ model User {
   avatar          String?
   organizationId  String?
   rejectionReason String?
+  phone           String?
+  rollNo          String?
+  year            String?
+  branch          String?
+  course          String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   

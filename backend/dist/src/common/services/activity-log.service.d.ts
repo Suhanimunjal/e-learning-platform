@@ -14,43 +14,43 @@ export declare class ActivityLogService {
     constructor(prisma: PrismaService);
     log(params: LogParams): Promise<{
         id: string;
+        createdAt: Date;
         action: string;
         entityType: string;
         entityId: string | null;
         userId: string | null;
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        createdAt: Date;
     }>;
     getRecentLogs(limit?: number, offset?: number): Promise<{
         id: string;
+        createdAt: Date;
         action: string;
         entityType: string;
         entityId: string | null;
         userId: string | null;
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        createdAt: Date;
     }[]>;
     getLogsByEntity(entityType: EntityType, entityId: string): Promise<{
         id: string;
+        createdAt: Date;
         action: string;
         entityType: string;
         entityId: string | null;
         userId: string | null;
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        createdAt: Date;
     }[]>;
     getLogsByUser(userId: string, limit?: number): Promise<{
         id: string;
+        createdAt: Date;
         action: string;
         entityType: string;
         entityId: string | null;
         userId: string | null;
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        createdAt: Date;
     }[]>;
 }
 export {};

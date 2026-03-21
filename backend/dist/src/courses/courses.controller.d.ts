@@ -6,13 +6,13 @@ export declare class CoursesController {
     constructor(coursesService: CoursesService);
     create(req: any, createCourseDto: CreateCourseDto): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.CourseStatus;
-        organizationId: string | null;
-        rejectionReason: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         description: string;
+        updatedAt: Date;
         slug: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        rejectionReason: string | null;
+        organizationId: string | null;
         title: string;
         thumbnail: string | null;
         videoIntro: string | null;
@@ -23,8 +23,8 @@ export declare class CoursesController {
     findAll(req: any): Promise<({
         instructor: {
             id: string;
-            email: string;
             name: string;
+            email: string;
         };
         sections: ({
             modules: {
@@ -62,13 +62,13 @@ export declare class CoursesController {
         })[];
     } & {
         id: string;
-        status: import(".prisma/client").$Enums.CourseStatus;
-        organizationId: string | null;
-        rejectionReason: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         description: string;
+        updatedAt: Date;
         slug: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        rejectionReason: string | null;
+        organizationId: string | null;
         title: string;
         thumbnail: string | null;
         videoIntro: string | null;
@@ -83,14 +83,14 @@ export declare class CoursesController {
         enrollments: {
             id: string;
             createdAt: Date;
-            userId: string;
             courseId: string;
+            userId: string;
             accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
         }[];
         instructor: {
             id: string;
-            email: string;
             name: string;
+            email: string;
         };
         sections: ({
             modules: {
@@ -127,13 +127,13 @@ export declare class CoursesController {
             courseId: string;
         })[];
         id: string;
-        status: import(".prisma/client").$Enums.CourseStatus;
-        organizationId: string | null;
-        rejectionReason: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         description: string;
+        updatedAt: Date;
         slug: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        rejectionReason: string | null;
+        organizationId: string | null;
         title: string;
         thumbnail: string | null;
         videoIntro: string | null;
@@ -147,14 +147,14 @@ export declare class CoursesController {
         enrollments: {
             id: string;
             createdAt: Date;
-            userId: string;
             courseId: string;
+            userId: string;
             accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
         }[];
         instructor: {
             id: string;
-            email: string;
             name: string;
+            email: string;
         };
         sections: ({
             modules: {
@@ -191,13 +191,13 @@ export declare class CoursesController {
             courseId: string;
         })[];
         id: string;
-        status: import(".prisma/client").$Enums.CourseStatus;
-        organizationId: string | null;
-        rejectionReason: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         description: string;
+        updatedAt: Date;
         slug: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        rejectionReason: string | null;
+        organizationId: string | null;
         title: string;
         thumbnail: string | null;
         videoIntro: string | null;
@@ -207,13 +207,13 @@ export declare class CoursesController {
     }>;
     update(id: string, updateCourseDto: UpdateCourseDto, req: any): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.CourseStatus;
-        organizationId: string | null;
-        rejectionReason: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         description: string;
+        updatedAt: Date;
         slug: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        rejectionReason: string | null;
+        organizationId: string | null;
         title: string;
         thumbnail: string | null;
         videoIntro: string | null;
@@ -223,13 +223,13 @@ export declare class CoursesController {
     }>;
     remove(id: string, req: any): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.CourseStatus;
-        organizationId: string | null;
-        rejectionReason: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         description: string;
+        updatedAt: Date;
         slug: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        rejectionReason: string | null;
+        organizationId: string | null;
         title: string;
         thumbnail: string | null;
         videoIntro: string | null;

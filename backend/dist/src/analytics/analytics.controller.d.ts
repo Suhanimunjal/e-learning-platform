@@ -13,11 +13,11 @@ export declare class AnalyticsController {
         recentEvents: {
             id: string;
             createdAt: Date;
-            userId: string;
-            metadata: import("@prisma/client/runtime/client").JsonValue;
             courseId: string | null;
             type: string;
             moduleId: string | null;
+            userId: string;
+            metadata: import("@prisma/client/runtime/client").JsonValue;
         }[];
     }>;
     getCourseAnalytics(courseId: string, req: any): Promise<{

@@ -865,4 +865,85 @@ export class QuizService {
       finalScore: updatedAttempt.score,
     };
   }
+
+  async getAllPendingSubmissions(user: User) {
+    // Get all courses owned by this teacher
+    const teacherCourses = await this.prisma.course.findMany({
+      where: { instructorId: user.id },
+      select: { id: true, title: true },
+    });
+
+    const courseIds = teacherCourses.map(c => c.id);
+
+    // Get all quizzes for these courses
+    const quizzes = await this.prisma.quiz.findMany({
+      where: {
+        module: {
+          section: {
+            courseId: { in: courseIds },
+          },
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        module: {
+          select: {
+            title: true,
+            section: {
+              select: {
+                course: {
+                  select: {
+                    id: true,
+                    title: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const quizIds = quizzes.map(q => q.id);
+
+    // Get all ungraded attempts for these quizzes
+    const attempts = await this.prisma.quizAttempt.findMany({
+      where: {
+        quizId: { in: quizIds },
+        completedAt: { not: null },
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { completedAt: 'desc' },
+    });
+
+    // Format pending submissions
+    const pendingSubmissions = attempts.map(attempt => {
+      const quiz = quizzes.find(q => q.id === attempt.quizId);
+      return {
+        id: attempt.id,
+        quizId: attempt.quizId,
+        quizTitle: quiz?.title || 'Unknown Quiz',
+        courseId: quiz?.module.section.course.id,
+        courseTitle: quiz?.module.section.course.title || 'Unknown Course',
+        userId: attempt.user.id,
+        userName: attempt.user.name,
+        userEmail: attempt.user.email,
+        score: attempt.score,
+        percentage: attempt.percentage,
+        completedAt: attempt.completedAt,
+        status: attempt.passed ? 'graded' : 'pending',
+      };
+    });
+
+    return {
+      submissions: pendingSubmissions,
+      total: pendingSubmissions.length,
+      pendingCount: pendingSubmissions.filter(s => s.status === 'pending').length,
+    };
+  }
 }

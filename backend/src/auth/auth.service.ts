@@ -41,7 +41,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, name, role, organization } = registerDto;
+    const { email, password, name, role, phone, rollNo, year, branch, course } = registerDto;
 
     // Only allow STUDENT registration via public registration
     if (role === Role.TEACHER || role === Role.ADMIN) {
@@ -67,6 +67,11 @@ export class AuthService {
         password: hashedPassword,
         role: Role.STUDENT,
         status: UserStatus.PENDING_APPROVAL,
+        phone,
+        rollNo,
+        year,
+        branch,
+        course,
       },
     });
 

@@ -33,10 +33,10 @@ export declare class PaymentsService {
     }>;
     getOrderStatus(orderId: string): Promise<{
         id: string;
-        status: string;
         createdAt: Date;
-        userId: string;
+        status: string;
         courseId: string;
+        userId: string;
         amount: number;
         currency: string;
         razorpayOrderId: string | null;

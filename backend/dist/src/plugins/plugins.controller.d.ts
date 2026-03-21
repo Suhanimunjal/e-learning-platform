@@ -11,9 +11,8 @@ export declare class PluginsController {
         };
         usageInstructions: string;
         id: string;
-        name: string;
-        updatedAt: Date;
         pluginId: string;
+        name: string;
         description: string | null;
         version: string;
         author: string | null;
@@ -22,6 +21,7 @@ export declare class PluginsController {
         enabled: boolean;
         config: import("@prisma/client/runtime/client").JsonValue | null;
         installedAt: Date;
+        updatedAt: Date;
     }[]>;
     getAvailablePlugins(category?: string): Promise<{
         isInstalled: boolean;
@@ -64,9 +64,8 @@ export declare class PluginsController {
         };
         usageInstructions: string;
         id: string;
-        name: string;
-        updatedAt: Date;
         pluginId: string;
+        name: string;
         description: string | null;
         version: string;
         author: string | null;
@@ -75,6 +74,7 @@ export declare class PluginsController {
         enabled: boolean;
         config: import("@prisma/client/runtime/client").JsonValue | null;
         installedAt: Date;
+        updatedAt: Date;
     }>;
     installPlugin(body: {
         pluginId: string;
@@ -82,9 +82,8 @@ export declare class PluginsController {
         message: string;
         plugin: {
             id: string;
-            name: string;
-            updatedAt: Date;
             pluginId: string;
+            name: string;
             description: string | null;
             version: string;
             author: string | null;
@@ -93,6 +92,7 @@ export declare class PluginsController {
             enabled: boolean;
             config: import("@prisma/client/runtime/client").JsonValue | null;
             installedAt: Date;
+            updatedAt: Date;
         };
     }>;
     uninstallPlugin(pluginId: string): Promise<{
@@ -104,9 +104,8 @@ export declare class PluginsController {
         message: string;
         plugin: {
             id: string;
-            name: string;
-            updatedAt: Date;
             pluginId: string;
+            name: string;
             description: string | null;
             version: string;
             author: string | null;
@@ -115,15 +114,15 @@ export declare class PluginsController {
             enabled: boolean;
             config: import("@prisma/client/runtime/client").JsonValue | null;
             installedAt: Date;
+            updatedAt: Date;
         };
     }>;
     configurePlugin(pluginId: string, config: Record<string, any>): Promise<{
         message: string;
         plugin: {
             id: string;
-            name: string;
-            updatedAt: Date;
             pluginId: string;
+            name: string;
             description: string | null;
             version: string;
             author: string | null;
@@ -132,6 +131,7 @@ export declare class PluginsController {
             enabled: boolean;
             config: import("@prisma/client/runtime/client").JsonValue | null;
             installedAt: Date;
+            updatedAt: Date;
         };
     }>;
 }
