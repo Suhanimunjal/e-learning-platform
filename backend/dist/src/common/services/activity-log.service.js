@@ -41,9 +41,6 @@ let ActivityLogService = ActivityLogService_1 = class ActivityLogService {
             take: limit,
             skip: offset,
             orderBy: { createdAt: 'desc' },
-            include: {
-                user: { select: { id: true, name: true, email: true, role: true } },
-            },
         });
     }
     async getFilteredLogs(limit = 50, offset = 0, filters) {
@@ -68,9 +65,6 @@ let ActivityLogService = ActivityLogService_1 = class ActivityLogService {
             take: limit,
             skip: offset,
             orderBy: { createdAt: 'desc' },
-            include: {
-                user: { select: { id: true, name: true, email: true, role: true } },
-            },
         });
     }
     async getLogTypes() {
@@ -85,9 +79,6 @@ let ActivityLogService = ActivityLogService_1 = class ActivityLogService {
         return this.prisma.activityLog.findMany({
             where: { entityType, entityId },
             orderBy: { createdAt: 'desc' },
-            include: {
-                user: { select: { id: true, name: true, email: true, role: true } },
-            },
         });
     }
     async getLogsByUser(userId, limit = 50) {
@@ -100,9 +91,6 @@ let ActivityLogService = ActivityLogService_1 = class ActivityLogService {
             },
             take: limit,
             orderBy: { createdAt: 'desc' },
-            include: {
-                user: { select: { id: true, name: true, email: true, role: true } },
-            },
         });
     }
     async getNewLogsSince(since, limit = 100) {
@@ -112,9 +100,6 @@ let ActivityLogService = ActivityLogService_1 = class ActivityLogService {
             },
             take: limit,
             orderBy: { createdAt: 'desc' },
-            include: {
-                user: { select: { id: true, name: true, email: true, role: true } },
-            },
         });
     }
 };

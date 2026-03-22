@@ -11,8 +11,8 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600">
             <GraduationCap className="h-10 w-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Welcome to E-Learning Platform</h1>
-          <p className="mt-2 text-gray-600">Select your role to continue</p>
+          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
+          <p className="mt-2 text-gray-600">Select your role to login</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
@@ -66,6 +66,12 @@ export default function LoginPage() {
               Admin Login <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
+        </div>
+
+        <div className="mt-8 text-center">
+          <Link href="/" className="text-gray-600 hover:text-gray-900">
+            ← Back to home
+          </Link>
         </div>
       </div>
     </div>

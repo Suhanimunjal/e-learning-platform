@@ -35,7 +35,7 @@ export default function StudentLoginPage() {
         const res = await fetch(`${browserApiBaseUrl}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, password, requestedRole: 'student' }),
         });
 
         const data = await res.json();

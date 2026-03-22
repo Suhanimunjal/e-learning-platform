@@ -224,7 +224,7 @@ export class AuthService {
   }
 
   async initiateLogin(loginDto: LoginDto): Promise<{ requiresOtp: boolean; message?: string }> {
-    const { email, password } = loginDto;
+    const { email, password, requestedRole } = loginDto;
 
     // Check if account is locked out
     const lockStatus = this.isLockedOut(email);
@@ -240,6 +240,14 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Validate that user's role matches the login page they're using
+    if (requestedRole) {
+      const normalizedRequestedRole = requestedRole.toUpperCase() as Role;
+      if (user.role !== normalizedRequestedRole) {
+        throw new ForbiddenException(`This account is not authorized for ${requestedRole} login.`);
+      }
+    }
+
     if (user.role === Role.TEACHER && user.status === UserStatus.PENDING_APPROVAL) {
       throw new ForbiddenException('Your teacher account is pending admin approval.');
     }
@@ -247,6 +255,11 @@ export class AuthService {
     // Block explicitly rejected accounts.
     if (user.status === UserStatus.REJECTED) {
       throw new ForbiddenException('Your account has been rejected. Please contact administrator.');
+    }
+
+    // Block blacklisted accounts.
+    if (user.status === UserStatus.BLACKLISTED) {
+      throw new ForbiddenException('Your account has been blacklisted. Please contact administrator.');
     }
 
     // Guard against accounts without a password hash and malformed stored hashes.

@@ -14,15 +14,15 @@ export declare class AdminCourseGenerationService {
     getJob(jobId: string): Promise<{
         error: string | null;
         id: string;
+        version: string;
+        updatedAt: Date;
         createdAt: Date;
-        type: string;
         status: string;
+        type: string;
+        retryCount: number;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
-        retryCount: number;
-        version: string;
         tenantId: string | null;
-        updatedAt: Date;
     }>;
     private executeGeneration;
     private normalizeModules;

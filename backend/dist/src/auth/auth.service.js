@@ -202,7 +202,7 @@ let AuthService = AuthService_1 = class AuthService {
         return process.env.AUTH_ENABLE_OTP === 'true';
     }
     async initiateLogin(loginDto) {
-        const { email, password } = loginDto;
+        const { email, password, requestedRole } = loginDto;
         const lockStatus = this.isLockedOut(email);
         if (lockStatus.locked) {
             throw new common_1.ForbiddenException(`Account temporarily locked. Try again in ${lockStatus.remainingMinutes} minutes.`);
@@ -213,11 +213,20 @@ let AuthService = AuthService_1 = class AuthService {
         if (!user) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
+        if (requestedRole) {
+            const normalizedRequestedRole = requestedRole.toUpperCase();
+            if (user.role !== normalizedRequestedRole) {
+                throw new common_1.ForbiddenException(`This account is not authorized for ${requestedRole} login.`);
+            }
+        }
         if (user.role === client_1.Role.TEACHER && user.status === client_1.UserStatus.PENDING_APPROVAL) {
             throw new common_1.ForbiddenException('Your teacher account is pending admin approval.');
         }
         if (user.status === client_1.UserStatus.REJECTED) {
             throw new common_1.ForbiddenException('Your account has been rejected. Please contact administrator.');
+        }
+        if (user.status === client_1.UserStatus.BLACKLISTED) {
+            throw new common_1.ForbiddenException('Your account has been blacklisted. Please contact administrator.');
         }
         if (!user.password) {
             throw new common_1.UnauthorizedException('Invalid credentials');

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, NotFound
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { Role, UserStatus } from '@prisma/client';
+import { Role, UserStatus, CourseStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { OtpService } from '../common/services/otp.service';
 import { EmailService } from '../common/services/email.service';
@@ -436,8 +436,8 @@ export class AdminController {
       this.prisma.user.count({ where: { role: Role.TEACHER } }),
       this.prisma.user.count({ where: { role: Role.STUDENT } }),
       this.prisma.course.count(),
-      this.prisma.user.count({ where: { status: 'BLACKLISTED' as any } }),
-      this.prisma.course.count({ where: { status: 'BLACKLISTED' as any } }),
+      this.prisma.user.count({ where: { status: UserStatus.BLACKLISTED } }),
+      this.prisma.course.count({ where: { status: CourseStatus.BLACKLISTED } }),
     ]);
 
     return {
@@ -456,7 +456,7 @@ export class AdminController {
   async blacklistUser(@Param('userId') userId: string, @Body() body: { reason: string }, @Request() req) {
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { status: 'BLACKLISTED' as any, rejectionReason: body.reason },
+      data: { status: UserStatus.BLACKLISTED, rejectionReason: body.reason },
       select: { id: true, email: true, name: true, role: true, status: true },
     });
 
@@ -496,7 +496,7 @@ export class AdminController {
   async blacklistCourse(@Param('courseId') courseId: string, @Body() body: { reason: string }, @Request() req) {
     const course = await this.prisma.course.update({
       where: { id: courseId },
-      data: { status: 'BLACKLISTED' as any, rejectionReason: body.reason },
+      data: { status: CourseStatus.BLACKLISTED, rejectionReason: body.reason },
       select: { id: true, title: true, status: true, instructorId: true },
     });
 

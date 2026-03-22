@@ -31,8 +31,8 @@ api.interceptors.response.use(
 );
 
 export const auth = {
-  login: async (email: string, password: string) => {
-    const res = await api.post('/auth/login', { email, password });
+  login: async (email: string, password: string, requestedRole?: string) => {
+    const res = await api.post('/auth/login', { email, password, requestedRole });
     if (res.data.accessToken) {
       localStorage.setItem('token', res.data.accessToken);
       localStorage.setItem('user', JSON.stringify(res.data.user));

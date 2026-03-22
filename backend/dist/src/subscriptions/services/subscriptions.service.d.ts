@@ -11,6 +11,7 @@ export declare class SubscriptionsService {
         razorpaySubscriptionId?: string;
     }): Promise<{
         user: {
+            year: string | null;
             id: string;
             name: string;
             updatedAt: Date;
@@ -23,7 +24,6 @@ export declare class SubscriptionsService {
             rejectionReason: string | null;
             phone: string | null;
             rollNo: string | null;
-            year: string | null;
             branch: string | null;
             course: string | null;
             organizationId: string | null;
@@ -58,6 +58,7 @@ export declare class SubscriptionsService {
     }>;
     getSubscriptionById(subscriptionId: string): Promise<{
         user: {
+            year: string | null;
             id: string;
             name: string;
             updatedAt: Date;
@@ -70,7 +71,6 @@ export declare class SubscriptionsService {
             rejectionReason: string | null;
             phone: string | null;
             rollNo: string | null;
-            year: string | null;
             branch: string | null;
             course: string | null;
             organizationId: string | null;
@@ -237,6 +237,7 @@ export declare class SubscriptionsService {
         planId?: string;
     }): Promise<({
         user: {
+            year: string | null;
             id: string;
             name: string;
             updatedAt: Date;
@@ -249,7 +250,6 @@ export declare class SubscriptionsService {
             rejectionReason: string | null;
             phone: string | null;
             rollNo: string | null;
-            year: string | null;
             branch: string | null;
             course: string | null;
             organizationId: string | null;

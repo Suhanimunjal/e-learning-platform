@@ -20,66 +20,56 @@ export declare class ActivityLogService {
     private readonly logger;
     constructor(prisma: PrismaService);
     log(params: LogParams): Promise<void>;
-    getRecentLogs(limit?: number, offset?: number): Promise<({
-        user: never;
-    } & {
+    getRecentLogs(limit?: number, offset?: number): Promise<{
         id: string;
+        createdAt: Date;
         action: string;
         entityType: string;
         entityId: string | null;
         userId: string | null;
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        createdAt: Date;
-    })[]>;
-    getFilteredLogs(limit: number, offset: number, filters: LogFilters): Promise<({
-        user: never;
-    } & {
+    }[]>;
+    getFilteredLogs(limit: number, offset: number, filters: LogFilters): Promise<{
         id: string;
+        createdAt: Date;
         action: string;
         entityType: string;
         entityId: string | null;
         userId: string | null;
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        createdAt: Date;
-    })[]>;
+    }[]>;
     getLogTypes(): Promise<string[]>;
-    getLogsByEntity(entityType: EntityType, entityId: string): Promise<({
-        user: never;
-    } & {
+    getLogsByEntity(entityType: EntityType, entityId: string): Promise<{
         id: string;
+        createdAt: Date;
         action: string;
         entityType: string;
         entityId: string | null;
         userId: string | null;
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        createdAt: Date;
-    })[]>;
-    getLogsByUser(userId: string, limit?: number): Promise<({
-        user: never;
-    } & {
+    }[]>;
+    getLogsByUser(userId: string, limit?: number): Promise<{
         id: string;
+        createdAt: Date;
         action: string;
         entityType: string;
         entityId: string | null;
         userId: string | null;
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        createdAt: Date;
-    })[]>;
-    getNewLogsSince(since: Date, limit?: number): Promise<({
-        user: never;
-    } & {
+    }[]>;
+    getNewLogsSince(since: Date, limit?: number): Promise<{
         id: string;
+        createdAt: Date;
         action: string;
         entityType: string;
         entityId: string | null;
         userId: string | null;
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        createdAt: Date;
-    })[]>;
+    }[]>;
 }
 export {};

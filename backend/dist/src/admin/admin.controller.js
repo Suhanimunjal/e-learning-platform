@@ -348,8 +348,8 @@ let AdminController = class AdminController {
             this.prisma.user.count({ where: { role: client_1.Role.TEACHER } }),
             this.prisma.user.count({ where: { role: client_1.Role.STUDENT } }),
             this.prisma.course.count(),
-            this.prisma.user.count({ where: { status: 'BLACKLISTED' } }),
-            this.prisma.course.count({ where: { status: 'BLACKLISTED' } }),
+            this.prisma.user.count({ where: { status: client_1.UserStatus.BLACKLISTED } }),
+            this.prisma.course.count({ where: { status: client_1.CourseStatus.BLACKLISTED } }),
         ]);
         return {
             pendingApprovals,
@@ -364,7 +364,7 @@ let AdminController = class AdminController {
     async blacklistUser(userId, body, req) {
         const user = await this.prisma.user.update({
             where: { id: userId },
-            data: { status: 'BLACKLISTED', rejectionReason: body.reason },
+            data: { status: client_1.UserStatus.BLACKLISTED, rejectionReason: body.reason },
             select: { id: true, email: true, name: true, role: true, status: true },
         });
         await this.activityLogService.log({
@@ -396,7 +396,7 @@ let AdminController = class AdminController {
     async blacklistCourse(courseId, body, req) {
         const course = await this.prisma.course.update({
             where: { id: courseId },
-            data: { status: 'BLACKLISTED', rejectionReason: body.reason },
+            data: { status: client_1.CourseStatus.BLACKLISTED, rejectionReason: body.reason },
             select: { id: true, title: true, status: true, instructorId: true },
         });
         await this.activityLogService.log({
