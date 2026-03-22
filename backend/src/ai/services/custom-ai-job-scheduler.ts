@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ContentGeneratorEnhancedService } from '../content-generator-enhanced.service';
-import { AnthropicService } from './anthropic.service';
+import { OllamaService } from './ollama.service';
 
 export interface AIJob {
   id: string;
@@ -22,7 +22,7 @@ export class CustomAiJobScheduler implements OnModuleDestroy {
   constructor(
     private prisma: PrismaService,
     private contentGenerator: ContentGeneratorEnhancedService,
-    private anthropicService: AnthropicService,
+    private ollamaService: OllamaService,
   ) {
     this.logger.log('Custom AI Job Scheduler initialized (Redis-free mode)');
   }
@@ -145,7 +145,7 @@ export class CustomAiJobScheduler implements OnModuleDestroy {
           data: { status: 'processing' },
         });
 
-        const flashcards = await this.anthropicService.generateFlashcards('Flashcard content', data.topic || 'General');
+        const flashcards = await this.ollamaService.generateResponse('Generate flashcards about: ' + (data.topic || 'General'));
         
         await this.prisma.aIGenerationJob.update({
           where: { id: data.jobId },

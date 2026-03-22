@@ -15,6 +15,7 @@ import {
   Mic
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import api from '@/lib/api';
 
 interface SearchResult {
   id: string;
@@ -37,66 +38,6 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
-const MOCK_RESULTS: SearchResult[] = [
-  {
-    id: '1',
-    type: 'lesson',
-    title: 'Introduction to JavaScript Variables',
-    snippet: 'Learn about let, const, and var declarations in JavaScript. This lesson covers variable scope, hoisting, and best practices for naming variables.',
-    courseName: 'JavaScript Fundamentals',
-    relevanceScore: 95
-  },
-  {
-    id: '2',
-    type: 'lesson',
-    title: 'Understanding Functions in JavaScript',
-    snippet: 'Functions are one of the fundamental building blocks in JavaScript. Learn about function declarations, expressions, and arrow functions.',
-    courseName: 'JavaScript Fundamentals',
-    relevanceScore: 92
-  },
-  {
-    id: '3',
-    type: 'assignment',
-    title: 'JavaScript Variables Practice',
-    snippet: 'Complete this assignment to practice declaring and using variables in JavaScript. Includes exercises on let, const, and var.',
-    courseName: 'JavaScript Fundamentals',
-    relevanceScore: 88
-  },
-  {
-    id: '4',
-    type: 'quiz',
-    title: 'JavaScript Basics Quiz',
-    snippet: 'Test your knowledge of JavaScript basics including variables, data types, and operators.',
-    courseName: 'JavaScript Fundamentals',
-    relevanceScore: 85
-  },
-  {
-    id: '5',
-    type: 'course',
-    title: 'Advanced React Patterns',
-    snippet: 'Master advanced React patterns including compound components, render props, and custom hooks. Learn how to build reusable, maintainable components.',
-    courseName: 'React Masterclass',
-    relevanceScore: 78
-  },
-  {
-    id: '6',
-    type: 'lesson',
-    title: 'CSS Flexbox Complete Guide',
-    snippet: 'Learn how to create flexible layouts with CSS Flexbox. This comprehensive guide covers container properties, items properties, and real-world examples.',
-    courseName: 'Modern CSS',
-    relevanceScore: 75
-  }
-];
-
-const MOCK_SUGGESTIONS = [
-  'javascript variables tutorial',
-  'javascript functions examples',
-  'how to use arrow functions',
-  'javascript array methods',
-  'javascript async await tutorial',
-  'react hooks guide'
-];
-
 const DIFFICULTY_LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 const CONTENT_TYPES = ['Course', 'Lesson', 'Assignment', 'Quiz'];
 
@@ -118,7 +59,6 @@ export default function SearchBar({
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Load recent searches from localStorage
     const saved = localStorage.getItem('recentSearches');
     if (saved) {
       setRecentSearches(JSON.parse(saved).slice(0, 5));
@@ -126,7 +66,6 @@ export default function SearchBar({
   }, []);
 
   useEffect(() => {
-    // Close results when clicking outside
     const handleClickOutside = (e: MouseEvent) => {
       if (resultsRef.current && !resultsRef.current.contains(e.target as Node) && inputRef.current && !inputRef.current.contains(e.target as Node)) {
         setShowResults(false);
@@ -147,46 +86,29 @@ export default function SearchBar({
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await api.get('/ai/search', { params: { query: searchQuery, ...filters } });
+      const data = response.data?.data || [];
+      
+      const formattedResults: SearchResult[] = data.map((item: any) => ({
+        id: item.id || item._id || String(Math.random()),
+        type: item.type || 'course',
+        title: item.title || item.name || 'Untitled',
+        snippet: item.snippet || item.description || '',
+        courseName: item.courseName || item.course?.title,
+        relevanceScore: item.relevanceScore || 80
+      }));
 
-      // Filter mock results based on query
-      const filtered = MOCK_RESULTS.filter(r => 
-        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.snippet.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.courseName?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      setResults(formattedResults);
 
-      // Apply filters
-      const filteredResults = filtered.filter(r => {
-        if (filters.type && r.type !== filters.type.toLowerCase()) return false;
-        if (filters.difficulty && r.title.toLowerCase().includes(filters.difficulty.toLowerCase())) return false;
-        return true;
-      });
+      const suggestionResponse = await api.get('/ai/search/suggestions', { params: { query: searchQuery } });
+      const suggestionData = suggestionResponse.data?.data || [];
+      setSuggestions(suggestionData.slice(0, 5));
 
-      setResults(filteredResults);
-
-      // Generate suggestions
-      const newSuggestions = MOCK_SUGGESTIONS.filter(s => 
-        s.includes(searchQuery.toLowerCase()) && s !== searchQuery.toLowerCase()
-      ).slice(0, 3);
-      setSuggestions(newSuggestions);
-
-      // "Did you mean" for typos
-      if (searchQuery.includes('javascrpt') || searchQuery.includes('javasript')) {
-        setDidYouMean('javascript');
-      } else {
-        setDidYouMean(null);
-      }
-
-      onSearch?.(searchQuery, filters);
-
-      // Save to recent searches
-      if (searchQuery.length > 2) {
-        const updated = [searchQuery, ...recentSearches.filter(s => s !== searchQuery)].slice(0, 5);
-        setRecentSearches(updated);
-        localStorage.setItem('recentSearches', JSON.stringify(updated));
-      }
+      setDidYouMean(null);
+    } catch (err) {
+      console.error('Search error:', err);
+      setResults([]);
+      setSuggestions([]);
     } finally {
       setIsLoading(false);
     }

@@ -6,7 +6,9 @@ import Button from '@/components/ui/Button';
 import ProgressBar from '@/components/ui/ProgressBar';
 import Badge from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
+import { useParams } from 'next/navigation';
 import { usePlugins } from '@/contexts/PluginContext';
+import api from '@/lib/api';
 import {
   Clock,
   CheckCircle,
@@ -33,78 +35,26 @@ interface Quiz {
   id: string;
   title: string;
   description?: string;
-  timeLimit?: number; // in minutes
+  timeLimit?: number;
   maxAttempts: number;
   passingScore: number;
   questions: Question[];
 }
 
-// Mock quiz data
-const mockQuiz: Quiz = {
-  id: '1',
-  title: 'JavaScript Basics Quiz',
-  description: 'Test your knowledge of JavaScript fundamentals',
-  timeLimit: 15, // 15 minutes
-  maxAttempts: 3,
-  passingScore: 70,
-  questions: [
-    {
-      id: '1',
-      text: 'What is the correct way to declare a variable in JavaScript?',
-      type: 'multiple-choice',
-      options: ['var x = 5;', 'variable x = 5;', 'v x = 5;', 'declare x = 5;'],
-      correctAnswer: 'var x = 5;',
-      points: 10,
-    },
-    {
-      id: '2',
-      text: 'Which of the following is NOT a JavaScript data type?',
-      type: 'multiple-choice',
-      options: ['String', 'Boolean', 'Character', 'Number'],
-      correctAnswer: 'Character',
-      points: 10,
-    },
-    {
-      id: '3',
-      text: 'What will console.log(typeof []) output?',
-      type: 'multiple-choice',
-      options: ['array', 'object', 'undefined', 'list'],
-      correctAnswer: 'object',
-      points: 10,
-    },
-    {
-      id: '4',
-      text: 'What is the purpose of the "use strict" directive?',
-      type: 'multiple-choice',
-      options: [
-        'To enable experimental features',
-        'To enforce stricter parsing and error handling',
-        'To enable TypeScript',
-        'To enable ES6 modules',
-      ],
-      correctAnswer: 'To enforce stricter parsing and error handling',
-      points: 10,
-    },
-    {
-      id: '5',
-      text: 'Which method is used to add an element to the end of an array?',
-      type: 'multiple-choice',
-      options: ['push()', 'pop()', 'shift()', 'unshift()'],
-      correctAnswer: 'push()',
-      points: 10,
-    },
-  ],
-};
-
 export default function QuizPage() {
+  const params = useParams();
+  const quizId = params.id as string;
+  
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState<{
     score: number;
     percentage: number;
@@ -119,13 +69,25 @@ export default function QuizPage() {
   const hasPoints = isPluginEnabled('points-leaderboard');
 
   useEffect(() => {
-    // Simulate loading quiz
-    setTimeout(() => {
-      setQuiz(mockQuiz);
-      setTimeLeft(mockQuiz.timeLimit ? mockQuiz.timeLimit * 60 : 0);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    const fetchQuiz = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/quizzes/${quizId}`);
+        const quizData = response.data;
+        setQuiz(quizData);
+        setTimeLeft(quizData.timeLimit ? quizData.timeLimit * 60 : 0);
+      } catch (err) {
+        console.error('Failed to fetch quiz:', err);
+        setError('Failed to load quiz. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (quizId) {
+      fetchQuiz();
+    }
+  }, [quizId]);
 
   // Timer effect
   useEffect(() => {

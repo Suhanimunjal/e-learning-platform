@@ -2,7 +2,7 @@ import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { AnthropicService } from './anthropic.service';
+import { OllamaService } from './ollama.service';
 
 @Processor('ai-jobs')
 export class AiJobProcessor {
@@ -10,7 +10,7 @@ export class AiJobProcessor {
 
   constructor(
     private prisma: PrismaService,
-    private anthropicService: AnthropicService,
+    private ollamaService: OllamaService,
   ) {}
 
   @Process('generate-outline')
@@ -25,7 +25,8 @@ export class AiJobProcessor {
       });
 
       // Generate outline
-      const outline = await this.anthropicService.generateCourseOutline(topic);
+      const outlinePrompt = `Generate a course outline for: ${topic}. Return JSON with structure: { "title": "Course Title", "description": "...", "modules": [{ "title": "...", "description": "..." }] }`;
+      const outline = await this.ollamaService.generateStructuredResponse(outlinePrompt);
 
       // Update job with result
       await this.prisma.aIGenerationJob.update({
@@ -82,11 +83,8 @@ export class AiJobProcessor {
       for (const section of course.sections) {
         for (const module of section.modules) {
           if (module.type === 'LESSON' && !module.textContent) {
-            const content = await this.anthropicService.generateLessonContent(
-              section.title,
-              module.title,
-              module.title, // Using title as description for now
-            );
+            const lessonPrompt = `Generate lesson content for section "${section.title}", lesson "${module.title}". Return JSON with: { "content": "detailed lesson text", "duration": "estimated minutes" }`;
+            const content = await this.ollamaService.generateStructuredResponse(lessonPrompt);
 
             await this.prisma.module.update({
               where: { id: module.id },
@@ -150,10 +148,8 @@ export class AiJobProcessor {
       }
 
       // Generate quiz
-      const quizData = await this.anthropicService.generateQuiz(
-        lessonModule.textContent,
-        lessonModule.title,
-      );
+      const quizPrompt = `Generate a quiz for this lesson. Return JSON: { "title": "Quiz Title", "description": "...", "questions": [{ "type": "multiple_choice", "text": "Question text", "options": ["A", "B", "C", "D"], "correctAnswer": "A" }] }`;
+      const quizData = await this.ollamaService.generateStructuredResponse(quizPrompt);
 
       // Create Quiz Module
       const quizModule = await this.prisma.module.create({
@@ -241,10 +237,8 @@ export class AiJobProcessor {
       }
 
       // Generate flashcards
-      const flashcardsData = await this.anthropicService.generateFlashcards(
-        lessonModule.textContent,
-        lessonModule.title,
-      );
+      const flashcardPrompt = `Generate 10 flashcards. Return JSON array: [{ "front": "question", "back": "answer" }]`;
+      const flashcardsData = await this.ollamaService.generateStructuredResponse(flashcardPrompt);
 
       // Create Flashcard Module
       const flashcardModule = await this.prisma.module.create({

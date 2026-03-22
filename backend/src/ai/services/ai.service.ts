@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException, OnModuleDestroy } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ContentGeneratorEnhancedService } from '../content-generator-enhanced.service';
-import { AnthropicService } from './anthropic.service';
+import { OllamaService } from './ollama.service';
 import { TTSService } from '../tts.service';
 import { CustomAiJobScheduler } from './custom-ai-job-scheduler';
 
@@ -12,7 +12,7 @@ export class AiService implements OnModuleDestroy {
   constructor(
     private prisma: PrismaService,
     private contentGenerator: ContentGeneratorEnhancedService,
-    private anthropicService: AnthropicService,
+    private ollamaService: OllamaService,
     private ttsService: TTSService,
     private customScheduler: CustomAiJobScheduler,
   ) {}
@@ -135,7 +135,7 @@ Return JSON with this structure:
 }`;
 
     try {
-      const response = await this.anthropicService.generateStructuredResponse(summaryPrompt);
+      const response = await this.ollamaService.generateStructuredResponse(summaryPrompt);
       
       return {
         success: true,
@@ -185,7 +185,7 @@ Provide a detailed grading response in JSON format:
 }`;
 
     try {
-      const gradingResult = await this.anthropicService.generateStructuredResponse(gradingPrompt);
+      const gradingResult = await this.ollamaService.generateStructuredResponse(gradingPrompt);
       
       await this.prisma.submission.update({
         where: { id: submissionId },
@@ -271,7 +271,7 @@ Provide a detailed grading response in JSON format:
 }`;
 
       try {
-        const result = await this.anthropicService.generateStructuredResponse(gradingPrompt);
+        const result = await this.ollamaService.generateStructuredResponse(gradingPrompt);
         
         const earnedPoints = Math.min(Math.max(0, result.earnedPoints || 0), question.points);
         totalScore += earnedPoints;
@@ -587,7 +587,7 @@ Return JSON:
 }`;
 
     try {
-      const result = await this.anthropicService.generateStructuredResponse(prompt);
+      const result = await this.ollamaService.generateStructuredResponse(prompt);
       
       return {
         success: true,
@@ -621,7 +621,7 @@ Return JSON:
 }`;
 
     try {
-      const result = await this.anthropicService.generateStructuredResponse(prompt);
+      const result = await this.ollamaService.generateStructuredResponse(prompt);
       
       return {
         success: true,
@@ -758,7 +758,7 @@ Return JSON:
 }`;
 
     try {
-      const result = await this.anthropicService.generateStructuredResponse(prompt);
+      const result = await this.ollamaService.generateStructuredResponse(prompt);
       
       return {
         success: true,

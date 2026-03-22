@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AiController } from './ai.controller';
 import { AiService } from './services/ai.service';
-import { AnthropicService } from './services/anthropic.service';
+import { OllamaService } from './services/ollama.service';
 import { CustomAiJobScheduler } from './services/custom-ai-job-scheduler';
 import { AiJobProcessor } from './services/ai-job.processor';
 import { PrismaService } from '../prisma/prisma.service';
@@ -12,7 +12,7 @@ import { QuizVerificationService } from './quiz-verification.service';
 @Module({
   providers: [
     AiService,
-    AnthropicService,
+    OllamaService,
     CustomAiJobScheduler,
     AiJobProcessor,
     PrismaService,
@@ -21,6 +21,6 @@ import { QuizVerificationService } from './quiz-verification.service';
     QuizVerificationService,
   ],
   controllers: [AiController],
-  exports: [AiService, TTSService, ContentGeneratorEnhancedService, QuizVerificationService],
+  exports: [AiService, TTSService, ContentGeneratorEnhancedService, QuizVerificationService, OllamaService],
 })
 export class AiModule {}

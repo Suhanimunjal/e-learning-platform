@@ -17,6 +17,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import api from '@/lib/api';
 
 interface ChatMessage {
   id: string;
@@ -40,19 +41,6 @@ interface ChatWidgetProps {
   onMessage?: (message: string) => void;
 }
 
-const MOCK_RESPONSES = [
-  "I can help you with that! Let me explain the concept of JavaScript closures. A closure is a function bundled together with references to its surrounding state (the lexical environment). In other words, a closure gives you access to an outer function's scope from an inner function.",
-  "Great question! For creating a React component, here's a simple example:\n\n```jsx\nfunction Welcome({ name }) {\n  return <h1>Hello, {name}</h1>;\n}\n```\n\nThis functional component receives a `name` prop and displays a greeting message.",
-  "To optimize your CSS, I recommend using CSS variables for reusable values, implementing proper specificity, and leveraging modern layout techniques like Flexbox and Grid. Here's a helpful pattern:\n\n```css\n:root {\n  --primary-color: #6366f1;\n  --spacing-unit: 1rem;\n}\n```",
-  "I understand you're asking about API integration. Here's a general approach:\n\n1. Identify the API endpoint\n2. Get your API key\n3. Use fetch or axios to make requests\n4. Handle responses and errors appropriately\n\nWould you like me to elaborate on any of these steps?"
-];
-
-const MOCK_SESSIONS: ChatSession[] = [
-  { id: '1', title: 'JavaScript Closures', createdAt: new Date('2024-03-15'), messageCount: 12 },
-  { id: '2', title: 'React Components', createdAt: new Date('2024-03-14'), messageCount: 8 },
-  { id: '3', title: 'CSS Grid Layout', createdAt: new Date('2024-03-13'), messageCount: 15 },
-];
-
 export default function ChatWidget({ 
   courseId, 
   courseName = 'Current Course',
@@ -64,14 +52,22 @@ export default function ChatWidget({
     {
       id: 'welcome',
       role: 'assistant',
-      content: `Hello! I'm your AI teaching assistant. I can help you with:\n\n• Explaining complex concepts\n• Creating code examples\n• Reviewing your work\n• Answering questions about ${courseName}\n\nHow can I help you today?`,
+      content: `Hello! I'm your AI teaching assistant. I can help you with:
+
+• Explaining complex concepts
+• Creating code examples
+• Reviewing your work
+• Answering questions about ${courseName}
+
+How can I help you today?`,
       timestamp: new Date()
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [sessions, setSessions] = useState<ChatSession[]>(MOCK_SESSIONS);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -94,20 +90,39 @@ export default function ChatWidget({
     setInputValue('');
     setIsTyping(true);
 
-    // Simulate AI typing
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+    try {
+      const response = await api.post('/ai/chat', {
+        message: userMessage.content,
+        sessionId: currentSessionId,
+        courseId: courseId
+      });
 
-    const aiResponse: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: MOCK_RESPONSES[Math.floor(Math.random() * MOCK_RESPONSES.length)],
-      timestamp: new Date()
-    };
+      const aiResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: response.data?.response || 'I apologize, but I could not generate a response. Please try again.',
+        timestamp: new Date()
+      };
 
-    setMessages(prev => [...prev, aiResponse]);
+      setMessages(prev => [...prev, aiResponse]);
+      
+      if (response.data?.sessionId && !currentSessionId) {
+        setCurrentSessionId(response.data.sessionId);
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error. Please try again later.',
+        timestamp: new Date(),
+        status: 'error'
+      };
+      setMessages(prev => [...prev, errorResponse]);
+    }
+
     setIsTyping(false);
     onMessage?.(userMessage.content);
-
     inputRef.current?.focus();
   };
 
@@ -123,10 +138,18 @@ export default function ChatWidget({
       {
         id: 'welcome',
         role: 'assistant',
-        content: `Hello! I'm your AI teaching assistant. I can help you with:\n\n• Explaining complex concepts\n• Creating code examples\n• Reviewing your work\n• Answering questions about ${courseName}\n\nHow can I help you today?`,
+        content: `Hello! I'm your AI teaching assistant. I can help you with:
+
+• Explaining complex concepts
+• Creating code examples
+• Reviewing your work
+• Answering questions about ${courseName}
+
+How can I help you today?`,
         timestamp: new Date()
       }
     ]);
+    setCurrentSessionId(null);
     setShowHistory(false);
   };
 
@@ -197,20 +220,9 @@ export default function ChatWidget({
                   New Chat
                 </Button>
               </div>
-              <div className="space-y-2">
-                {sessions.map((session) => (
-                  <button
-                    key={session.id}
-                    onClick={() => setShowHistory(false)}
-                    className="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <div className="font-medium text-gray-900 truncate">{session.title}</div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {session.messageCount} messages • {new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(session.createdAt)}
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <p className="text-sm text-gray-500 text-center py-8">
+                Chat history will appear here
+              </p>
             </div>
           ) : (
             <>
@@ -237,6 +249,8 @@ export default function ChatWidget({
                         <div className={`rounded-2xl px-4 py-2 ${
                           message.role === 'user'
                             ? 'bg-indigo-600 text-white rounded-br-sm'
+                            : message.status === 'error'
+                            ? 'bg-red-100 text-red-700 rounded-bl-sm'
                             : 'bg-gray-100 text-gray-900 rounded-bl-sm'
                         }`}>
                           <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import api from '@/lib/api';
 
 interface Submission {
   id: string;
@@ -42,68 +43,8 @@ interface GradingPreviewProps {
   onApprove?: (submissionId: string) => void;
 }
 
-const MOCK_SUBMISSIONS: Submission[] = [
-  {
-    id: '1',
-    studentName: 'Emily Johnson',
-    type: 'essay',
-    assignmentTitle: 'JavaScript Fundamentals Essay',
-    submittedAt: '2024-03-15T10:30:00',
-    status: 'graded',
-    aiScore: 87,
-    aiConfidence: 94,
-    aiFeedback: 'Excellent analysis of JavaScript closures. Well-structured essay with clear examples. Minor improvements needed in explaining event loops.'
-  },
-  {
-    id: '2',
-    studentName: 'Michael Chen',
-    type: 'mcq',
-    assignmentTitle: 'React Basics Quiz',
-    submittedAt: '2024-03-15T11:45:00',
-    status: 'graded',
-    aiScore: 100,
-    aiConfidence: 100,
-    aiFeedback: 'Perfect score! All answers are correct.'
-  },
-  {
-    id: '3',
-    studentName: 'Sarah Williams',
-    type: 'essay',
-    assignmentTitle: 'Async Programming Assignment',
-    submittedAt: '2024-03-15T14:20:00',
-    status: 'pending',
-    aiScore: undefined,
-    aiConfidence: undefined,
-    aiFeedback: undefined
-  },
-  {
-    id: '4',
-    studentName: 'David Brown',
-    type: 'assignment',
-    assignmentTitle: 'Node.js Project',
-    submittedAt: '2024-03-15T16:00:00',
-    status: 'grading',
-    aiScore: undefined,
-    aiConfidence: undefined,
-    aiFeedback: undefined
-  },
-  {
-    id: '5',
-    studentName: 'Lisa Anderson',
-    type: 'essay',
-    assignmentTitle: 'CSS Flexbox & Grid',
-    submittedAt: '2024-03-15T09:15:00',
-    status: 'graded',
-    aiScore: 78,
-    aiConfidence: 88,
-    teacherOverride: true,
-    teacherScore: 82,
-    aiFeedback: 'Good understanding of Flexbox concepts. Grid explanations could be more detailed. Missing some responsive design considerations.'
-  }
-];
-
 export default function GradingPreview({ submission: propSubmission, onGrade, onApprove }: GradingPreviewProps) {
-  const [submissions, setSubmissions] = useState<Submission[]>(MOCK_SUBMISSIONS);
+  const [submissions, setSubmissions] = useState<Submission[]>(propSubmission ? [propSubmission] : []);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(propSubmission || null);
   const [showOverrideModal, setShowOverrideModal] = useState(false);
   const [overrideScore, setOverrideScore] = useState<number>(0);
@@ -114,21 +55,37 @@ export default function GradingPreview({ submission: propSubmission, onGrade, on
   const handleGradeSubmission = async (submissionId: string) => {
     setGradingInProgress(submissionId);
     
-    // Simulate AI grading
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const submission = submissions.find(s => s.id === submissionId);
-    if (submission) {
+    try {
+      const response = await api.post(`/ai/grade/${submissionId}`);
+      const data = response.data?.data || response.data;
+      
       setSubmissions(prev => prev.map(s => 
         s.id === submissionId 
-          ? { ...s, status: 'graded', aiScore: Math.floor(Math.random() * 30) + 70, aiConfidence: Math.floor(Math.random() * 15) + 85, aiFeedback: 'AI has evaluated this submission. Review the feedback below.' }
+          ? { 
+              ...s, 
+              status: 'graded', 
+              aiScore: data.aiScore || data.grade,
+              aiConfidence: data.aiConfidence,
+              aiFeedback: data.feedback 
+            }
           : s
       ));
+      
       const updated = submissions.find(s => s.id === submissionId);
-      if (updated) setSelectedSubmission(updated);
+      if (updated) {
+        setSelectedSubmission({ 
+          ...updated, 
+          status: 'graded', 
+          aiScore: data.aiScore || data.grade,
+          aiConfidence: data.aiConfidence,
+          aiFeedback: data.feedback 
+        });
+      }
+    } catch (err) {
+      console.error('Grading error:', err);
+    } finally {
+      setGradingInProgress(null);
     }
-    
-    setGradingInProgress(null);
   };
 
   const handleOverrideGrade = () => {

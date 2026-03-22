@@ -3,13 +3,12 @@
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Bot,
   Sparkles,
   FileText,
   CheckSquare,
-  BookOpen,
   Languages,
   Lightbulb,
   Search,
@@ -26,6 +25,7 @@ import GradingPreview from '@/components/ai/GradingPreview';
 import TranslationModal from '@/components/ai/TranslationModal';
 import SearchBar from '@/components/ai/SearchBar';
 import ChatWidget from '@/components/ai/ChatWidget';
+import api from '@/lib/api';
 
 type TabType = 'content' | 'grading' | 'translate' | 'search' | 'chat';
 
@@ -37,10 +37,40 @@ const tabs = [
   { id: 'chat' as const, label: 'AI Chatbot', icon: MessageCircle },
 ];
 
+interface Stats {
+  contentGenerated: number;
+  submissionsGraded: number;
+  translationsDone: number;
+  studentQuestions: number;
+}
+
 export default function TeacherAIPage() {
   const [activeTab, setActiveTab] = useState<TabType>('content');
   const [showTranslationModal, setShowTranslationModal] = useState(false);
   const [showChatWidget, setShowChatWidget] = useState(false);
+  const [stats, setStats] = useState<Stats>({
+    contentGenerated: 0,
+    submissionsGraded: 0,
+    translationsDone: 0,
+    studentQuestions: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/ai/stats/teacher');
+        if (response.data?.success && response.data?.data) {
+          setStats(response.data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch AI stats:', error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
   return (
     <DashboardLayout>
@@ -77,24 +107,64 @@ export default function TeacherAIPage() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: 'Content Generated', value: '127', icon: FileText, color: 'text-indigo-600' },
-            { label: 'Submissions Graded', value: '89', icon: CheckSquare, color: 'text-green-600' },
-            { label: 'Translations Done', value: '45', icon: Languages, color: 'text-cyan-600' },
-            { label: 'Student Questions', value: '234', icon: MessageCircle, color: 'text-amber-600' },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-white rounded-xl border p-4">
-              <div className="flex items-center gap-3">
-                <div className={`h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center ${stat.color}`}>
-                  <stat.icon className="h-5 w-5" />
+          {loadingStats ? (
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white rounded-xl border p-4 animate-pulse">
+                  <div className="h-10 w-10 rounded-lg bg-gray-200 mb-3"></div>
+                  <div className="h-6 w-12 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 w-20 bg-gray-200 rounded"></div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                  <div className="text-xs text-gray-500">{stat.label}</div>
+              ))}
+            </>
+          ) : (
+            <>
+              <div className="bg-white rounded-xl border p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">{stats.contentGenerated}</div>
+                    <div className="text-xs text-gray-500">Content Generated</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+              <div className="bg-white rounded-xl border p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                    <CheckSquare className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">{stats.submissionsGraded}</div>
+                    <div className="text-xs text-gray-500">Submissions Graded</div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl border p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-cyan-100 flex items-center justify-center text-cyan-600">
+                    <Languages className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">{stats.translationsDone}</div>
+                    <div className="text-xs text-gray-500">Translations Done</div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl border p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
+                    <MessageCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">{stats.studentQuestions}</div>
+                    <div className="text-xs text-gray-500">Student Questions</div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Tabs */}
@@ -127,218 +197,81 @@ export default function TeacherAIPage() {
         <div className="min-h-[500px]">
           {/* Content Generator Tab */}
           {activeTab === 'content' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Main Generator */}
-              <div className="bg-white rounded-xl border p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-indigo-600" />
-                  Generate Content
-                </h2>
-                <ContentGenerator />
-              </div>
-
-              {/* Recent Generations */}
-              <div className="bg-white rounded-xl border p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Generations</h2>
-                <div className="space-y-3">
-                  {[
-                    { type: 'Assignment', title: 'JavaScript Functions Practice', time: '2 hours ago', tone: 'Formal' },
-                    { type: 'Examples', title: 'React Hooks Code Examples', time: '4 hours ago', tone: 'Casual' },
-                    { type: 'Summary', title: 'CSS Grid Lecture Summary', time: '1 day ago', tone: 'Simplified' },
-                    { type: 'Assignment', title: 'Node.js API Assignment', time: '2 days ago', tone: 'Formal' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
-                      <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-                        <FileText className="h-5 w-5 text-indigo-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 truncate">{item.title}</div>
-                        <div className="text-xs text-gray-500">{item.type} • {item.tone} • {item.time}</div>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-gray-400" />
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="bg-white rounded-xl border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-indigo-600" />
+                Generate Content
+              </h2>
+              <ContentGenerator />
             </div>
           )}
 
           {/* Auto-Grading Tab */}
           {activeTab === 'grading' && (
-            <div>
-              <div className="bg-white rounded-xl border p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <CheckSquare className="h-5 w-5 text-indigo-600" />
-                    AI Auto-Grading
-                  </h2>
-                  <Button variant="outline" size="sm">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
-                  </Button>
-                </div>
-                <GradingPreview />
+            <div className="bg-white rounded-xl border p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5 text-indigo-600" />
+                  AI Auto-Grading
+                </h2>
               </div>
+              <GradingPreview />
             </div>
           )}
 
           {/* Translation Tab */}
           {activeTab === 'translate' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Quick Actions */}
-              <div className="lg:col-span-2 space-y-4">
-                <div className="bg-white rounded-xl border p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Languages className="h-5 w-5 text-indigo-600" />
-                    Quick Translation
-                  </h2>
-                  <Button onClick={() => setShowTranslationModal(true)} size="lg">
-                    <Languages className="h-5 w-5 mr-2" />
-                    Open Translation Tool
-                  </Button>
-                </div>
-
-                {/* Recent Translations */}
-                <div className="bg-white rounded-xl border p-6">
-                  <h3 className="font-semibold text-gray-900 mb-4">Recent Translations</h3>
-                  <div className="space-y-3">
-                    {[
-                      { title: 'JavaScript Lesson 1', lang: 'Spanish', progress: 'Completed' },
-                      { title: 'React Quiz', lang: 'French', progress: 'Completed' },
-                      { title: 'Node.js Guide', lang: 'German', progress: 'Completed' },
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Languages className="h-5 w-5 text-gray-400" />
-                          <div>
-                            <div className="font-medium text-gray-900">{item.title}</div>
-                            <div className="text-xs text-gray-500">To: {item.lang}</div>
-                          </div>
-                        </div>
-                        <Badge variant="success">{item.progress}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Supported Languages */}
-              <div className="bg-white rounded-xl border p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Supported Languages</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {['Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Chinese', 'Japanese', 'Korean', 'Arabic', 'Hindi', 'Russian', 'Dutch'].map((lang) => (
-                    <div key={lang} className="px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-700 text-center">
-                      {lang}
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="bg-white rounded-xl border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Languages className="h-5 w-5 text-indigo-600" />
+                Quick Translation
+              </h2>
+              <Button onClick={() => setShowTranslationModal(true)} size="lg">
+                <Languages className="h-5 w-5 mr-2" />
+                Open Translation Tool
+              </Button>
             </div>
           )}
 
           {/* Smart Search Tab */}
           {activeTab === 'search' && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-xl border p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                  <Search className="h-5 w-5 text-indigo-600" />
-                  AI-Powered Search
-                </h2>
-                <SearchBar 
-                  placeholder="Search courses, lessons, assignments, quizzes..."
-                  onResultClick={(result) => console.log('Result clicked:', result)}
-                />
-              </div>
-
-              {/* Search Tips */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-indigo-50 rounded-xl p-4">
-                  <Lightbulb className="h-6 w-6 text-indigo-600 mb-2" />
-                  <h4 className="font-medium text-indigo-900 mb-1">Natural Language</h4>
-                  <p className="text-sm text-indigo-700">Ask questions naturally like "show me JavaScript courses for beginners"</p>
-                </div>
-                <div className="bg-green-50 rounded-xl p-4">
-                  <CheckCircle className="h-6 w-6 text-green-600 mb-2" />
-                  <h4 className="font-medium text-green-900 mb-1">Smart Filters</h4>
-                  <p className="text-sm text-green-700">Filter by type, difficulty, topic, or any keyword</p>
-                </div>
-                <div className="bg-amber-50 rounded-xl p-4">
-                  <Sparkles className="h-6 w-6 text-amber-600 mb-2" />
-                  <h4 className="font-medium text-amber-900 mb-1">Auto-Corrections</h4>
-                  <p className="text-sm text-amber-700">"Did you mean?" suggestions for typos</p>
-                </div>
-              </div>
+            <div className="bg-white rounded-xl border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <Search className="h-5 w-5 text-indigo-600" />
+                AI-Powered Search
+              </h2>
+              <SearchBar 
+                placeholder="Search courses, lessons, assignments, quizzes..."
+                onResultClick={(result) => console.log('Result clicked:', result)}
+              />
             </div>
           )}
 
           {/* Chatbot Tab */}
           {activeTab === 'chat' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Chat Preview */}
-              <div className="lg:col-span-2 bg-white rounded-xl border p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <MessageCircle className="h-5 w-5 text-indigo-600" />
-                    AI Chatbot Preview
-                  </h2>
-                  <Button onClick={() => setShowChatWidget(!showChatWidget)}>
-                    {showChatWidget ? 'Hide Widget' : 'Show Widget'}
-                  </Button>
-                </div>
-                
-                {showChatWidget ? (
-                  <div className="border rounded-xl overflow-hidden">
-                    <ChatWidget courseName="General" initialOpen={true} />
-                  </div>
-                ) : (
-                  <div className="h-96 flex items-center justify-center bg-gray-50 rounded-xl border-2 border-dashed">
-                    <div className="text-center">
-                      <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500">Click "Show Widget" to preview the chatbot</p>
-                    </div>
-                  </div>
-                )}
+            <div className="bg-white rounded-xl border p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-indigo-600" />
+                  AI Chatbot Preview
+                </h2>
+                <Button onClick={() => setShowChatWidget(!showChatWidget)}>
+                  {showChatWidget ? 'Hide Widget' : 'Show Widget'}
+                </Button>
               </div>
-
-              {/* Chat Info */}
-              <div className="space-y-4">
-                <div className="bg-white rounded-xl border p-6">
-                  <h3 className="font-semibold text-gray-900 mb-4">Chatbot Capabilities</h3>
-                  <div className="space-y-3">
-                    {[
-                      'Answer course-related questions',
-                      'Explain complex concepts',
-                      'Provide code examples',
-                      'Help with assignments',
-                      'Summarize lessons',
-                      'Suggest additional resources',
-                    ].map((cap, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-gray-700">{cap}</span>
-                      </div>
-                    ))}
+              
+              {showChatWidget ? (
+                <div className="border rounded-xl overflow-hidden">
+                  <ChatWidget courseName="General" initialOpen={true} />
+                </div>
+              ) : (
+                <div className="h-96 flex items-center justify-center bg-gray-50 rounded-xl border-2 border-dashed">
+                  <div className="text-center">
+                    <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">Click "Show Widget" to preview the chatbot</p>
                   </div>
                 </div>
-
-                <div className="bg-white rounded-xl border p-6">
-                  <h3 className="font-semibold text-gray-900 mb-4">Quick Links</h3>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Chatbot Settings
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      View Chat History
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Lightbulb className="h-4 w-4 mr-2" />
-                      Training Data
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           )}
         </div>

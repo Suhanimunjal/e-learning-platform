@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
 import { usePlugins } from '@/contexts/PluginContext';
+import api from '@/lib/api';
 import {
   FileText,
   Upload,
@@ -42,51 +44,13 @@ interface Assignment {
   };
 }
 
-// Mock assignment data
-const mockAssignment: Assignment = {
-  id: '1',
-  title: 'JavaScript Project Assignment',
-  description: `
-## Assignment Overview
-
-Create a simple JavaScript application that demonstrates your understanding of the following concepts:
-
-1. **Variables and Data Types**
-2. **Functions and Scope**
-3. **Arrays and Objects**
-4. **DOM Manipulation**
-5. **Event Handling**
-
-## Requirements
-
-- The application should be interactive (user can click buttons, input data, etc.)
-- Include at least 3 different functions
-- Use at least one array and one object
-- Handle at least 2 types of events
-- Code should be well-commented
-
-## Submission Guidelines
-
-- Submit a ZIP file containing all your HTML, CSS, and JavaScript files
-- Include a README.md file with instructions on how to run your project
-- Maximum file size: 10MB
-
-## Grading Criteria
-
-- Functionality (40%)
-- Code Quality (30%)
-- Creativity (20%)
-- Documentation (10%)
-  `,
-  dueDate: '2026-03-25T23:59:59',
-  maxPoints: 100,
-  allowFileUpload: true,
-  allowedFileTypes: '.zip,.rar,.pdf',
-};
-
 export default function AssignmentPage() {
+  const params = useParams();
+  const assignmentId = params.id as string;
+  
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [textContent, setTextContent] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -101,16 +65,29 @@ export default function AssignmentPage() {
   const hasBadges = isPluginEnabled('badges-certificates');
 
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setAssignment(mockAssignment);
-      if (mockAssignment.submissions) {
-        setSubmitted(true);
-        setTextContent(mockAssignment.submissions.textContent || '');
+    const fetchAssignment = async () => {
+      if (!assignmentId) return;
+      
+      try {
+        setLoading(true);
+        const response = await api.get(`/assignments/${assignmentId}`);
+        const data = response.data;
+        setAssignment(data);
+        
+        if (data.submissions) {
+          setSubmitted(true);
+          setTextContent(data.submissions.textContent || '');
+        }
+      } catch (err) {
+        console.error('Failed to fetch assignment:', err);
+        setError('Failed to load assignment');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, 1000);
-  }, []);
+    };
+    
+    fetchAssignment();
+  }, [assignmentId]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();

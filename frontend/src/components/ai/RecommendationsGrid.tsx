@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   BookOpen, 
   TrendingUp, 
@@ -11,10 +11,12 @@ import {
   X,
   Sparkles,
   Clock,
-  Award
+  Award,
+  Loader2
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import api from '@/lib/api';
 
 interface Recommendation {
   id: string;
@@ -40,110 +42,6 @@ interface RecommendationsGridProps {
   onViewCourse?: (courseId: string) => void;
 }
 
-const MOCK_RECOMMENDATIONS: Recommendation[] = [
-  {
-    id: '1',
-    courseId: 'course-1',
-    title: 'Advanced JavaScript Patterns',
-    description: 'Master advanced JavaScript patterns including closures, prototypes, and async programming. Perfect for learners who have completed JavaScript fundamentals.',
-    reason: 'Strong performance in JavaScript basics. Ready for more advanced topics.',
-    category: 'Programming',
-    difficulty: 'Advanced',
-    progress: 0,
-    estimatedHours: 12,
-    matchScore: 95,
-    tags: ['JavaScript', 'Patterns', 'Async'],
-    status: 'pending'
-  },
-  {
-    id: '2',
-    courseId: 'course-2',
-    title: 'React Hooks Deep Dive',
-    description: 'Learn useState, useEffect, useContext, and custom hooks. Build real-world applications with modern React patterns.',
-    reason: 'Completed React basics course. Excellent foundation for hooks.',
-    category: 'Frontend',
-    difficulty: 'Intermediate',
-    progress: 0,
-    estimatedHours: 8,
-    matchScore: 92,
-    tags: ['React', 'Hooks', 'Frontend'],
-    status: 'pending'
-  },
-  {
-    id: '3',
-    courseId: 'course-3',
-    title: 'CSS Grid & Flexbox Masterclass',
-    description: 'Create responsive layouts with CSS Grid and Flexbox. Learn modern CSS layout techniques used in production.',
-    reason: 'Struggled with layout concepts. This course provides hands-on practice.',
-    category: 'CSS',
-    difficulty: 'Intermediate',
-    progress: 0,
-    estimatedHours: 6,
-    matchScore: 88,
-    tags: ['CSS', 'Layout', 'Responsive'],
-    status: 'pending'
-  },
-  {
-    id: '4',
-    courseId: 'course-4',
-    title: 'Node.js API Development',
-    description: 'Build RESTful APIs with Node.js, Express, and MongoDB. Learn authentication, validation, and best practices.',
-    reason: 'JavaScript fundamentals strong. Backend development recommended.',
-    category: 'Backend',
-    difficulty: 'Advanced',
-    progress: 0,
-    estimatedHours: 15,
-    matchScore: 85,
-    tags: ['Node.js', 'API', 'Backend'],
-    status: 'pending'
-  },
-  {
-    id: '5',
-    courseId: 'course-5',
-    title: 'TypeScript for Beginners',
-    description: 'Learn TypeScript from scratch. Understand types, interfaces, and how TypeScript improves JavaScript development.',
-    reason: 'Ready to level up JavaScript skills with type safety.',
-    category: 'Programming',
-    difficulty: 'Beginner',
-    progress: 45,
-    estimatedHours: 10,
-    matchScore: 78,
-    tags: ['TypeScript', 'JavaScript', 'Types'],
-    status: 'pending'
-  },
-  {
-    id: '6',
-    courseId: 'course-6',
-    title: 'Git & GitHub Essentials',
-    description: 'Master version control with Git and collaborate using GitHub. Essential skills for any developer.',
-    reason: 'Understanding Git will improve your development workflow.',
-    category: 'Tools',
-    difficulty: 'Beginner',
-    progress: 0,
-    estimatedHours: 4,
-    matchScore: 75,
-    tags: ['Git', 'GitHub', 'Version Control'],
-    status: 'pending'
-  }
-];
-
-const MOCK_LEARNING_PATHS = [
-  {
-    id: 'lp-1',
-    title: 'Full Stack Developer Path',
-    progress: 35,
-    courses: ['JavaScript Basics', 'React Fundamentals', 'Node.js Basics', 'Database Design'],
-    completed: 1
-  },
-  {
-    id: 'lp-2',
-    title: 'Frontend Specialist Path',
-    progress: 50,
-    courses: ['HTML & CSS', 'JavaScript', 'React', 'Advanced CSS'],
-    completed: 2
-  }
-];
-
 export default function RecommendationsGrid({ 
   studentId,
   studentName = 'Student',
@@ -151,15 +49,63 @@ export default function RecommendationsGrid({
   onDismiss, 
   onViewCourse 
 }: RecommendationsGridProps) {
-  const [recommendations, setRecommendations] = useState<Recommendation[]>(MOCK_RECOMMENDATIONS);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [showPaths, setShowPaths] = useState(false);
 
-  const handleAccept = (id: string) => {
-    setRecommendations(prev => prev.map(r => 
-      r.id === id ? { ...r, status: 'completed' as const } : r
-    ));
-    onAccept?.(id);
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!studentId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await api.get(`/ai/recommendations/${studentId}`);
+        const data = response.data?.data || [];
+        setRecommendations(data.map((item: any) => ({
+          id: item.courseId || item.id || String(Math.random()),
+          courseId: item.courseId || item.id,
+          title: item.title || item.courseTitle || 'Untitled Course',
+          description: item.description || '',
+          reason: item.reason || 'Recommended for you',
+          category: item.category || 'General',
+          difficulty: item.difficulty || 'Intermediate',
+          progress: item.progress || 0,
+          estimatedHours: item.estimatedHours,
+          matchScore: item.matchScore || 75,
+          tags: item.tags || [],
+          thumbnail: item.thumbnail,
+          status: 'pending' as const
+        })));
+      } catch (err) {
+        console.error('Failed to fetch recommendations:', err);
+        setError('Failed to load recommendations');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, [studentId]);
+
+  const handleAccept = async (id: string) => {
+    try {
+      await api.post('/ai/recommendations/track', { 
+        studentId, 
+        courseId: id, 
+        score: 100 
+      });
+      setRecommendations(prev => prev.map(r => 
+        r.id === id ? { ...r, status: 'completed' as const } : r
+      ));
+      onAccept?.(id);
+    } catch (err) {
+      console.error('Failed to accept recommendation:', err);
+    }
   };
 
   const handleDismiss = (id: string) => {
@@ -348,81 +294,8 @@ export default function RecommendationsGrid({
           ))}
         </div>
       ) : (
-        /* Learning Paths */
-        <div className="space-y-4">
-          {MOCK_LEARNING_PATHS.map((path) => (
-            <div 
-              key={path.id}
-              className="bg-white rounded-xl border p-6 hover:shadow-lg transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">{path.title}</h3>
-                  <p className="text-sm text-gray-500">{path.courses.length} courses</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-indigo-600">{path.progress}%</div>
-                  <div className="text-xs text-gray-500">Complete</div>
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="h-3 bg-gray-200 rounded-full overflow-hidden mb-4">
-                <div 
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all"
-                  style={{ width: `${path.progress}%` }}
-                />
-              </div>
-
-              {/* Course List */}
-              <div className="space-y-2">
-                {path.courses.map((course, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center gap-3 p-2 rounded-lg bg-gray-50"
-                  >
-                    <div className={`h-6 w-6 rounded-full flex items-center justify-center ${
-                      index < path.completed 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-gray-200 text-gray-500'
-                    }`}>
-                      {index < path.completed ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <span className="text-xs">{index + 1}</span>
-                      )}
-                    </div>
-                    <span className={`flex-1 ${index < path.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
-                      {course}
-                    </span>
-                    {index < path.completed && (
-                      <Award className="h-4 w-4 text-green-500" />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Continue Button */}
-              <Button className="w-full mt-4">
-                Continue Learning
-                <ExternalLink className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Empty State */}
-      {activeRecommendations.length === 0 && !showPaths && (
-        <div className="text-center py-12">
-          <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Award className="h-8 w-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">All Caught Up!</h3>
-          <p className="text-gray-500">
-            You've completed all recommended courses. Check back later for new recommendations.
-          </p>
-        </div>
+        /* Learning Paths - Not yet implemented */
+        null
       )}
     </div>
   );
