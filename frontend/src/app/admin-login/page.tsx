@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Loader2, Shield, Eye, EyeOff } from 'lucide-react';
-import { apiBaseUrl } from '@/lib/runtime-config';
+import { browserApiBaseUrl } from '@/lib/runtime-config';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
 
     try {
       if (!requiresOtp) {
-        const res = await fetch(`${apiBaseUrl}/auth/login`, {
+        const res = await fetch(`${browserApiBaseUrl}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
@@ -54,7 +54,7 @@ export default function AdminLoginPage() {
           window.location.href = '/dashboard';
         }
       } else {
-        const res = await fetch(`${apiBaseUrl}/auth/verify-otp`, {
+        const res = await fetch(`${browserApiBaseUrl}/auth/verify-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, otp }),
@@ -88,7 +88,7 @@ export default function AdminLoginPage() {
     setError('');
 
     try {
-      const res = await fetch(`${apiBaseUrl}/auth/resend-otp`, {
+      const res = await fetch(`${browserApiBaseUrl}/auth/resend-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

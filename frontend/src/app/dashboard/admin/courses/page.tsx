@@ -9,7 +9,7 @@ import { BookOpen, Loader2, Eye, Edit, Trash2, Plus, FileText, CheckSquare, Vide
 import Link from 'next/link';
 import { usePlugins } from '@/contexts/PluginContext';
 import { admin } from '@/lib/api';
-import { apiBaseUrl } from '@/lib/runtime-config';
+import { browserApiBaseUrl } from '@/lib/runtime-config';
 
 interface CourseData {
   id: string;
@@ -91,7 +91,7 @@ export default function AdminCoursesPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch(`${apiBaseUrl}/courses`, {
+      const res = await fetch(`${browserApiBaseUrl}/courses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {

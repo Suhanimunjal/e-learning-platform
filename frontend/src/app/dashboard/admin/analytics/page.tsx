@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatCard from '@/components/ui/StatCard';
 import Badge from '@/components/ui/Badge';
-import { apiBaseUrl } from '@/lib/runtime-config';
+import { browserApiBaseUrl } from '@/lib/runtime-config';
 import { BarChart3, TrendingUp, Users, DollarSign, Loader2 } from 'lucide-react';
 import {
   BarChart,
@@ -52,7 +52,7 @@ export default function AdminAnalyticsPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch(`${apiBaseUrl}/analytics/platform`, {
+      const res = await fetch(`${browserApiBaseUrl}/analytics/platform`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {

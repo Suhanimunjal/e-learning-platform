@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { apiBaseUrl } from './runtime-config';
+import { browserApiBaseUrl } from './runtime-config';
 
 const api = axios.create({
-  baseURL: apiBaseUrl,
+  baseURL: browserApiBaseUrl,
   withCredentials: true,
 });
 
@@ -122,6 +122,98 @@ export const analytics = {
   },
   getEngagementMetrics: async () => {
     const res = await api.get('/analytics/platform/engagement');
+    return res.data;
+  },
+};
+
+export interface StudentDashboardResponse {
+  totalCourses: number;
+  completedCourses: number;
+  inProgressCourses: number;
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    metadata: unknown;
+    createdAt: string;
+  }>;
+}
+
+export interface StudentEnrolledCourse {
+  id: string;
+  createdAt: string;
+  course: {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+    thumbnail: string | null;
+    status: string;
+    instructor: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  };
+  progress: {
+    totalModules: number;
+    completedModules: number;
+    percentage: number;
+    lastAccessedModuleId: string | null;
+    lastAccessedModuleTitle: string | null;
+    lastAccessedAt: string | null;
+  };
+}
+
+export interface StudentCertificate {
+  id: string;
+  issuedAt: string;
+  pdfUrl: string | null;
+  course: {
+    id: string;
+    title: string;
+  };
+}
+
+export interface StudentNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export const student = {
+  getDashboard: async (): Promise<StudentDashboardResponse> => {
+    const res = await api.get('/student/dashboard');
+    return res.data;
+  },
+  getEnrolled: async (): Promise<StudentEnrolledCourse[]> => {
+    const res = await api.get('/student/enrolled');
+    return res.data;
+  },
+  getCourseFull: async (courseId: string) => {
+    const res = await api.get(`/student/course/${courseId}/full`);
+    return res.data;
+  },
+  getCertificates: async (): Promise<StudentCertificate[]> => {
+    const res = await api.get('/student/certificates');
+    return res.data;
+  },
+  getCertificateDownload: async (certificateId: string): Promise<{ certificateId: string; downloadUrl: string }> => {
+    const res = await api.get(`/student/certificates/${certificateId}/download`);
+    return res.data;
+  },
+  getNotifications: async (params?: { limit?: number; unreadOnly?: boolean }): Promise<StudentNotification[]> => {
+    const res = await api.get('/student/notifications', { params });
+    return res.data;
+  },
+  getUnreadNotificationCount: async (): Promise<{ unreadCount: number }> => {
+    const res = await api.get('/student/notifications/unread-count');
+    return res.data;
+  },
+  markNotificationRead: async (notificationId: string): Promise<{ id: string; read: boolean }> => {
+    const res = await api.patch(`/student/notifications/${notificationId}/read`);
     return res.data;
   },
 };

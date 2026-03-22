@@ -1,29 +1,32 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { BookOpen, Loader2 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import CourseCard from '@/components/ui/CourseCard';
-import { useState, useEffect } from 'react';
-import { Loader2, BookOpen } from 'lucide-react';
-import { enrollments } from '@/lib/api';
+import { StudentEnrolledCourse, student } from '@/lib/api';
 
 export default function StudentCoursesPage() {
-  const [enrollmentsData, setEnrollmentsData] = useState<any[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<StudentEnrolledCourse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await student.getEnrolled();
+        setEnrolledCourses(data);
+      } catch {
+        setError('Failed to load enrolled courses.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadData();
   }, []);
-
-  const loadData = async () => {
-    try {
-      const data = await enrollments.getMyCourses();
-      setEnrollmentsData(data || []);
-    } catch (error) {
-      console.error('Error loading enrollments:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -40,8 +43,10 @@ export default function StudentCoursesPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">My Courses</h1>
-        
-        {enrollmentsData.length === 0 ? (
+
+        {error && <div className="rounded-lg bg-red-50 p-4 text-red-700">{error}</div>}
+
+        {enrolledCourses.length === 0 ? (
           <div className="rounded-lg bg-white p-12 text-center">
             <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-4 text-lg font-medium text-gray-900">No courses yet</h3>
@@ -49,16 +54,16 @@ export default function StudentCoursesPage() {
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {enrollmentsData.map((enrollment) => (
+            {enrolledCourses.map((enrollment) => (
               <CourseCard
                 key={enrollment.id}
                 id={enrollment.course.id}
                 title={enrollment.course.title}
                 description={enrollment.course.description}
                 price={enrollment.course.price}
-                instructor={enrollment.course.instructor?.name}
+                instructor={enrollment.course.instructor.name}
                 published={enrollment.course.status === 'APPROVED'}
-                progress={Math.floor(Math.random() * 100)}
+                progress={enrollment.progress.percentage}
                 showProgress
               />
             ))}

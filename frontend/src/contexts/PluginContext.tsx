@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { plugins as pluginsApi } from '@/lib/api';
-import { apiBaseUrl } from '@/lib/runtime-config';
+import { browserApiBaseUrl } from '@/lib/runtime-config';
 
 interface Plugin {
   id: string;
@@ -53,7 +53,7 @@ export function PluginProvider({ children }: { children: ReactNode }) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 3000);
       
-      const res = await fetch(`${apiBaseUrl}/plugins/installed`, {
+      const res = await fetch(`${browserApiBaseUrl}/plugins/installed`, {
         headers,
         signal: controller.signal 
       });

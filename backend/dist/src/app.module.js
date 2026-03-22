@@ -27,6 +27,7 @@ const video_generation_module_1 = require("./video-generation/video-generation.m
 const quiz_module_1 = require("./quiz/quiz.module");
 const admin_module_1 = require("./admin/admin.module");
 const course_enrollment_guard_1 = require("./common/guards/course-enrollment.guard");
+const student_module_1 = require("./student/student.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -52,6 +53,7 @@ exports.AppModule = AppModule = __decorate([
             video_generation_module_1.VideoGenerationModule,
             quiz_module_1.QuizModule,
             admin_module_1.AdminModule,
+            student_module_1.StudentModule,
         ],
         controllers: [health_controller_1.HealthController],
         providers: [course_enrollment_guard_1.CourseEnrollmentGuard],

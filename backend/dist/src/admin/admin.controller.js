@@ -225,6 +225,106 @@ let AdminController = class AdminController {
             orderBy: { createdAt: 'desc' },
         });
     }
+    async getTeacherById(teacherId) {
+        const teacher = await this.prisma.user.findFirst({
+            where: {
+                id: teacherId,
+                role: client_1.Role.TEACHER,
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true,
+                organization: {
+                    select: {
+                        id: true,
+                        name: true,
+                        createdAt: true,
+                    },
+                },
+                coursesCreated: {
+                    select: {
+                        id: true,
+                        title: true,
+                        status: true,
+                        price: true,
+                        createdAt: true,
+                        _count: { select: { sections: true } },
+                    },
+                    orderBy: { createdAt: 'desc' },
+                },
+            },
+        });
+        if (!teacher) {
+            throw new common_1.NotFoundException('Teacher not found');
+        }
+        return teacher;
+    }
+    async getStudents(status) {
+        const whereClause = status
+            ? { role: client_1.Role.STUDENT, status }
+            : { role: client_1.Role.STUDENT };
+        return this.prisma.user.findMany({
+            where: whereClause,
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                status: true,
+                createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+    async getStudentById(studentId) {
+        const student = await this.prisma.user.findFirst({
+            where: {
+                id: studentId,
+                role: client_1.Role.STUDENT,
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true,
+                organization: {
+                    select: {
+                        id: true,
+                        name: true,
+                        createdAt: true,
+                    },
+                },
+                enrollments: {
+                    select: {
+                        id: true,
+                        accessStatus: true,
+                        createdAt: true,
+                        course: {
+                            select: {
+                                id: true,
+                                title: true,
+                                status: true,
+                                price: true,
+                                createdAt: true,
+                            },
+                        },
+                    },
+                    orderBy: { createdAt: 'desc' },
+                },
+            },
+        });
+        if (!student) {
+            throw new common_1.NotFoundException('Student not found');
+        }
+        return student;
+    }
     async getStats() {
         const [pendingApprovals, totalUsers, totalTeachers, totalStudents, totalCourses] = await Promise.all([
             this.prisma.user.count({ where: { status: client_1.UserStatus.PENDING_APPROVAL, role: client_1.Role.TEACHER } }),
@@ -348,6 +448,27 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getTeachers", null);
+__decorate([
+    (0, common_1.Get)('teachers/:teacherId'),
+    __param(0, (0, common_1.Param)('teacherId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getTeacherById", null);
+__decorate([
+    (0, common_1.Get)('students'),
+    __param(0, (0, common_1.Query)('status')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getStudents", null);
+__decorate([
+    (0, common_1.Get)('students/:studentId'),
+    __param(0, (0, common_1.Param)('studentId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getStudentById", null);
 __decorate([
     (0, common_1.Get)('stats'),
     __metadata("design:type", Function),

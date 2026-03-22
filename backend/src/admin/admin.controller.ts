@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, NotFoundException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -288,6 +288,117 @@ export class AdminController {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  @Get('teachers/:teacherId')
+  async getTeacherById(@Param('teacherId') teacherId: string) {
+    const teacher = await this.prisma.user.findFirst({
+      where: {
+        id: teacherId,
+        role: Role.TEACHER,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            createdAt: true,
+          },
+        },
+        coursesCreated: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            price: true,
+            createdAt: true,
+            _count: { select: { sections: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!teacher) {
+      throw new NotFoundException('Teacher not found');
+    }
+
+    return teacher;
+  }
+
+  @Get('students')
+  async getStudents(@Query('status') status?: UserStatus) {
+    const whereClause = status
+      ? { role: Role.STUDENT, status }
+      : { role: Role.STUDENT };
+
+    return this.prisma.user.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  @Get('students/:studentId')
+  async getStudentById(@Param('studentId') studentId: string) {
+    const student = await this.prisma.user.findFirst({
+      where: {
+        id: studentId,
+        role: Role.STUDENT,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            createdAt: true,
+          },
+        },
+        enrollments: {
+          select: {
+            id: true,
+            accessStatus: true,
+            createdAt: true,
+            course: {
+              select: {
+                id: true,
+                title: true,
+                status: true,
+                price: true,
+                createdAt: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+
+    return student;
   }
 
   // Statistics

@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Loader2, GraduationCap, Eye, EyeOff } from 'lucide-react';
-import { apiBaseUrl } from '@/lib/runtime-config';
+import { browserApiBaseUrl } from '@/lib/runtime-config';
 
 export default function StudentLoginPage() {
   const [email, setEmail] = useState('');
@@ -17,7 +16,6 @@ export default function StudentLoginPage() {
   const [requiresOtp, setRequiresOtp] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resending, setResending] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     if (resendCooldown > 0) {
@@ -34,7 +32,7 @@ export default function StudentLoginPage() {
 
     try {
       if (!requiresOtp) {
-        const res = await fetch(`${apiBaseUrl}/auth/login`, {
+        const res = await fetch(`${browserApiBaseUrl}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
@@ -53,10 +51,10 @@ export default function StudentLoginPage() {
         } else {
           localStorage.setItem('token', data.accessToken);
           localStorage.setItem('user', JSON.stringify(data.user));
-          router.push('/dashboard');
+          window.location.href = '/dashboard';
         }
       } else {
-        const res = await fetch(`${apiBaseUrl}/auth/verify-otp`, {
+        const res = await fetch(`${browserApiBaseUrl}/auth/verify-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, otp }),
@@ -70,7 +68,7 @@ export default function StudentLoginPage() {
 
         localStorage.setItem('token', data.accessToken);
         localStorage.setItem('user', JSON.stringify(data.user));
-        router.push('/dashboard');
+        window.location.href = '/dashboard';
       }
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
@@ -90,7 +88,7 @@ export default function StudentLoginPage() {
     setError('');
 
     try {
-      const res = await fetch(`${apiBaseUrl}/auth/resend-otp`, {
+      const res = await fetch(`${browserApiBaseUrl}/auth/resend-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
