@@ -25,8 +25,8 @@ export declare class StudentController {
             status: import(".prisma/client").$Enums.CourseStatus;
             instructor: {
                 id: string;
-                name: string;
                 email: string;
+                name: string;
             };
         };
         progress: {
@@ -50,8 +50,8 @@ export declare class StudentController {
             createdAt: Date;
             instructor: {
                 id: string;
-                name: string;
                 email: string;
+                name: string;
             };
         };
         sections: {
@@ -95,9 +95,9 @@ export declare class StudentController {
     getNotifications(req: any, limit?: string, unreadOnly?: string): Promise<{
         id: string;
         createdAt: Date;
+        message: string;
         title: string;
         type: string;
-        message: string;
         read: boolean;
     }[]>;
     getUnreadCount(req: any): Promise<{

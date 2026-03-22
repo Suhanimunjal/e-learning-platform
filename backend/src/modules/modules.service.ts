@@ -18,7 +18,6 @@ export class ModulesService {
   ) {}
 
   async create(createModuleDto: CreateModuleDto, user: User) {
-    // Get section to check course ownership
     const section = await this.prisma.section.findUnique({
       where: { id: createModuleDto.sectionId },
       include: { course: true },
@@ -28,7 +27,6 @@ export class ModulesService {
       throw new NotFoundException('Section not found');
     }
 
-    // Check permissions
     if (user.role === Role.STUDENT) {
       throw new ForbiddenException('Students cannot create modules');
     }
@@ -37,8 +35,18 @@ export class ModulesService {
       throw new ForbiddenException('You can only create modules for your own courses');
     }
 
+    const { contentItems, ...moduleData } = createModuleDto;
+
     return this.prisma.module.create({
-      data: createModuleDto,
+      data: {
+        ...moduleData,
+        contentItems: contentItems ? {
+          create: contentItems,
+        } : undefined,
+      },
+      include: {
+        contentItems: true,
+      },
     });
   }
 
@@ -69,6 +77,12 @@ export class ModulesService {
     return this.prisma.module.findMany({
       where: { sectionId },
       orderBy: { order: 'asc' },
+      include: {
+        contentItems: {
+          orderBy: { order: 'asc' },
+        },
+        moduleQuiz: true,
+      },
     });
   }
 
@@ -81,6 +95,10 @@ export class ModulesService {
             course: true,
           },
         },
+        contentItems: {
+          orderBy: { order: 'asc' },
+        },
+        moduleQuiz: true,
       },
     });
 

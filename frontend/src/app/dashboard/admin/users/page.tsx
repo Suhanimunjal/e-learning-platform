@@ -766,7 +766,9 @@ export default function AdminUsersPage() {
           isOpen={!!confirmAction}
           onClose={() => { setConfirmAction(null); setBlacklistReason(''); }}
           title={
-            confirmAction?.type.includes('blacklist') && !confirmAction.type.includes('un')
+            confirmAction?.type === 'revert-blacklist'
+              ? `Restore: ${confirmAction?.name}`
+              : confirmAction?.type.includes('blacklist') && !confirmAction.type.includes('un')
               ? `Blacklist ${confirmAction?.name}`
               : confirmAction?.type.includes('unblacklist')
               ? `Unblacklist ${confirmAction?.name}`
@@ -777,9 +779,13 @@ export default function AdminUsersPage() {
         >
           {confirmAction && (
             <div className="space-y-4">
-              <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
-                <AlertTriangle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
-                <div className="text-sm text-red-700">
+              <div className={`flex items-start gap-3 rounded-lg p-4 ${confirmAction.type === 'revert-blacklist' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                {confirmAction.type === 'revert-blacklist' ? (
+                  <ShieldCheck className="text-green-500 flex-shrink-0 mt-0.5" size={20} />
+                ) : (
+                  <AlertTriangle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
+                )}
+                <div className={`text-sm ${confirmAction.type === 'revert-blacklist' ? 'text-green-700' : 'text-red-700'}`}>
                   {confirmAction.type === 'blacklist-student' && <p>This student will be blocked from logging in.</p>}
                   {confirmAction.type === 'blacklist-teacher' && (
                     <p>This teacher will be blocked and <strong>all their courses will also be blacklisted</strong>.</p>
@@ -796,10 +802,13 @@ export default function AdminUsersPage() {
                   {confirmAction.type === 'cleanup' && (
                     <p>This will permanently delete all rejected students, teachers, and courses.</p>
                   )}
+                  {confirmAction.type === 'revert-blacklist' && (
+                    <p>This user will be restored to the main user table with <strong>ACTIVE</strong> status. If they are a teacher, their courses will also be restored.</p>
+                  )}
                 </div>
               </div>
 
-              {confirmAction.type.includes('blacklist') && !confirmAction.type.includes('un') && (
+              {confirmAction.type.includes('blacklist') && !confirmAction.type.includes('un') && confirmAction.type !== 'revert-blacklist' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Reason (optional)</label>
                   <input
@@ -820,12 +829,12 @@ export default function AdminUsersPage() {
                   onClick={handleConfirm}
                   loading={acting}
                   className={
-                    confirmAction.type.includes('unblacklist')
+                    confirmAction.type.includes('unblacklist') || confirmAction.type === 'revert-blacklist'
                       ? 'bg-green-600 hover:bg-green-700 text-white'
                       : 'bg-red-600 hover:bg-red-700 text-white'
                   }
                 >
-                  {confirmAction.type.includes('unblacklist') ? 'Confirm Unblacklist' : 'Confirm'}
+                  {confirmAction.type.includes('unblacklist') || confirmAction.type === 'revert-blacklist' ? 'Restore User' : 'Confirm'}
                 </Button>
               </div>
             </div>

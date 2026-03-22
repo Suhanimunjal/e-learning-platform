@@ -8,11 +8,45 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateModuleDto = void 0;
+exports.CreateModuleDto = exports.ContentItemDto = void 0;
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
 const client_1 = require("@prisma/client");
+class ContentItemDto {
+}
+exports.ContentItemDto = ContentItemDto;
+__decorate([
+    (0, class_validator_1.IsEnum)(client_1.ContentItemType),
+    __metadata("design:type", String)
+], ContentItemDto.prototype, "type", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ContentItemDto.prototype, "title", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ContentItemDto.prototype, "url", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], ContentItemDto.prototype, "content", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], ContentItemDto.prototype, "order", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], ContentItemDto.prototype, "duration", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], ContentItemDto.prototype, "metadata", void 0);
 class CreateModuleDto {
     constructor() {
         this.order = 0;
@@ -30,7 +64,7 @@ __decorate([
 ], CreateModuleDto.prototype, "sectionId", void 0);
 __decorate([
     (0, class_validator_1.IsEnum)(client_1.ModuleType),
-    __metadata("design:type", typeof (_a = typeof client_1.ModuleType !== "undefined" && client_1.ModuleType) === "function" ? _a : Object)
+    __metadata("design:type", String)
 ], CreateModuleDto.prototype, "type", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
@@ -61,4 +95,11 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateModuleDto.prototype, "isPreview", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => ContentItemDto),
+    __metadata("design:type", Array)
+], CreateModuleDto.prototype, "contentItems", void 0);
 //# sourceMappingURL=create-module.dto.js.map

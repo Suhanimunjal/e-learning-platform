@@ -213,6 +213,18 @@ let AuthService = AuthService_1 = class AuthService {
         if (!user) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
+        const blacklistedUser = await this.prisma.blacklistedUser.findUnique({
+            where: { originalUserId: user.id },
+        });
+        if (blacklistedUser) {
+            return {
+                requiresOtp: false,
+                isBlacklisted: true,
+                message: 'Your account has been blacklisted. Please contact administration.',
+                blacklistedEmail: blacklistedUser.email,
+                blacklistedName: blacklistedUser.name,
+            };
+        }
         if (requestedRole) {
             const normalizedRequestedRole = requestedRole.toUpperCase();
             if (user.role !== normalizedRequestedRole) {
@@ -403,6 +415,15 @@ let AuthService = AuthService_1 = class AuthService {
     }
     async login(loginDto) {
         const result = await this.initiateLogin(loginDto);
+        if (result.isBlacklisted) {
+            return {
+                requiresOtp: false,
+                isBlacklisted: true,
+                message: result.message || 'Your account has been blacklisted.',
+                blacklistedEmail: result.blacklistedEmail,
+                blacklistedName: result.blacklistedName,
+            };
+        }
         if (!result.requiresOtp) {
             const { email, password } = loginDto;
             const user = await this.prisma.user.findUnique({ where: { email } });
@@ -414,6 +435,79 @@ let AuthService = AuthService_1 = class AuthService {
             };
         }
         return { requiresOtp: true, message: result.message || 'OTP required' };
+    }
+    async sendBlacklistAppeal(email, message) {
+        const blacklistedUser = await this.prisma.blacklistedUser.findFirst({
+            where: { email },
+        });
+        if (!blacklistedUser) {
+            throw new common_1.UnauthorizedException('User is not blacklisted');
+        }
+        let adminEmail = process.env.SMTP_USER || 'admin@elearning.com';
+        let adminName = 'Administrator';
+        if (blacklistedUser.blacklistedBy) {
+            const admin = await this.prisma.user.findUnique({
+                where: { id: blacklistedUser.blacklistedBy },
+                select: { email: true, name: true },
+            });
+            if (admin) {
+                adminEmail = admin.email;
+                adminName = admin.name;
+            }
+        }
+        try {
+            await this.transporter.sendMail({
+                from: process.env.SMTP_FROM || 'E-Learning Platform <noreply@elearning.com>',
+                to: adminEmail,
+                subject: `Blacklist Appeal from ${blacklistedUser.name} - E-Learning Platform`,
+                html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #DC2626, #991B1B); padding: 20px; text-align: center;">
+              <h1 style="color: white; margin: 0;">Blacklist Appeal Request</h1>
+            </div>
+            <div style="padding: 30px; background: #f9fafb;">
+              <p style="color: #1f2937; font-size: 16px;">
+                Hello ${adminName},
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+                A blacklisted user has submitted an appeal to have their account restored.
+              </p>
+              <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="color: #991b1b; font-size: 14px; margin: 0;"><strong>User Details:</strong></p>
+                <p style="color: #991b1b; font-size: 14px; margin: 5px 0;">Name: ${blacklistedUser.name}</p>
+                <p style="color: #991b1b; font-size: 14px; margin: 5px 0;">Email: ${blacklistedUser.email}</p>
+                <p style="color: #991b1b; font-size: 14px; margin: 5px 0;">Role: ${blacklistedUser.role}</p>
+                <p style="color: #991b1b; font-size: 14px; margin: 5px 0;">Blacklist Reason: ${blacklistedUser.reason}</p>
+              </div>
+              <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="color: #0c4a6e; font-size: 14px; margin: 0;"><strong>User's Appeal Message:</strong></p>
+                <p style="color: #0c4a6e; font-size: 14px; margin: 10px 0;">${message}</p>
+              </div>
+              <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+                To restore this user, please visit the admin panel and use the "Revert Blacklist" option in the Blacklisted Users tab.
+              </p>
+            </div>
+          </div>
+        `,
+            });
+            return { success: true, message: 'Your appeal has been sent to the administrator.' };
+        }
+        catch (error) {
+            this.logger.error(`Failed to send blacklist appeal email for ${email}:`, error);
+            throw new common_1.ServiceUnavailableException('Unable to send appeal email. Please try again later.');
+        }
+    }
+    get transporter() {
+        const nodemailer = require('nodemailer');
+        return nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: parseInt(process.env.SMTP_PORT || '587'),
+            secure: process.env.SMTP_SECURE === 'true',
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS,
+            },
+        });
     }
     async validateUser(userId) {
         return this.prisma.user.findUnique({

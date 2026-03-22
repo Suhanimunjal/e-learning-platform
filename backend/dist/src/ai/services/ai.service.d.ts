@@ -16,12 +16,12 @@ export declare class AiService implements OnModuleDestroy {
     generateCourseOutline(topic: string, userId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         type: string;
         retryCount: number;
+        version: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
         tenantId: string | null;
@@ -29,12 +29,12 @@ export declare class AiService implements OnModuleDestroy {
     generateLessons(courseId: string, userId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         type: string;
         retryCount: number;
+        version: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
         tenantId: string | null;
@@ -42,12 +42,12 @@ export declare class AiService implements OnModuleDestroy {
     generateQuiz(moduleId: string, userId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         type: string;
         retryCount: number;
+        version: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
         tenantId: string | null;
@@ -55,12 +55,12 @@ export declare class AiService implements OnModuleDestroy {
     generateFlashcards(moduleId: string, userId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         type: string;
         retryCount: number;
+        version: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
         tenantId: string | null;
@@ -68,12 +68,12 @@ export declare class AiService implements OnModuleDestroy {
     getJobStatus(jobId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         type: string;
         retryCount: number;
+        version: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
         tenantId: string | null;

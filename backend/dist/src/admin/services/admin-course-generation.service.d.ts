@@ -14,9 +14,9 @@ export declare class AdminCourseGenerationService {
     getJob(jobId: string): Promise<{
         error: string | null;
         id: string;
+        status: string;
         createdAt: Date;
         updatedAt: Date;
-        status: string;
         type: string;
         retryCount: number;
         version: string;

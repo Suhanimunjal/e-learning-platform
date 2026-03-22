@@ -27,8 +27,8 @@ export declare class PaymentsController {
     }>;
     getOrderStatus(orderId: string): Promise<{
         id: string;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
         courseId: string;
         userId: string;
         amount: number;

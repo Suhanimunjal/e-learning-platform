@@ -1,4 +1,13 @@
-import { ModuleType } from '@prisma/client';
+import { ModuleType, ContentItemType } from '@prisma/client';
+export declare class ContentItemDto {
+    type: ContentItemType;
+    title: string;
+    url?: string;
+    content?: any;
+    order?: number;
+    duration?: number;
+    metadata?: any;
+}
 export declare class CreateModuleDto {
     title: string;
     sectionId: string;
@@ -9,4 +18,5 @@ export declare class CreateModuleDto {
     order?: number;
     duration?: number;
     isPreview?: boolean;
+    contentItems?: ContentItemDto[];
 }

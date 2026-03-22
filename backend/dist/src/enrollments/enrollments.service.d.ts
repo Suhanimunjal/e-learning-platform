@@ -19,20 +19,19 @@ export declare class EnrollmentsService {
         course: {
             instructor: {
                 id: string;
-                name: string;
                 email: string;
+                name: string;
             };
             sections: ({
                 modules: {
                     id: string;
                     rejectionReason: string | null;
                     title: string;
-                    approvedBy: string | null;
-                    order: number;
                     type: import(".prisma/client").$Enums.ModuleType;
                     videoUrl: string | null;
                     textContent: string | null;
                     content: import("@prisma/client/runtime/client").JsonValue | null;
+                    order: number;
                     duration: number | null;
                     isPreview: boolean;
                     hasVideo: boolean;
@@ -45,6 +44,7 @@ export declare class EnrollmentsService {
                     transcript: string | null;
                     voiceId: string | null;
                     approvedAt: Date | null;
+                    approvedBy: string | null;
                     contentGeneratedAt: Date | null;
                     videoGeneratedAt: Date | null;
                     retryCount: number;
@@ -58,21 +58,21 @@ export declare class EnrollmentsService {
             })[];
         } & {
             id: string;
-            slug: string;
-            createdAt: Date;
-            updatedAt: Date;
             status: import(".prisma/client").$Enums.CourseStatus;
             rejectionReason: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             organizationId: string | null;
+            slug: string;
             title: string;
+            approvedBy: string | null;
             description: string;
             thumbnail: string | null;
             videoIntro: string | null;
             price: number;
-            approvedBy: string | null;
+            instructorId: string;
             materials: import("@prisma/client/runtime/client").JsonValue | null;
             youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
-            instructorId: string;
         };
     } & {
         id: string;
@@ -84,8 +84,8 @@ export declare class EnrollmentsService {
     getCourseStudents(courseId: string, user: User): Promise<({
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
             phone: string;
             rollNo: string;
             year: string;

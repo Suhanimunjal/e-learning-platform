@@ -15,6 +15,9 @@ export declare class AuthController {
     login(loginDto: LoginDto): Promise<import("./dto/auth-response.dto").AuthResponseDto | {
         requiresOtp: boolean;
         message: string;
+        isBlacklisted?: boolean;
+        blacklistedEmail?: string;
+        blacklistedName?: string;
     }>;
     verifyOTP(body: VerifyOtpDto): Promise<import("./dto/auth-response.dto").AuthResponseDto>;
     resendOTP(body: ResendOtpDto): Promise<{
@@ -24,8 +27,8 @@ export declare class AuthController {
     getProfile(req: any): Promise<any>;
     updateProfile(req: any, dto: UpdateProfileDto): Promise<{
         id: string;
-        name: string;
         email: string;
+        name: string;
         role: import(".prisma/client").$Enums.Role;
         status: import(".prisma/client").$Enums.UserStatus;
         phone: string;
@@ -48,6 +51,13 @@ export declare class AuthController {
         message: string;
     }>;
     adminOnly(): Promise<{
+        message: string;
+    }>;
+    sendBlacklistAppeal(body: {
+        email: string;
+        message: string;
+    }): Promise<{
+        success: boolean;
         message: string;
     }>;
 }

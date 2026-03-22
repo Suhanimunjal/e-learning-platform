@@ -121,4 +121,9 @@ export class AuthController {
   async adminOnly() {
     return { message: 'This is an admin-only route' };
   }
+
+  @Post('blacklist-appeal')
+  async sendBlacklistAppeal(@Body() body: { email: string; message: string }) {
+    return this.authService.sendBlacklistAppeal(body.email, body.message);
+  }
 }

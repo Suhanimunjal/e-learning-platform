@@ -75,6 +75,9 @@ let AuthController = class AuthController {
     async adminOnly() {
         return { message: 'This is an admin-only route' };
     }
+    async sendBlacklistAppeal(body) {
+        return this.authService.sendBlacklistAppeal(body.email, body.message);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -186,6 +189,13 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "adminOnly", null);
+__decorate([
+    (0, common_1.Post)('blacklist-appeal'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "sendBlacklistAppeal", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

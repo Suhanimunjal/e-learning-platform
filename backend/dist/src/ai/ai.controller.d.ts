@@ -8,12 +8,12 @@ export declare class AiController {
     }): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         type: string;
         retryCount: number;
+        version: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
         tenantId: string | null;
@@ -21,12 +21,12 @@ export declare class AiController {
     generateLessons(req: any, courseId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         type: string;
         retryCount: number;
+        version: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
         tenantId: string | null;
@@ -34,12 +34,12 @@ export declare class AiController {
     getJobStatus(jobId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         type: string;
         retryCount: number;
+        version: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
         tenantId: string | null;
@@ -47,12 +47,12 @@ export declare class AiController {
     generateQuiz(req: any, moduleId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         type: string;
         retryCount: number;
+        version: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
         tenantId: string | null;
@@ -60,12 +60,12 @@ export declare class AiController {
     generateFlashcards(req: any, moduleId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         type: string;
         retryCount: number;
+        version: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
         tenantId: string | null;

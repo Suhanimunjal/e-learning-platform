@@ -12,10 +12,8 @@ export declare class SubscriptionsService {
     }): Promise<{
         user: {
             id: string;
-            name: string;
-            updatedAt: Date;
-            createdAt: Date;
             email: string;
+            name: string;
             password: string | null;
             role: import(".prisma/client").$Enums.Role;
             status: import(".prisma/client").$Enums.UserStatus;
@@ -26,43 +24,43 @@ export declare class SubscriptionsService {
             year: string | null;
             branch: string | null;
             course: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             organizationId: string | null;
         };
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            razorpayPlanId: string | null;
             isActive: boolean;
+            razorpayPlanId: string | null;
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         planId: string;
-        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
+        razorpaySubscriptionId: string | null;
     }>;
     getSubscriptionById(subscriptionId: string): Promise<{
         user: {
             id: string;
-            name: string;
-            updatedAt: Date;
-            createdAt: Date;
             email: string;
+            name: string;
             password: string | null;
             role: import(".prisma/client").$Enums.Role;
             status: import(".prisma/client").$Enums.UserStatus;
@@ -73,164 +71,166 @@ export declare class SubscriptionsService {
             year: string | null;
             branch: string | null;
             course: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             organizationId: string | null;
         };
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            razorpayPlanId: string | null;
             isActive: boolean;
+            razorpayPlanId: string | null;
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         planId: string;
-        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
+        razorpaySubscriptionId: string | null;
     }>;
     getUserSubscription(userId: string): Promise<{
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            razorpayPlanId: string | null;
             isActive: boolean;
+            razorpayPlanId: string | null;
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         planId: string;
-        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
+        razorpaySubscriptionId: string | null;
     }>;
     getUserActiveSubscription(userId: string): Promise<{
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            razorpayPlanId: string | null;
             isActive: boolean;
+            razorpayPlanId: string | null;
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         planId: string;
-        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
+        razorpaySubscriptionId: string | null;
     }>;
     cancelSubscription(subscriptionId: string): Promise<{
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            razorpayPlanId: string | null;
             isActive: boolean;
+            razorpayPlanId: string | null;
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         planId: string;
-        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
+        razorpaySubscriptionId: string | null;
     }>;
     renewSubscription(subscriptionId: string): Promise<{
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            razorpayPlanId: string | null;
             isActive: boolean;
+            razorpayPlanId: string | null;
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         planId: string;
-        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
+        razorpaySubscriptionId: string | null;
     }>;
     checkExpiredSubscriptions(): Promise<{
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         planId: string;
-        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
+        razorpaySubscriptionId: string | null;
     }[]>;
     getAllSubscriptions(filter?: {
         status?: string;
@@ -238,10 +238,8 @@ export declare class SubscriptionsService {
     }): Promise<({
         user: {
             id: string;
-            name: string;
-            updatedAt: Date;
-            createdAt: Date;
             email: string;
+            name: string;
             password: string | null;
             role: import(".prisma/client").$Enums.Role;
             status: import(".prisma/client").$Enums.UserStatus;
@@ -252,34 +250,36 @@ export declare class SubscriptionsService {
             year: string | null;
             branch: string | null;
             course: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             organizationId: string | null;
         };
         plan: {
             id: string;
             name: string;
-            description: string | null;
-            updatedAt: Date;
             createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
             price: number;
             features: import("@prisma/client/runtime/client").JsonValue | null;
             billingCycle: string;
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            razorpayPlanId: string | null;
             isActive: boolean;
+            razorpayPlanId: string | null;
         };
     } & {
         id: string;
-        updatedAt: Date;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         planId: string;
-        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
+        razorpaySubscriptionId: string | null;
     })[]>;
 }

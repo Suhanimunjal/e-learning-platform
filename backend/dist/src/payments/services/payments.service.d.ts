@@ -33,8 +33,8 @@ export declare class PaymentsService {
     }>;
     getOrderStatus(orderId: string): Promise<{
         id: string;
-        createdAt: Date;
         status: string;
+        createdAt: Date;
         courseId: string;
         userId: string;
         amount: number;

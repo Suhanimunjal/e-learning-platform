@@ -472,7 +472,7 @@ let AdminController = class AdminController {
             this.prisma.user.count({ where: { role: client_1.Role.TEACHER } }),
             this.prisma.user.count({ where: { role: client_1.Role.STUDENT } }),
             this.prisma.course.count(),
-            this.prisma.user.count({ where: { status: client_1.UserStatus.BLACKLISTED } }),
+            this.prisma.blacklistedUser.count(),
             this.prisma.course.count({ where: { status: client_1.CourseStatus.BLACKLISTED } }),
         ]);
         return {
@@ -486,11 +486,17 @@ let AdminController = class AdminController {
         };
     }
     async blacklistUser(userId, body, req) {
-        const user = await this.prisma.user.update({
+        const user = await this.prisma.user.findUnique({
             where: { id: userId },
-            data: { status: client_1.UserStatus.BLACKLISTED, rejectionReason: body.reason },
-            select: { id: true, email: true, name: true, role: true, status: true },
+            select: {
+                id: true, email: true, name: true, password: true, role: true, status: true,
+                avatar: true, organizationId: true, rejectionReason: true,
+                phone: true, rollNo: true, year: true, branch: true, course: true,
+            },
         });
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
         let blacklistedCourses = 0;
         if (user.role === client_1.Role.TEACHER) {
             const result = await this.prisma.course.updateMany({
@@ -499,7 +505,43 @@ let AdminController = class AdminController {
             });
             blacklistedCourses = result.count;
         }
-        await this.notify(user.id, 'account', 'Account Blacklisted', `Your account has been suspended. ${body.reason || 'Contact support for details.'}`);
+        if (user.role === client_1.Role.TEACHER) {
+            await this.prisma.course.updateMany({
+                where: { instructorId: userId },
+                data: { status: client_1.CourseStatus.BLACKLISTED, rejectionReason: `Instructor blacklisted: ${body.reason}` },
+            });
+        }
+        await this.prisma.blacklistedUser.create({
+            data: {
+                originalUserId: user.id,
+                email: user.email,
+                name: user.name,
+                password: user.password,
+                role: user.role,
+                avatar: user.avatar,
+                organizationId: user.organizationId,
+                rejectionReason: user.rejectionReason,
+                phone: user.phone,
+                rollNo: user.rollNo,
+                year: user.year,
+                branch: user.branch,
+                course: user.course,
+                reason: body.reason,
+                blacklistedBy: req.user.id,
+            },
+        });
+        await this.prisma.enrollment.deleteMany({ where: { userId } });
+        await this.prisma.progress.deleteMany({ where: { userId } });
+        await this.prisma.quizAttempt.deleteMany({ where: { userId } });
+        await this.prisma.submission.deleteMany({ where: { userId } });
+        await this.prisma.analyticsEvent.deleteMany({ where: { userId } });
+        await this.prisma.notification.deleteMany({ where: { userId } });
+        await this.prisma.review.deleteMany({ where: { userId } });
+        await this.prisma.order.deleteMany({ where: { userId } });
+        await this.prisma.discussion.deleteMany({ where: { userId } });
+        await this.prisma.certificate.deleteMany({ where: { userId } });
+        await this.prisma.reply.deleteMany({ where: { userId } });
+        await this.prisma.user.delete({ where: { id: userId } });
         await this.activityLogService.log({
             action: 'USER_BLACKLISTED',
             entityType: 'USER',
@@ -508,32 +550,122 @@ let AdminController = class AdminController {
             targetUserId: user.id,
             metadata: { email: user.email, name: user.name, role: user.role, reason: body.reason, blacklistedCourses },
         });
-        return { success: true, user, blacklistedCourses };
+        return { success: true, user: { id: user.id, email: user.email, name: user.name, role: user.role }, blacklistedCourses };
     }
     async unblacklistUser(userId, req) {
-        const user = await this.prisma.user.update({
-            where: { id: userId },
-            data: { status: client_1.UserStatus.ACTIVE, rejectionReason: null },
-            select: { id: true, email: true, name: true, role: true, status: true },
+        const blacklisted = await this.prisma.blacklistedUser.findFirst({
+            where: { originalUserId: userId },
+        });
+        if (!blacklisted) {
+            throw new common_1.NotFoundException('Blacklisted user not found');
+        }
+        const restoredUser = await this.prisma.user.create({
+            data: {
+                email: blacklisted.email,
+                name: blacklisted.name,
+                password: blacklisted.password,
+                role: blacklisted.role,
+                status: client_1.UserStatus.ACTIVE,
+                avatar: blacklisted.avatar,
+                organizationId: blacklisted.organizationId,
+                phone: blacklisted.phone,
+                rollNo: blacklisted.rollNo,
+                year: blacklisted.year,
+                branch: blacklisted.branch,
+                course: blacklisted.course,
+            },
         });
         let restoredCourses = 0;
-        if (user.role === client_1.Role.TEACHER) {
+        if (blacklisted.role === client_1.Role.TEACHER) {
             const result = await this.prisma.course.updateMany({
                 where: { instructorId: userId, status: client_1.CourseStatus.BLACKLISTED },
                 data: { status: client_1.CourseStatus.APPROVED, rejectionReason: null },
             });
             restoredCourses = result.count;
+            await this.prisma.course.updateMany({
+                where: { instructorId: userId },
+                data: { instructorId: restoredUser.id },
+            });
         }
-        await this.notify(user.id, 'account', 'Account Restored', 'Your account has been reactivated. You can now access all features.');
+        await this.prisma.blacklistedUser.delete({ where: { id: blacklisted.id } });
         await this.activityLogService.log({
             action: 'USER_UNBLACKLISTED',
             entityType: 'USER',
-            entityId: user.id,
+            entityId: restoredUser.id,
             userId: req.user.id,
-            targetUserId: user.id,
-            metadata: { email: user.email, name: user.name, restoredCourses },
+            targetUserId: restoredUser.id,
+            metadata: { email: restoredUser.email, name: restoredUser.name, restoredCourses },
         });
-        return { success: true, user, restoredCourses };
+        return { success: true, user: { id: restoredUser.id, email: restoredUser.email, name: restoredUser.name, role: restoredUser.role }, restoredCourses };
+    }
+    async getBlacklistedUsers() {
+        return this.prisma.blacklistedUser.findMany({
+            select: {
+                id: true,
+                originalUserId: true,
+                email: true,
+                name: true,
+                role: true,
+                phone: true,
+                rollNo: true,
+                year: true,
+                branch: true,
+                course: true,
+                reason: true,
+                blacklistedAt: true,
+                organizationId: true,
+            },
+            orderBy: { blacklistedAt: 'desc' },
+        });
+    }
+    async revertBlacklist(blacklistedId, req) {
+        const blacklisted = await this.prisma.blacklistedUser.findUnique({
+            where: { id: blacklistedId },
+        });
+        if (!blacklisted) {
+            throw new common_1.NotFoundException('Blacklisted user not found');
+        }
+        const existing = await this.prisma.user.findUnique({ where: { email: blacklisted.email } });
+        if (existing) {
+            return { success: false, message: 'A user with this email already exists in the main table' };
+        }
+        const restoredUser = await this.prisma.user.create({
+            data: {
+                email: blacklisted.email,
+                name: blacklisted.name,
+                password: blacklisted.password,
+                role: blacklisted.role,
+                status: client_1.UserStatus.ACTIVE,
+                avatar: blacklisted.avatar,
+                organizationId: blacklisted.organizationId,
+                phone: blacklisted.phone,
+                rollNo: blacklisted.rollNo,
+                year: blacklisted.year,
+                branch: blacklisted.branch,
+                course: blacklisted.course,
+            },
+        });
+        let restoredCourses = 0;
+        if (blacklisted.role === client_1.Role.TEACHER) {
+            const result = await this.prisma.course.updateMany({
+                where: {
+                    instructorId: blacklisted.originalUserId,
+                    status: client_1.CourseStatus.BLACKLISTED,
+                },
+                data: { status: client_1.CourseStatus.APPROVED, rejectionReason: null, instructorId: restoredUser.id },
+            });
+            restoredCourses = result.count;
+        }
+        await this.prisma.blacklistedUser.delete({ where: { id: blacklistedId } });
+        await this.activityLogService.log({
+            action: 'BLACKLIST_REVERTED',
+            entityType: 'USER',
+            entityId: restoredUser.id,
+            userId: req.user.id,
+            targetUserId: restoredUser.id,
+            metadata: { email: restoredUser.email, name: restoredUser.name, restoredCourses },
+        });
+        return { success: true, user: { id: restoredUser.id, email: restoredUser.email, name: restoredUser.name, role: restoredUser.role }, restoredCourses };
     }
     async blacklistCourse(courseId, body, req) {
         const course = await this.prisma.course.update({
@@ -791,6 +923,20 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "unblacklistUser", null);
+__decorate([
+    (0, common_1.Get)('users/blacklisted'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getBlacklistedUsers", null);
+__decorate([
+    (0, common_1.Post)('users/blacklisted/:blacklistedId/revert'),
+    __param(0, (0, common_1.Param)('blacklistedId')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "revertBlacklist", null);
 __decorate([
     (0, common_1.Post)('courses/:courseId/blacklist'),
     __param(0, (0, common_1.Param)('courseId')),

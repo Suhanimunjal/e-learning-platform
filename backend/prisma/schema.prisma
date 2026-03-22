@@ -7,12 +7,12 @@ datasource db {
 }
 
 model User {
-  id              String                 @id @default(uuid())
-  email           String                 @unique
+  id              String     @id @default(uuid())
+  email           String     @unique
   name            String
   password        String?
-  role            Role                   @default(STUDENT)
-  status          UserStatus             @default(PENDING_APPROVAL)
+  role            Role       @default(STUDENT)
+  status          UserStatus @default(PENDING_APPROVAL)
   avatar          String?
   organizationId  String?
   rejectionReason String?
@@ -21,24 +21,25 @@ model User {
   year            String?
   branch          String?
   course          String?
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
-  organization    Organization?          @relation(fields: [organizationId], references: [id])
-  coursesCreated  Course[]               @relation("InstructorCourses")
-  enrollments     Enrollment[]
-  orders          Order[]
-  submissions     Submission[]
-  quizAttempts    QuizAttempt[]
-  discussions     Discussion[]
-  replies         Reply[]
-  notifications   Notification[]
-  subscriptions   Subscription[]
-  progresses      Progress[]
-  certificates    Certificate[]
-  analyticsEvents AnalyticsEvent[]
-  reviews         Review[]
-  pendingCourses  PendingCourseRequest[]
+  organization       Organization?          @relation(fields: [organizationId], references: [id])
+  coursesCreated     Course[]               @relation("InstructorCourses")
+  enrollments        Enrollment[]
+  orders             Order[]
+  submissions        Submission[]
+  quizAttempts       QuizAttempt[]
+  moduleQuizAttempts ModuleQuizAttempt[]
+  discussions        Discussion[]
+  replies            Reply[]
+  notifications      Notification[]
+  subscriptions      Subscription[]
+  progresses         Progress[]
+  certificates       Certificate[]
+  analyticsEvents    AnalyticsEvent[]
+  reviews            Review[]
+  pendingCourses     PendingCourseRequest[]
 
   @@index([email])
   @@index([role])
@@ -61,49 +62,49 @@ enum UserStatus {
 }
 
 model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  domain    String?
-  settings  Json?
-  
-  users     User[]
-  courses   Course[]
-  
+  id       String  @id @default(uuid())
+  name     String
+  slug     String  @unique
+  domain   String?
+  settings Json?
+
+  users   User[]
+  courses Course[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([slug])
   @@index([domain])
 }
 
 model Course {
-  id              String        @id @default(uuid())
+  id              String       @id @default(uuid())
   title           String
-  slug            String        @unique
+  slug            String       @unique
   description     String
   thumbnail       String?
   videoIntro      String?
-  price           Float         @default(0)
+  price           Float        @default(0)
   instructorId    String
   organizationId  String?
-  status          CourseStatus  @default(PENDING_APPROVAL)
+  status          CourseStatus @default(PENDING_APPROVAL)
   approvedBy      String?
   rejectionReason String?
   materials       Json?
   youtubeLinks    Json?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  
-  instructor      User          @relation("InstructorCourses", fields: [instructorId], references: [id])
-  organization    Organization? @relation(fields: [organizationId], references: [id])
-  sections        Section[]
-  enrollments     Enrollment[]
-  reviews         Review[]
-  orders          Order[]
-  discussions     Discussion[]
-  certificates    Certificate[]
-  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  instructor   User          @relation("InstructorCourses", fields: [instructorId], references: [id])
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  sections     Section[]
+  enrollments  Enrollment[]
+  reviews      Review[]
+  orders       Order[]
+  discussions  Discussion[]
+  certificates Certificate[]
+
   @@index([instructorId])
   @@index([organizationId])
   @@index([status])
@@ -117,14 +118,14 @@ enum CourseStatus {
 }
 
 model Section {
-  id        String   @id @default(uuid())
-  title     String
-  courseId  String
-  order     Int      @default(0)
-  
-  course    Course   @relation(fields: [courseId], references: [id])
-  modules   Module[]
-  
+  id       String @id @default(uuid())
+  title    String
+  courseId String
+  order    Int    @default(0)
+
+  course  Course   @relation(fields: [courseId], references: [id])
+  modules Module[]
+
   @@index([courseId])
 }
 
@@ -152,41 +153,72 @@ enum VideoStatus {
   FAILED
 }
 
+enum ContentItemType {
+  VIDEO
+  PDF
+  YOUTUBE
+  EXTERNAL_LINK
+  TEXT
+  IMAGE
+  AUDIO
+  EMBED
+}
+
+model ContentItem {
+  id       String          @id @default(uuid())
+  moduleId String
+  type     ContentItemType
+  title    String
+  url      String?
+  content  Json?
+  order    Int             @default(0)
+  duration Int?
+  metadata Json?
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@index([moduleId])
+  @@index([type])
+}
+
 model Module {
-  id          String   @id @default(uuid())
+  id          String     @id @default(uuid())
   title       String
   sectionId   String
   type        ModuleType
   videoUrl    String?
   textContent String?
   content     Json?
-  order       Int      @default(0)
+  order       Int        @default(0)
   duration    Int?
-  isPreview   Boolean  @default(false)
-  hasVideo    Boolean  @default(false)
-  videoGenId String?
-  
-  topic              String?
-  generatedContent   Json?
-  contentStatus      ContentStatus @default(PENDING)
-  videoStatus        VideoStatus   @default(PENDING)
-  audioUrl           String?
-  transcript         String?
-  voiceId            String?
-  
-  approvedAt          DateTime?
-  approvedBy          String?
-  rejectionReason     String?
-  
+  isPreview   Boolean    @default(false)
+  hasVideo    Boolean    @default(false)
+  videoGenId  String?
+
+  topic            String?
+  generatedContent Json?
+  contentStatus    ContentStatus @default(PENDING)
+  videoStatus      VideoStatus   @default(PENDING)
+  audioUrl         String?
+  transcript       String?
+  voiceId          String?
+
+  approvedAt      DateTime?
+  approvedBy      String?
+  rejectionReason String?
+
   contentGeneratedAt DateTime?
   videoGeneratedAt   DateTime?
-  retryCount         Int @default(0)
-  
-  section     Section  @relation(fields: [sectionId], references: [id])
-  quiz        Quiz?
-  assignment  Assignment?
-  progresses  Progress[]
-  
+  retryCount         Int       @default(0)
+
+  section      Section       @relation(fields: [sectionId], references: [id])
+  quiz         Quiz?
+  assignment   Assignment?
+  progresses   Progress[]
+  contentItems ContentItem[]
+
+  moduleQuiz ModuleQuiz?
+
   @@index([sectionId])
   @@index([contentStatus])
   @@index([videoStatus])
@@ -194,84 +226,139 @@ model Module {
 }
 
 model Quiz {
-  id           String   @id @default(uuid())
-  moduleId     String   @unique
-  title        String
-  description  String?
-  timeLimit    Int?
-  maxAttempts  Int      @default(1)
-  passingScore Int      @default(50)
-  shuffleQuestions Boolean @default(false)
-  published    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
-  module       Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  questions    Question[]
-  attempts     QuizAttempt[]
-  
+  id               String   @id @default(uuid())
+  moduleId         String   @unique
+  title            String
+  description      String?
+  timeLimit        Int?
+  maxAttempts      Int      @default(1)
+  passingScore     Int      @default(50)
+  shuffleQuestions Boolean  @default(false)
+  published        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  module    Module        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  questions Question[]
+  attempts  QuizAttempt[]
+
   @@index([moduleId])
 }
 
-model Question {
-  id          String   @id @default(uuid())
-  quizId      String
-  type        String
-  text        String
-  options     Json?
+model ModuleQuiz {
+  id               String   @id @default(uuid())
+  moduleId         String   @unique
+  title            String
+  description      String?
+  timeLimit        Int?
+  maxAttempts      Int      @default(1)
+  passingScore     Int      @default(50)
+  shuffleQuestions Boolean  @default(false)
+  published        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  module    Module              @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  questions ModuleQuestion[]
+  attempts  ModuleQuizAttempt[]
+
+  @@index([moduleId])
+}
+
+model ModuleQuestion {
+  id            String  @id @default(uuid())
+  moduleQuizId  String
+  type          String
+  text          String
+  options       Json?
   correctAnswer String?
-  points      Int      @default(1)
-  order       Int      @default(0)
-  
-  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  
+  points        Int     @default(1)
+  order         Int     @default(0)
+
+  moduleQuiz ModuleQuiz @relation(fields: [moduleQuizId], references: [id], onDelete: Cascade)
+
+  @@index([moduleQuizId])
+}
+
+model ModuleQuizAttempt {
+  id           String    @id @default(uuid())
+  userId       String
+  moduleQuizId String
+  answers      Json
+  score        Int?
+  percentage   Float?
+  passed       Boolean?
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+
+  user       User       @relation(fields: [userId], references: [id])
+  moduleQuiz ModuleQuiz @relation(fields: [moduleQuizId], references: [id])
+
+  @@index([userId])
+  @@index([moduleQuizId])
+}
+
+model Question {
+  id            String  @id @default(uuid())
+  quizId        String
+  type          String
+  text          String
+  options       Json?
+  correctAnswer String?
+  points        Int     @default(1)
+  order         Int     @default(0)
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
   @@index([quizId])
 }
 
 model QuizAttempt {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   userId      String
   quizId      String
   answers     Json
   score       Int?
   percentage  Float?
   passed      Boolean?
-  startedAt   DateTime @default(now())
+  startedAt   DateTime  @default(now())
   completedAt DateTime?
-  
-  user        User     @relation(fields: [userId], references: [id])
-  quiz        Quiz     @relation(fields: [quizId], references: [id])
+
+  user User @relation(fields: [userId], references: [id])
+  quiz Quiz @relation(fields: [quizId], references: [id])
+
   @@index([userId])
   @@index([quizId])
 }
 
 model Assignment {
-  id           String   @id @default(uuid())
-  moduleId     String   @unique
-  title        String
-  description  String?
-  dueDate      DateTime?
-  maxPoints    Int      @default(100)
-  allowFileUpload Boolean @default(true)
+  id               String    @id @default(uuid())
+  moduleId         String    @unique
+  title            String
+  description      String?
+  dueDate          DateTime?
+  maxPoints        Int       @default(100)
+  allowFileUpload  Boolean   @default(true)
   allowedFileTypes String?
-  
-  module       Module   @relation(fields: [moduleId], references: [id])
-  submissions  Submission[]
+
+  module      Module       @relation(fields: [moduleId], references: [id])
+  submissions Submission[]
 }
 
 model Submission {
-  id          String   @id @default(uuid())
-  userId      String
+  id           String    @id @default(uuid())
+  userId       String
   assignmentId String
-  fileUrl     String?
-  textContent String?
-  grade       Int?
-  feedback    String?
-  submittedAt DateTime @default(now())
-  gradedAt    DateTime?
-  
-  user        User     @relation(fields: [userId], references: [id])
-  assignment  Assignment @relation(fields: [assignmentId], references: [id])
+  fileUrl      String?
+  textContent  String?
+  grade        Int?
+  feedback     String?
+  submittedAt  DateTime  @default(now())
+  gradedAt     DateTime?
+
+  user       User       @relation(fields: [userId], references: [id])
+  assignment Assignment @relation(fields: [assignmentId], references: [id])
+
   @@index([userId])
   @@index([assignmentId])
 }
@@ -282,9 +369,10 @@ model Enrollment {
   courseId     String
   accessStatus EnrollmentStatus @default(PENDING)
   createdAt    DateTime         @default(now())
-  
-  user         User     @relation(fields: [userId], references: [id])
-  course       Course   @relation(fields: [courseId], references: [id])
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
   @@index([userId])
   @@index([courseId])
 }
@@ -296,19 +384,19 @@ enum EnrollmentStatus {
 }
 
 model PendingCourseRequest {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  price       Float    @default(0)
-  instructorId String
-  thumbnail   String?
-  status      RequestStatus @default(PENDING)
+  id              String        @id @default(uuid())
+  title           String
+  description     String
+  price           Float         @default(0)
+  instructorId    String
+  thumbnail       String?
+  status          RequestStatus @default(PENDING)
   rejectionReason String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  instructor  User     @relation(fields: [instructorId], references: [id])
-  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  instructor User @relation(fields: [instructorId], references: [id])
+
   @@index([instructorId])
   @@index([status])
 }
@@ -320,92 +408,95 @@ enum RequestStatus {
 }
 
 model Order {
-  id                   String   @id @default(uuid())
-  userId               String
-  courseId             String
-  amount               Float
-  currency             String   @default("INR")
-  status               String   @default("PENDING")
-  razorpayOrderId      String?
-  razorpayPaymentId    String?
-  paymentMethod        String?
-  createdAt            DateTime @default(now())
-  
-  user                 User     @relation(fields: [userId], references: [id])
-  course               Course   @relation(fields: [courseId], references: [id])
+  id                String   @id @default(uuid())
+  userId            String
+  courseId          String
+  amount            Float
+  currency          String   @default("INR")
+  status            String   @default("PENDING")
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  paymentMethod     String?
+  createdAt         DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
   @@index([userId])
   @@index([status])
 }
 
 model SubscriptionPlan {
-  id                String   @id @default(uuid())
-  name              String
-  description       String?
-  price             Float
-  billingCycle      String   @default("monthly")
-  features          Json?
-  maxCourses        Int      @default(-1)
-  maxStudents       Int      @default(-1)
-  supportLevel      String   @default("basic")
-  isActive          Boolean  @default(true)
-  razorpayPlanId    String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  subscriptions     Subscription[]
-  
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  price          Float
+  billingCycle   String   @default("monthly")
+  features       Json?
+  maxCourses     Int      @default(-1)
+  maxStudents    Int      @default(-1)
+  supportLevel   String   @default("basic")
+  isActive       Boolean  @default(true)
+  razorpayPlanId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  subscriptions Subscription[]
+
   @@index([isActive])
   @@index([billingCycle])
 }
 
 model Subscription {
-  id                   String   @id @default(uuid())
-  userId               String
-  planId               String
-  status               String   @default("active")
-  currentPeriodStart   DateTime @default(now())
-  currentPeriodEnd     DateTime
-  nextBillingDate      DateTime?
-  cancelledAt          DateTime?
+  id                     String    @id @default(uuid())
+  userId                 String
+  planId                 String
+  status                 String    @default("active")
+  currentPeriodStart     DateTime  @default(now())
+  currentPeriodEnd       DateTime
+  nextBillingDate        DateTime?
+  cancelledAt            DateTime?
   razorpaySubscriptionId String?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  
-  user                 User     @relation(fields: [userId], references: [id])
-  plan                 SubscriptionPlan @relation(fields: [planId], references: [id])
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  user User             @relation(fields: [userId], references: [id])
+  plan SubscriptionPlan @relation(fields: [planId], references: [id])
+
   @@index([userId])
   @@index([status])
   @@index([planId])
 }
 
 model Progress {
-  id           String   @id @default(uuid())
-  userId       String
-  moduleId     String
-  completed    Boolean  @default(false)
-  timeSpent    Int      @default(0)
-  courseProgress Float?  @default(0)
-  lastAccessed DateTime @default(now())
-  
-  user         User     @relation(fields: [userId], references: [id])
-  module       Module   @relation(fields: [moduleId], references: [id])
+  id             String   @id @default(uuid())
+  userId         String
+  moduleId       String
+  completed      Boolean  @default(false)
+  timeSpent      Int      @default(0)
+  courseProgress Float?   @default(0)
+  lastAccessed   DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  module Module @relation(fields: [moduleId], references: [id])
+
   @@index([userId])
   @@index([moduleId])
 }
 
 model AIGenerationJob {
-  id          String   @id @default(uuid())
-  type        String
-  status      String   @default("pending")
-  input       Json
-  output      Json?
-  error       String?
-  retryCount  Int      @default(0)
-  version     String
-  tenantId    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  id         String   @id @default(uuid())
+  type       String
+  status     String   @default("pending")
+  input      Json
+  output     Json?
+  error      String?
+  retryCount Int      @default(0)
+  version    String
+  tenantId   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
   @@index([status])
   @@index([tenantId])
 }
@@ -420,7 +511,7 @@ model VideoGeneration {
   errorMessage String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  
+
   @@index([status])
   @@index([moduleId])
 }
@@ -432,9 +523,10 @@ model Review {
   rating    Int      @default(5)
   comment   String?
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id])
-  course    Course   @relation(fields: [courseId], references: [id])
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
   @@index([courseId])
 }
 
@@ -445,10 +537,11 @@ model Discussion {
   title     String
   content   String
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id])
-  course    Course   @relation(fields: [courseId], references: [id])
-  replies   Reply[]
+
+  user    User    @relation(fields: [userId], references: [id])
+  course  Course  @relation(fields: [courseId], references: [id])
+  replies Reply[]
+
   @@index([courseId])
 }
 
@@ -458,21 +551,23 @@ model Reply {
   discussionId String
   content      String
   createdAt    DateTime @default(now())
-  
-  user         User     @relation(fields: [userId], references: [id])
-  discussion   Discussion @relation(fields: [discussionId], references: [id])
+
+  user       User       @relation(fields: [userId], references: [id])
+  discussion Discussion @relation(fields: [discussionId], references: [id])
+
   @@index([discussionId])
 }
 
 model Certificate {
-  id          String   @id @default(uuid())
-  userId      String
-  courseId    String
-  issuedAt    DateTime @default(now())
-  pdfUrl      String?
-  
-  user        User     @relation(fields: [userId], references: [id])
-  course      Course   @relation(fields: [courseId], references: [id])
+  id       String   @id @default(uuid())
+  userId   String
+  courseId String
+  issuedAt DateTime @default(now())
+  pdfUrl   String?
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
   @@index([userId])
   @@index([courseId])
 }
@@ -485,8 +580,9 @@ model Notification {
   message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id])
+
+  user User @relation(fields: [userId], references: [id])
+
   @@index([userId])
   @@index([read])
 }
@@ -499,22 +595,23 @@ model AnalyticsEvent {
   type      String
   metadata  Json
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id])
+
+  user User @relation(fields: [userId], references: [id])
+
   @@index([userId])
   @@index([courseId])
   @@index([createdAt])
 }
 
 model ActivityLog {
-  id          String   @id @default(uuid())
-  action      String
-  entityType  String
-  entityId    String?
-  userId      String?
+  id           String   @id @default(uuid())
+  action       String
+  entityType   String
+  entityId     String?
+  userId       String?
   targetUserId String?
-  metadata    Json?
-  createdAt   DateTime @default(now())
+  metadata     Json?
+  createdAt    DateTime @default(now())
 
   @@index([action])
   @@index([entityType])
@@ -523,18 +620,18 @@ model ActivityLog {
 }
 
 model Plugin {
-  id          String   @id @default(uuid())
-  pluginId    String   @unique
+  id          String         @id @default(uuid())
+  pluginId    String         @unique
   name        String
   description String?
   version     String
   author      String?
   category    PluginCategory @default(CONTENT)
   icon        String?
-  enabled     Boolean  @default(false)
+  enabled     Boolean        @default(false)
   config      Json?
-  installedAt DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  installedAt DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 }
 
 enum PluginCategory {
@@ -550,8 +647,8 @@ enum PluginCategory {
 }
 
 model BlacklistedUser {
-  id              String     @id @default(uuid())
-  originalUserId  String     @unique
+  id              String   @id @default(uuid())
+  originalUserId  String   @unique
   email           String
   name            String
   password        String?
@@ -565,7 +662,7 @@ model BlacklistedUser {
   branch          String?
   course          String?
   reason          String
-  blacklistedAt   DateTime   @default(now())
+  blacklistedAt   DateTime @default(now())
   blacklistedBy   String?
 
   @@index([email])

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Loader2, GraduationCap, Eye, EyeOff } from 'lucide-react';
+import { Loader2, GraduationCap, Eye, EyeOff, Ban, Mail } from 'lucide-react';
 import { browserApiBaseUrl } from '@/lib/runtime-config';
 
 export default function StudentLoginPage() {
@@ -16,6 +16,13 @@ export default function StudentLoginPage() {
   const [requiresOtp, setRequiresOtp] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resending, setResending] = useState(false);
+
+  // Blacklist popup state
+  const [showBlacklistPopup, setShowBlacklistPopup] = useState(false);
+  const [blacklistName, setBlacklistName] = useState('');
+  const [appealMessage, setAppealMessage] = useState('');
+  const [sendingAppeal, setSendingAppeal] = useState(false);
+  const [appealSent, setAppealSent] = useState(false);
 
   useEffect(() => {
     if (resendCooldown > 0) {
@@ -39,6 +46,13 @@ export default function StudentLoginPage() {
         });
 
         const data = await res.json();
+
+        if (data.isBlacklisted) {
+          setBlacklistName(data.blacklistedName || '');
+          setShowBlacklistPopup(true);
+          setLoading(false);
+          return;
+        }
 
         if (!res.ok) {
           throw new Error(data.message || 'Login failed. Please try again.');
@@ -78,6 +92,34 @@ export default function StudentLoginPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendAppeal = async () => {
+    if (!appealMessage.trim()) {
+      alert('Please enter a message explaining why your account should be restored.');
+      return;
+    }
+
+    setSendingAppeal(true);
+    try {
+      const res = await fetch(`${browserApiBaseUrl}/auth/blacklist-appeal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, message: appealMessage }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to send appeal.');
+      }
+
+      setAppealSent(true);
+    } catch (err: any) {
+      alert(err.message || 'Failed to send appeal. Please try again.');
+    } finally {
+      setSendingAppeal(false);
     }
   };
 
@@ -268,6 +310,78 @@ export default function StudentLoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Blacklist Popup Modal */}
+      {showBlacklistPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                <Ban className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Account Blacklisted</h3>
+                <p className="text-sm text-gray-500">{blacklistName || email}</p>
+              </div>
+            </div>
+
+            {!appealSent ? (
+              <>
+                <p className="text-sm text-gray-600 mb-4">
+                  Your account has been suspended by the administrator. You can send an appeal message to request a review of your account.
+                </p>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Appeal Message
+                  </label>
+                  <textarea
+                    value={appealMessage}
+                    onChange={(e) => setAppealMessage(e.target.value)}
+                    placeholder="Explain why your account should be restored..."
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 h-24 resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setShowBlacklistPopup(false); setAppealMessage(''); }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={handleSendAppeal}
+                    disabled={sendingAppeal}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {sendingAppeal ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Mail className="h-4 w-4" />
+                    )}
+                    {sendingAppeal ? 'Sending...' : 'Send Appeal'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                  <Mail className="h-6 w-6 text-green-600" />
+                </div>
+                <p className="text-sm font-medium text-green-700">Appeal sent successfully!</p>
+                <p className="text-xs text-gray-500 mt-1">The administrator will review your request.</p>
+                <button
+                  onClick={() => { setShowBlacklistPopup(false); setAppealSent(false); setAppealMessage(''); }}
+                  className="mt-4 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

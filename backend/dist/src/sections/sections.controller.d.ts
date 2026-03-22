@@ -15,12 +15,11 @@ export declare class SectionsController {
             id: string;
             rejectionReason: string | null;
             title: string;
-            approvedBy: string | null;
-            order: number;
             type: import(".prisma/client").$Enums.ModuleType;
             videoUrl: string | null;
             textContent: string | null;
             content: import("@prisma/client/runtime/client").JsonValue | null;
+            order: number;
             duration: number | null;
             isPreview: boolean;
             hasVideo: boolean;
@@ -33,6 +32,7 @@ export declare class SectionsController {
             transcript: string | null;
             voiceId: string | null;
             approvedAt: Date | null;
+            approvedBy: string | null;
             contentGeneratedAt: Date | null;
             videoGeneratedAt: Date | null;
             retryCount: number;

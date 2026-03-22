@@ -1,5 +1,32 @@
-import { IsString, IsEnum, IsOptional, IsNumber, IsBoolean } from 'class-validator';
-import { ModuleType } from '@prisma/client';
+import { IsString, IsEnum, IsOptional, IsNumber, IsBoolean, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ModuleType, ContentItemType } from '@prisma/client';
+
+export class ContentItemDto {
+  @IsEnum(ContentItemType)
+  type: ContentItemType;
+
+  @IsString()
+  title: string;
+
+  @IsOptional()
+  @IsString()
+  url?: string;
+
+  @IsOptional()
+  content?: any;
+
+  @IsOptional()
+  @IsNumber()
+  order?: number;
+
+  @IsOptional()
+  @IsNumber()
+  duration?: number;
+
+  @IsOptional()
+  metadata?: any;
+}
 
 export class CreateModuleDto {
   @IsString()
@@ -33,4 +60,10 @@ export class CreateModuleDto {
   @IsOptional()
   @IsBoolean()
   isPreview?: boolean = false;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ContentItemDto)
+  contentItems?: ContentItemDto[];
 }

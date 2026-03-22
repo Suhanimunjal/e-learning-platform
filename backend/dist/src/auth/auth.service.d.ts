@@ -38,6 +38,9 @@ export declare class AuthService {
     initiateLogin(loginDto: LoginDto): Promise<{
         requiresOtp: boolean;
         message?: string;
+        isBlacklisted?: boolean;
+        blacklistedEmail?: string;
+        blacklistedName?: string;
     }>;
     verifyLoginOTP(email: string, otp: string): Promise<AuthResponseDto>;
     resendLoginOTP(email: string): Promise<{
@@ -47,11 +50,19 @@ export declare class AuthService {
     login(loginDto: LoginDto): Promise<AuthResponseDto | {
         requiresOtp: boolean;
         message: string;
+        isBlacklisted?: boolean;
+        blacklistedEmail?: string;
+        blacklistedName?: string;
     }>;
+    sendBlacklistAppeal(email: string, message: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    private get transporter();
     validateUser(userId: string): Promise<{
         id: string;
-        name: string;
         email: string;
+        name: string;
         role: import(".prisma/client").$Enums.Role;
         status: import(".prisma/client").$Enums.UserStatus;
         phone: string;
@@ -71,8 +82,8 @@ export declare class AuthService {
         course?: string;
     }): Promise<{
         id: string;
-        name: string;
         email: string;
+        name: string;
         role: import(".prisma/client").$Enums.Role;
         status: import(".prisma/client").$Enums.UserStatus;
         phone: string;

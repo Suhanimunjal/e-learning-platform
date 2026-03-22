@@ -39,8 +39,17 @@ let ModulesService = class ModulesService {
         if (user.role === client_1.Role.TEACHER && section.course.instructorId !== user.id) {
             throw new common_1.ForbiddenException('You can only create modules for your own courses');
         }
+        const { contentItems, ...moduleData } = createModuleDto;
         return this.prisma.module.create({
-            data: createModuleDto,
+            data: {
+                ...moduleData,
+                contentItems: contentItems ? {
+                    create: contentItems,
+                } : undefined,
+            },
+            include: {
+                contentItems: true,
+            },
         });
     }
     async findAll(sectionId, user) {
@@ -65,6 +74,12 @@ let ModulesService = class ModulesService {
         return this.prisma.module.findMany({
             where: { sectionId },
             orderBy: { order: 'asc' },
+            include: {
+                contentItems: {
+                    orderBy: { order: 'asc' },
+                },
+                moduleQuiz: true,
+            },
         });
     }
     async findOne(id, user) {
@@ -76,6 +91,10 @@ let ModulesService = class ModulesService {
                         course: true,
                     },
                 },
+                contentItems: {
+                    orderBy: { order: 'asc' },
+                },
+                moduleQuiz: true,
             },
         });
         if (!module) {

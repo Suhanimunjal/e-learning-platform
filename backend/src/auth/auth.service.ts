@@ -223,7 +223,7 @@ export class AuthService {
     return process.env.AUTH_ENABLE_OTP === 'true';
   }
 
-  async initiateLogin(loginDto: LoginDto): Promise<{ requiresOtp: boolean; message?: string }> {
+  async initiateLogin(loginDto: LoginDto): Promise<{ requiresOtp: boolean; message?: string; isBlacklisted?: boolean; blacklistedEmail?: string; blacklistedName?: string }> {
     const { email, password, requestedRole } = loginDto;
 
     // Check if account is locked out
@@ -232,12 +232,27 @@ export class AuthService {
       throw new ForbiddenException(`Account temporarily locked. Try again in ${lockStatus.remainingMinutes} minutes.`);
     }
 
+    // Check if user is in BlacklistedUser table
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const blacklistedUser = await this.prisma.blacklistedUser.findUnique({
+      where: { originalUserId: user.id },
+    });
+
+    if (blacklistedUser) {
+      return {
+        requiresOtp: false,
+        isBlacklisted: true,
+        message: 'Your account has been blacklisted. Please contact administration.',
+        blacklistedEmail: blacklistedUser.email,
+        blacklistedName: blacklistedUser.name,
+      };
     }
 
     // Validate that user's role matches the login page they're using
@@ -494,9 +509,20 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResponseDto | { requiresOtp: boolean; message: string }> {
+  async login(loginDto: LoginDto): Promise<AuthResponseDto | { requiresOtp: boolean; message: string; isBlacklisted?: boolean; blacklistedEmail?: string; blacklistedName?: string }> {
     const result = await this.initiateLogin(loginDto);
     
+    // Handle blacklisted user
+    if (result.isBlacklisted) {
+      return {
+        requiresOtp: false,
+        isBlacklisted: true,
+        message: result.message || 'Your account has been blacklisted.',
+        blacklistedEmail: result.blacklistedEmail,
+        blacklistedName: result.blacklistedName,
+      };
+    }
+
     if (!result.requiresOtp) {
       // For students, return full auth response
       const { email, password } = loginDto;
@@ -511,6 +537,87 @@ export class AuthService {
 
     // For teachers/admins, return requiring OTP
     return { requiresOtp: true, message: result.message || 'OTP required' };
+  }
+
+  async sendBlacklistAppeal(email: string, message: string): Promise<{ success: boolean; message: string }> {
+    const blacklistedUser = await this.prisma.blacklistedUser.findFirst({
+      where: { email },
+    });
+
+    if (!blacklistedUser) {
+      throw new UnauthorizedException('User is not blacklisted');
+    }
+
+    // Get the admin who blacklisted this user
+    let adminEmail = process.env.SMTP_USER || 'admin@elearning.com';
+    let adminName = 'Administrator';
+
+    if (blacklistedUser.blacklistedBy) {
+      const admin = await this.prisma.user.findUnique({
+        where: { id: blacklistedUser.blacklistedBy },
+        select: { email: true, name: true },
+      });
+      if (admin) {
+        adminEmail = admin.email;
+        adminName = admin.name;
+      }
+    }
+
+    // Send appeal email to admin
+    try {
+      await this.transporter.sendMail({
+        from: process.env.SMTP_FROM || 'E-Learning Platform <noreply@elearning.com>',
+        to: adminEmail,
+        subject: `Blacklist Appeal from ${blacklistedUser.name} - E-Learning Platform`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #DC2626, #991B1B); padding: 20px; text-align: center;">
+              <h1 style="color: white; margin: 0;">Blacklist Appeal Request</h1>
+            </div>
+            <div style="padding: 30px; background: #f9fafb;">
+              <p style="color: #1f2937; font-size: 16px;">
+                Hello ${adminName},
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+                A blacklisted user has submitted an appeal to have their account restored.
+              </p>
+              <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="color: #991b1b; font-size: 14px; margin: 0;"><strong>User Details:</strong></p>
+                <p style="color: #991b1b; font-size: 14px; margin: 5px 0;">Name: ${blacklistedUser.name}</p>
+                <p style="color: #991b1b; font-size: 14px; margin: 5px 0;">Email: ${blacklistedUser.email}</p>
+                <p style="color: #991b1b; font-size: 14px; margin: 5px 0;">Role: ${blacklistedUser.role}</p>
+                <p style="color: #991b1b; font-size: 14px; margin: 5px 0;">Blacklist Reason: ${blacklistedUser.reason}</p>
+              </div>
+              <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="color: #0c4a6e; font-size: 14px; margin: 0;"><strong>User's Appeal Message:</strong></p>
+                <p style="color: #0c4a6e; font-size: 14px; margin: 10px 0;">${message}</p>
+              </div>
+              <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+                To restore this user, please visit the admin panel and use the "Revert Blacklist" option in the Blacklisted Users tab.
+              </p>
+            </div>
+          </div>
+        `,
+      });
+
+      return { success: true, message: 'Your appeal has been sent to the administrator.' };
+    } catch (error) {
+      this.logger.error(`Failed to send blacklist appeal email for ${email}:`, error);
+      throw new ServiceUnavailableException('Unable to send appeal email. Please try again later.');
+    }
+  }
+
+  private get transporter() {
+    const nodemailer = require('nodemailer');
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
   }
 
   async validateUser(userId: string) {

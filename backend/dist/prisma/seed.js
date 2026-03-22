@@ -45,6 +45,10 @@ const prisma = new client_1.PrismaClient({ adapter });
 async function main() {
     console.log('Starting database seed...\n');
     console.log('Cleaning existing data...');
+    await prisma.moduleQuizAttempt.deleteMany();
+    await prisma.moduleQuestion.deleteMany();
+    await prisma.moduleQuiz.deleteMany();
+    await prisma.contentItem.deleteMany();
     await prisma.progress.deleteMany();
     await prisma.quizAttempt.deleteMany();
     await prisma.question.deleteMany();
@@ -128,6 +132,17 @@ async function main() {
             organizationId: org2.id,
         },
     });
+    const teacher3 = await prisma.user.create({
+        data: {
+            email: 'junejatanubhav@gmail.com',
+            name: 'Tanubhav Juneja',
+            password: hashedPassword,
+            role: client_1.Role.TEACHER,
+            status: client_1.UserStatus.ACTIVE,
+            phone: '+91 9876501234',
+            organizationId: org1.id,
+        },
+    });
     const student1 = await prisma.user.create({
         data: {
             email: 'student@lms.com',
@@ -173,7 +188,7 @@ async function main() {
             organizationId: org2.id,
         },
     });
-    console.log('Created 7 users\n');
+    console.log('Created 8 users\n');
     console.log('Creating subscription plans...');
     await prisma.subscriptionPlan.createMany({
         data: [
@@ -255,8 +270,172 @@ async function main() {
             thumbnail: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800',
         },
     });
-    console.log('Created 4 courses\n');
-    console.log('Creating sections and modules...');
+    const course5 = await prisma.course.create({
+        data: {
+            title: 'Web Development Fundamentals',
+            slug: 'web-dev-fundamentals',
+            description: 'Learn HTML, CSS, and JavaScript to build modern websites from scratch.',
+            instructorId: teacher3.id,
+            price: 0,
+            status: 'APPROVED',
+            thumbnail: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800',
+        },
+    });
+    console.log('Created 5 courses\n');
+    console.log('Creating sections and modules for course5...');
+    const c5Section1 = await prisma.section.create({
+        data: { title: 'Introduction to HTML', courseId: course5.id, order: 1 },
+    });
+    const c5Section2 = await prisma.section.create({
+        data: { title: 'CSS Fundamentals', courseId: course5.id, order: 2 },
+    });
+    const c5Section3 = await prisma.section.create({
+        data: { title: 'JavaScript Basics', courseId: course5.id, order: 3 },
+    });
+    const c5Section4 = await prisma.section.create({
+        data: { title: 'Building a Website Project', courseId: course5.id, order: 4 },
+    });
+    const c5Module1 = await prisma.module.create({
+        data: {
+            title: 'Introduction to HTML',
+            sectionId: c5Section1.id,
+            type: client_1.ModuleType.LESSON,
+            order: 1,
+            contentStatus: client_1.ContentStatus.APPROVED,
+            textContent: 'HTML (HyperText Markup Language) is the standard markup language for creating web pages.',
+        },
+    });
+    await prisma.contentItem.createMany({
+        data: [
+            {
+                moduleId: c5Module1.id,
+                type: 'PDF',
+                title: 'HTML Basics Presentation',
+                url: 'https://www.w3schools.com/html/pic_trulli.jpg',
+                order: 1,
+                metadata: { fileSize: '2.5MB', pages: 25 },
+            },
+        ],
+    });
+    const c5Module2 = await prisma.module.create({
+        data: {
+            title: 'HTML Elements and Tags',
+            sectionId: c5Section1.id,
+            type: client_1.ModuleType.LESSON,
+            order: 2,
+            contentStatus: client_1.ContentStatus.APPROVED,
+            textContent: 'HTML elements are the building blocks of web pages.',
+        },
+    });
+    await prisma.contentItem.createMany({
+        data: [
+            {
+                moduleId: c5Module2.id,
+                type: 'YOUTUBE',
+                title: 'HTML Tutorial for Beginners',
+                url: 'https://www.youtube.com/watch?v=pQN-pnXPaVg',
+                order: 1,
+                duration: 120,
+            },
+        ],
+    });
+    const c5Module3 = await prisma.module.create({
+        data: {
+            title: 'Getting Started with CSS',
+            sectionId: c5Section2.id,
+            type: client_1.ModuleType.LESSON,
+            order: 1,
+            contentStatus: client_1.ContentStatus.APPROVED,
+            textContent: 'CSS (Cascading Style Sheets) is used to style and layout web pages.',
+        },
+    });
+    await prisma.contentItem.createMany({
+        data: [
+            {
+                moduleId: c5Module3.id,
+                type: 'VIDEO',
+                title: 'CSS Fundamentals Video',
+                url: 'https://www.w3schools.com/css/mov_bbb.mp4',
+                order: 1,
+                duration: 600,
+            },
+            {
+                moduleId: c5Module3.id,
+                type: 'EXTERNAL_LINK',
+                title: 'MDN CSS Documentation',
+                url: 'https://developer.mozilla.org/en-US/docs/Web/CSS',
+                order: 2,
+                metadata: { description: 'Official CSS documentation' },
+            },
+        ],
+    });
+    const c5Module4 = await prisma.module.create({
+        data: {
+            title: 'JavaScript Fundamentals Quiz',
+            sectionId: c5Section3.id,
+            type: client_1.ModuleType.QUIZ,
+            order: 1,
+            contentStatus: client_1.ContentStatus.APPROVED,
+        },
+    });
+    const c5Quiz = await prisma.moduleQuiz.create({
+        data: {
+            moduleId: c5Module4.id,
+            title: 'JavaScript Basics Assessment',
+            description: 'Test your knowledge of JavaScript fundamentals',
+            timeLimit: 20,
+            maxAttempts: 2,
+            passingScore: 70,
+            published: true,
+        },
+    });
+    await prisma.moduleQuestion.createMany({
+        data: [
+            { moduleQuizId: c5Quiz.id, type: 'multiple_choice', text: 'Which keyword is used to declare a variable in JavaScript?', options: ['var', 'let', 'const', 'All of the above'], correctAnswer: 'All of the above', points: 10, order: 1 },
+            { moduleQuizId: c5Quiz.id, type: 'multiple_choice', text: 'What does CSS stand for?', options: ['Computer Style Sheets', 'Cascading Style Sheets', 'Creative Style Syntax', 'Colorful Style Scripts'], correctAnswer: 'Cascading Style Sheets', points: 10, order: 2 },
+            { moduleQuizId: c5Quiz.id, type: 'true_false', text: 'HTML is a programming language.', correctAnswer: 'false', points: 5, order: 3 },
+        ],
+    });
+    const c5Module5 = await prisma.module.create({
+        data: {
+            title: 'Building Your First Website',
+            sectionId: c5Section4.id,
+            type: client_1.ModuleType.LESSON,
+            order: 1,
+            contentStatus: client_1.ContentStatus.APPROVED,
+            textContent: 'Put together everything you have learned to build a complete website.',
+        },
+    });
+    await prisma.contentItem.createMany({
+        data: [
+            {
+                moduleId: c5Module5.id,
+                type: 'PDF',
+                title: 'Project Guidelines',
+                url: 'https://www.w3schools.com/html/img_girl.jpg',
+                order: 1,
+                metadata: { fileSize: '1.2MB', pages: 10 },
+            },
+            {
+                moduleId: c5Module5.id,
+                type: 'YOUTUBE',
+                title: 'Build a Website Tutorial',
+                url: 'https://www.youtube.com/watch?v=1q6y_aDKYbU',
+                order: 2,
+                duration: 900,
+            },
+            {
+                moduleId: c5Module5.id,
+                type: 'EXTERNAL_LINK',
+                title: 'CodePen Examples',
+                url: 'https://codepen.io',
+                order: 3,
+                metadata: { description: 'Practice your code online' },
+            },
+        ],
+    });
+    console.log('Created sections and modules for course5\n');
+    console.log('Creating sections and modules for course1...');
     const section1 = await prisma.section.create({
         data: { title: 'Getting Started', courseId: course1.id, order: 1 },
     });
@@ -429,6 +608,7 @@ async function main() {
     console.log('\nUsers:');
     console.log('  Admin:    suhanimunjal97@gmail.com / Test@123');
     console.log('  Teacher:  teacher@example.com / Test@123');
+    console.log('  Teacher:  junejatanubhav@gmail.com / Test@123');
     console.log('  Student:  student@lms.com / Test@123');
     console.log('==================================================\n');
 }
