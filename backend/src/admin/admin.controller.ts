@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, NotFoundException, Delete, Patch } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -32,24 +32,49 @@ export class AdminController {
     return this.adminCourseGenerationService.getJob(jobId);
   }
 
-  // Activity Logs
+  // Activity Logs with filters
   @Get('logs')
-  async getActivityLogs(@Query('limit') limit?: string, @Query('offset') offset?: string) {
-    return this.activityLogService.getRecentLogs(Number(limit) || 50, Number(offset) || 0);
+  async getActivityLogs(
+    @Query('limit') limit?: string, 
+    @Query('offset') offset?: string,
+    @Query('action') action?: string,
+    @Query('entityType') entityType?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const filters: any = {};
+    if (action) filters.action = action;
+    if (entityType) filters.entityType = entityType;
+    if (startDate) filters.startDate = new Date(startDate);
+    if (endDate) filters.endDate = new Date(endDate);
+    
+    return this.activityLogService.getFilteredLogs(
+      Number(limit) || 50, 
+      Number(offset) || 0,
+      filters
+    );
   }
 
-  // Teacher Registration by Admin (direct creation, no OTP)
+  @Get('logs/types')
+  async getLogTypes() {
+    const types = await this.prisma.activityLog.findMany({
+      select: { action: true },
+      distinct: ['action'],
+      orderBy: { action: 'asc' },
+    });
+    return types.map(t => t.action);
+  }
+
+  // Teacher Registration by Admin (creates in PENDING status)
   @Post('teachers/register')
   async registerTeacher(@Body() body: { name: string; email: string; password: string }, @Request() req) {
     const { name, email, password } = body;
 
-    // Check if user exists
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
       return { success: false, message: 'User with this email already exists' };
     }
 
-    // Create teacher directly (no OTP verification needed)
     const bcrypt = require('bcrypt');
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -59,11 +84,10 @@ export class AdminController {
         name,
         password: hashedPassword,
         role: Role.TEACHER,
-        status: UserStatus.ACTIVE,
+        status: UserStatus.PENDING_APPROVAL,
       },
     });
 
-    // Log activity
     await this.activityLogService.log({
       action: 'TEACHER_CREATED',
       entityType: 'USER',
@@ -75,8 +99,8 @@ export class AdminController {
 
     return {
       success: true,
-      message: 'Teacher account created successfully',
-      teacher: { id: teacher.id, email: teacher.email, name: teacher.name, role: teacher.role },
+      message: 'Teacher account created successfully. Awaiting approval.',
+      teacher: { id: teacher.id, email: teacher.email, name: teacher.name, role: teacher.role, status: teacher.status },
     };
   }
 
@@ -404,12 +428,14 @@ export class AdminController {
   // Statistics
   @Get('stats')
   async getStats() {
-    const [pendingApprovals, totalUsers, totalTeachers, totalStudents, totalCourses] = await Promise.all([
+    const [pendingApprovals, totalUsers, totalTeachers, totalStudents, totalCourses, blacklistedUsers, blacklistedCourses] = await Promise.all([
       this.prisma.user.count({ where: { status: UserStatus.PENDING_APPROVAL, role: Role.TEACHER } }),
       this.prisma.user.count(),
       this.prisma.user.count({ where: { role: Role.TEACHER } }),
       this.prisma.user.count({ where: { role: Role.STUDENT } }),
       this.prisma.course.count(),
+      this.prisma.user.count({ where: { status: 'BLACKLISTED' as any } }),
+      this.prisma.course.count({ where: { status: 'BLACKLISTED' as any } }),
     ]);
 
     return {
@@ -418,6 +444,89 @@ export class AdminController {
       totalTeachers,
       totalStudents,
       totalCourses,
+      blacklistedUsers,
+      blacklistedCourses,
     };
+  }
+
+  // Blacklist Management
+  @Post('users/:userId/blacklist')
+  async blacklistUser(@Param('userId') userId: string, @Body() body: { reason: string }, @Request() req) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { status: 'BLACKLISTED' as any, rejectionReason: body.reason },
+      select: { id: true, email: true, name: true, role: true, status: true },
+    });
+
+    await this.activityLogService.log({
+      action: 'USER_BLACKLISTED',
+      entityType: 'USER',
+      entityId: user.id,
+      userId: req.user.id,
+      targetUserId: user.id,
+      metadata: { email: user.email, name: user.name, reason: body.reason },
+    });
+
+    return { success: true, user };
+  }
+
+  @Post('users/:userId/unblacklist')
+  async unblacklistUser(@Param('userId') userId: string, @Request() req) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { status: UserStatus.ACTIVE, rejectionReason: null },
+      select: { id: true, email: true, name: true, role: true, status: true },
+    });
+
+    await this.activityLogService.log({
+      action: 'USER_UNBLACKLISTED',
+      entityType: 'USER',
+      entityId: user.id,
+      userId: req.user.id,
+      targetUserId: user.id,
+      metadata: { email: user.email, name: user.name },
+    });
+
+    return { success: true, user };
+  }
+
+  @Post('courses/:courseId/blacklist')
+  async blacklistCourse(@Param('courseId') courseId: string, @Body() body: { reason: string }, @Request() req) {
+    const course = await this.prisma.course.update({
+      where: { id: courseId },
+      data: { status: 'BLACKLISTED' as any, rejectionReason: body.reason },
+      select: { id: true, title: true, status: true, instructorId: true },
+    });
+
+    await this.activityLogService.log({
+      action: 'COURSE_BLACKLISTED',
+      entityType: 'COURSE',
+      entityId: course.id,
+      userId: req.user.id,
+      targetUserId: course.instructorId,
+      metadata: { title: course.title, reason: body.reason },
+    });
+
+    return { success: true, course };
+  }
+
+  @Post('courses/:courseId/unblacklist')
+  async unblacklistCourse(@Param('courseId') courseId: string, @Request() req) {
+    const course = await this.prisma.course.update({
+      where: { id: courseId },
+      data: { status: 'APPROVED', rejectionReason: null },
+      select: { id: true, title: true, status: true, instructorId: true },
+    });
+
+    await this.activityLogService.log({
+      action: 'COURSE_UNBLACKLISTED',
+      entityType: 'COURSE',
+      entityId: course.id,
+      userId: req.user.id,
+      targetUserId: course.instructorId,
+      metadata: { title: course.title },
+    });
+
+    return { success: true, course };
   }
 }

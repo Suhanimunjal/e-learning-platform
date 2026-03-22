@@ -474,7 +474,7 @@ export default function CreateCoursePage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Course Title *</label>
+                <label className="block text-sm font-medium mb-1 text-gray-900">Course Title *</label>
                 <input
                   type="text"
                   value={courseData.title}
@@ -485,7 +485,7 @@ export default function CreateCoursePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
+                <label className="block text-sm font-medium mb-1 text-gray-900">Description</label>
                 <textarea
                   value={courseData.description}
                   onChange={e => setCourseData({ ...courseData, description: e.target.value })}
@@ -495,7 +495,7 @@ export default function CreateCoursePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Price ($)</label>
+                <label className="block text-sm font-medium mb-1 text-gray-900">Price ($)</label>
                 <input
                   type="number"
                   value={courseData.price}

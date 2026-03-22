@@ -5,17 +5,23 @@ export type ActivityAction =
   | 'USER_REGISTERED'
   | 'USER_APPROVED'
   | 'USER_REJECTED'
+  | 'USER_BLACKLISTED'
+  | 'USER_UNBLACKLISTED'
   | 'TEACHER_CREATED'
   | 'COURSE_CREATED'
   | 'COURSE_ACCESSED'
   | 'COURSE_APPROVED'
   | 'COURSE_REJECTED'
+  | 'COURSE_BLACKLISTED'
+  | 'COURSE_UNBLACKLISTED'
   | 'ENROLLMENT_REQUESTED'
   | 'ENROLLMENT_APPROVED'
   | 'ENROLLMENT_REJECTED'
   | 'QUIZ_GRADED'
   | 'ASSIGNMENT_GRADED'
-  | 'COURSE_COMPLETED';
+  | 'COURSE_COMPLETED'
+  | 'LOGIN'
+  | 'LOGOUT';
 
 export type EntityType = 'USER' | 'COURSE' | 'ENROLLMENT' | 'QUIZ' | 'ASSIGNMENT' | 'CERTIFICATE';
 
@@ -26,6 +32,13 @@ interface LogParams {
   userId?: string;
   targetUserId?: string;
   metadata?: Record<string, any>;
+}
+
+interface LogFilters {
+  action?: string;
+  entityType?: string;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 @Injectable()
@@ -51,6 +64,33 @@ export class ActivityLogService {
 
   async getRecentLogs(limit: number = 50, offset: number = 0) {
     return this.prisma.activityLog.findMany({
+      take: limit,
+      skip: offset,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getFilteredLogs(limit: number = 50, offset: number = 0, filters: LogFilters) {
+    const where: any = {};
+    
+    if (filters.action) {
+      where.action = filters.action;
+    }
+    if (filters.entityType) {
+      where.entityType = filters.entityType;
+    }
+    if (filters.startDate || filters.endDate) {
+      where.createdAt = {};
+      if (filters.startDate) {
+        where.createdAt.gte = filters.startDate;
+      }
+      if (filters.endDate) {
+        where.createdAt.lte = filters.endDate;
+      }
+    }
+    
+    return this.prisma.activityLog.findMany({
+      where,
       take: limit,
       skip: offset,
       orderBy: { createdAt: 'desc' },
