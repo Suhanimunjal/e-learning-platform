@@ -9,19 +9,19 @@ export declare class CoursesService {
     constructor(prisma: PrismaService, activityLogService: ActivityLogService);
     create(createCourseDto: CreateCourseDto, user: User): Promise<{
         id: string;
-        title: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        updatedAt: Date;
+        rejectionReason: string | null;
+        organizationId: string | null;
         slug: string;
+        title: string;
         description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        status: import(".prisma/client").$Enums.CourseStatus;
-        approvedBy: string | null;
-        rejectionReason: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         instructorId: string;
-        organizationId: string | null;
+        approvedBy: string | null;
     }>;
     findAll(user: User): Promise<({
         instructor: {
@@ -32,12 +32,13 @@ export declare class CoursesService {
         sections: ({
             modules: {
                 id: string;
+                type: import(".prisma/client").$Enums.ModuleType;
+                retryCount: number;
+                rejectionReason: string | null;
                 title: string;
                 approvedBy: string | null;
-                rejectionReason: string | null;
                 order: number;
                 sectionId: string;
-                type: import(".prisma/client").$Enums.ModuleType;
                 videoUrl: string | null;
                 textContent: string | null;
                 content: import("@prisma/client/runtime/client").JsonValue | null;
@@ -55,7 +56,6 @@ export declare class CoursesService {
                 approvedAt: Date | null;
                 contentGeneratedAt: Date | null;
                 videoGeneratedAt: Date | null;
-                retryCount: number;
             }[];
         } & {
             id: string;
@@ -65,24 +65,31 @@ export declare class CoursesService {
         })[];
     } & {
         id: string;
-        title: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        updatedAt: Date;
+        rejectionReason: string | null;
+        organizationId: string | null;
         slug: string;
+        title: string;
         description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        status: import(".prisma/client").$Enums.CourseStatus;
-        approvedBy: string | null;
-        rejectionReason: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         instructorId: string;
-        organizationId: string | null;
+        approvedBy: string | null;
     })[]>;
     findOne(id: string, user: any): Promise<{
         isEnrolled: boolean;
         previewOnly: boolean;
         message: string;
+        enrollments: {
+            id: string;
+            userId: string;
+            createdAt: Date;
+            courseId: string;
+            accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
+        }[];
         instructor: {
             id: string;
             name: string;
@@ -91,12 +98,13 @@ export declare class CoursesService {
         sections: ({
             modules: {
                 id: string;
+                type: import(".prisma/client").$Enums.ModuleType;
+                retryCount: number;
+                rejectionReason: string | null;
                 title: string;
                 approvedBy: string | null;
-                rejectionReason: string | null;
                 order: number;
                 sectionId: string;
-                type: import(".prisma/client").$Enums.ModuleType;
                 videoUrl: string | null;
                 textContent: string | null;
                 content: import("@prisma/client/runtime/client").JsonValue | null;
@@ -114,7 +122,6 @@ export declare class CoursesService {
                 approvedAt: Date | null;
                 contentGeneratedAt: Date | null;
                 videoGeneratedAt: Date | null;
-                retryCount: number;
             }[];
         } & {
             id: string;
@@ -122,31 +129,31 @@ export declare class CoursesService {
             courseId: string;
             order: number;
         })[];
-        enrollments: {
-            id: string;
-            createdAt: Date;
-            courseId: string;
-            userId: string;
-            accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
-        }[];
         id: string;
-        title: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        updatedAt: Date;
+        rejectionReason: string | null;
+        organizationId: string | null;
         slug: string;
+        title: string;
         description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        status: import(".prisma/client").$Enums.CourseStatus;
-        approvedBy: string | null;
-        rejectionReason: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         instructorId: string;
-        organizationId: string | null;
+        approvedBy: string | null;
     } | {
         isEnrolled: boolean;
         isInstructor: boolean;
         isAdmin: boolean;
+        enrollments: {
+            id: string;
+            userId: string;
+            createdAt: Date;
+            courseId: string;
+            accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
+        }[];
         instructor: {
             id: string;
             name: string;
@@ -155,12 +162,13 @@ export declare class CoursesService {
         sections: ({
             modules: {
                 id: string;
+                type: import(".prisma/client").$Enums.ModuleType;
+                retryCount: number;
+                rejectionReason: string | null;
                 title: string;
                 approvedBy: string | null;
-                rejectionReason: string | null;
                 order: number;
                 sectionId: string;
-                type: import(".prisma/client").$Enums.ModuleType;
                 videoUrl: string | null;
                 textContent: string | null;
                 content: import("@prisma/client/runtime/client").JsonValue | null;
@@ -178,7 +186,6 @@ export declare class CoursesService {
                 approvedAt: Date | null;
                 contentGeneratedAt: Date | null;
                 videoGeneratedAt: Date | null;
-                retryCount: number;
             }[];
         } & {
             id: string;
@@ -186,58 +193,51 @@ export declare class CoursesService {
             courseId: string;
             order: number;
         })[];
-        enrollments: {
-            id: string;
-            createdAt: Date;
-            courseId: string;
-            userId: string;
-            accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
-        }[];
         id: string;
-        title: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        updatedAt: Date;
+        rejectionReason: string | null;
+        organizationId: string | null;
         slug: string;
+        title: string;
         description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        status: import(".prisma/client").$Enums.CourseStatus;
-        approvedBy: string | null;
-        rejectionReason: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         instructorId: string;
-        organizationId: string | null;
+        approvedBy: string | null;
     }>;
     update(id: string, updateCourseDto: UpdateCourseDto, user: User): Promise<{
         id: string;
-        title: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        updatedAt: Date;
+        rejectionReason: string | null;
+        organizationId: string | null;
         slug: string;
+        title: string;
         description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        status: import(".prisma/client").$Enums.CourseStatus;
-        approvedBy: string | null;
-        rejectionReason: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         instructorId: string;
-        organizationId: string | null;
+        approvedBy: string | null;
     }>;
     remove(id: string, user: User): Promise<{
         id: string;
-        title: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        updatedAt: Date;
+        rejectionReason: string | null;
+        organizationId: string | null;
         slug: string;
+        title: string;
         description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
-        status: import(".prisma/client").$Enums.CourseStatus;
-        approvedBy: string | null;
-        rejectionReason: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         instructorId: string;
-        organizationId: string | null;
+        approvedBy: string | null;
     }>;
 }

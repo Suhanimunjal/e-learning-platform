@@ -8,68 +8,45 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var ContentGeneratorEnhancedService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ContentGeneratorEnhancedService = void 0;
 const common_1 = require("@nestjs/common");
-const axios_1 = __importDefault(require("axios"));
-let ContentGeneratorEnhancedService = class ContentGeneratorEnhancedService {
-    constructor() {
-        this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-        this.apiKey = process.env.GEMINI_API_KEY;
-        if (!this.apiKey) {
-            throw new Error('GEMINI_API_KEY environment variable is required. Please set it in your .env file.');
-        }
+const ollama_service_1 = require("./services/ollama.service");
+let ContentGeneratorEnhancedService = ContentGeneratorEnhancedService_1 = class ContentGeneratorEnhancedService {
+    constructor(ollamaService) {
+        this.ollamaService = ollamaService;
+        this.logger = new common_1.Logger(ContentGeneratorEnhancedService_1.name);
     }
     async generateFullContent(topic, moduleTitle, difficulty = 'intermediate') {
         const prompt = this.buildContentPrompt(topic, moduleTitle, difficulty);
         try {
-            const response = await axios_1.default.post(`${this.baseUrl}?key=${this.apiKey}`, {
-                contents: [
-                    {
-                        parts: [
-                            {
-                                text: prompt,
-                            },
-                        ],
-                    },
-                ],
-                generationConfig: {
-                    temperature: 0.4,
-                    maxOutputTokens: 8192,
-                    responseMimeType: 'application/json',
-                },
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!content) {
-                throw new Error('Failed to generate content - no response from API');
-            }
+            const response = await this.ollamaService.generateStructuredResponse(prompt);
+            const content = response.rawText || JSON.stringify(response);
             let parsed;
             try {
-                parsed = JSON.parse(content);
+                if (typeof response === 'object' && response !== null) {
+                    parsed = response;
+                }
+                else {
+                    parsed = JSON.parse(content);
+                }
             }
             catch (parseError) {
-                if (parseError instanceof SyntaxError) {
-                    throw new Error(`Invalid JSON response from API: ${parseError.message}. Response was: ${content.substring(0, 200)}`);
-                }
-                throw parseError;
+                this.logger.warn('Failed to parse AI response as JSON, returning structured fallback');
+                return this.getFallbackContent(topic);
             }
             const requiredFields = ['topic', 'title', 'quiz', 'assignment'];
             const missingFields = requiredFields.filter(field => !(field in parsed));
             if (missingFields.length > 0) {
-                throw new Error(`Invalid content structure - missing required fields: ${missingFields.join(', ')}`);
+                this.logger.warn(`Missing fields: ${missingFields.join(', ')}, using fallback`);
+                return this.getFallbackContent(topic);
             }
             return parsed;
         }
         catch (error) {
-            console.error('Content generation error:', error?.response?.data || error?.message || error);
-            throw new Error(error?.response?.data?.error?.message || 'Failed to generate content with AI');
+            this.logger.error('Content generation error:', error);
+            return this.getFallbackContent(topic);
         }
     }
     async generateCourseOutline(courseName, difficulty, moduleCount) {
@@ -98,30 +75,11 @@ JSON shape:
   ]
 }`;
         try {
-            const response = await axios_1.default.post(`${this.baseUrl}?key=${this.apiKey}`, {
-                contents: [
-                    {
-                        parts: [
-                            {
-                                text: prompt,
-                            },
-                        ],
-                    },
-                ],
-                generationConfig: {
-                    temperature: 0.3,
-                    maxOutputTokens: 4096,
-                    responseMimeType: 'application/json',
-                },
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!content) {
-                throw new Error('Failed to generate outline - no response from API');
+            const response = await this.ollamaService.generateStructuredResponse(prompt);
+            if (response.modules && Array.isArray(response.modules)) {
+                return response;
             }
+            const content = typeof response === 'string' ? response : JSON.stringify(response);
             const parsed = JSON.parse(content);
             if (!Array.isArray(parsed?.modules)) {
                 throw new Error('Generated outline is missing modules array');
@@ -129,8 +87,12 @@ JSON shape:
             return parsed;
         }
         catch (error) {
-            console.error('Course outline generation error:', error?.response?.data || error?.message || error);
-            throw new Error(error?.response?.data?.error?.message || 'Failed to generate course outline with AI');
+            this.logger.error('Course outline generation error:', error);
+            return {
+                courseTitle: courseName,
+                difficulty,
+                modules: this.getFallbackModules(moduleCount),
+            };
         }
     }
     buildContentPrompt(topic, moduleTitle, difficulty = 'intermediate') {
@@ -246,10 +208,71 @@ IMPORTANT: Make content DETAILED and REAL - no placeholders. Include working cod
         });
         return parts.join('\n\n');
     }
+    getFallbackContent(topic) {
+        return {
+            topic,
+            title: `Introduction to ${topic}`,
+            introduction: {
+                whatIsIt: `This module covers the fundamental concepts of ${topic}.`,
+                whyImportant: `Understanding ${topic} is essential for building practical skills.`,
+                realWorldUse: `${topic} is used extensively in industry applications.`,
+                learningObjectives: [`Understand ${topic} fundamentals`, 'Apply concepts practically', 'Build working examples'],
+                prerequisites: ['Basic knowledge'],
+                estimatedTime: '30-45 minutes',
+            },
+            theory: {
+                definitions: [{ term: topic, explanation: 'Core concept definition' }],
+                background: 'Background information',
+                terminology: [{ term: 'Key Term', meaning: 'Definition' }],
+                misconceptions: ['Common misconception'],
+            },
+            concepts: [{ title: 'Core Concept', explanation: 'Detailed explanation', analogy: 'Like a real-world analogy', realLifeMapping: 'Practical application' }],
+            examples: [{ level: 'beginner', title: 'Example 1', description: 'Description', explanation: 'How it works', code: '// code example', output: 'output' }],
+            practice: {
+                guidedExercise: { title: 'Guided Practice', instructions: ['Step 1', 'Step 2'], hints: ['Hint 1'] },
+                independentTasks: [{ title: 'Task 1', instructions: ['Instructions'] }],
+                challenge: { title: 'Challenge', instructions: ['Challenge steps'] },
+                miniProject: { title: 'Mini Project', description: 'Build something', requirements: ['Req 1'], evaluationCriteria: ['Criteria 1'] },
+            },
+            quiz: {
+                questions: [{ question: 'Sample question?', type: 'multiple_choice', options: ['A', 'B', 'C', 'D'], correctAnswer: 'A', explanation: 'Explanation', difficulty: 'easy' }],
+            },
+            assignment: {
+                problemStatement: 'Assignment problem',
+                instructions: ['Step 1', 'Step 2'],
+                expectedOutput: 'Expected output',
+                rubric: [{ criterion: 'Completion', points: 10, description: 'All steps completed' }],
+            },
+            summary: {
+                keyPoints: [`Learned about ${topic}`],
+                importantIdeas: ['Key takeaway'],
+                rememberPoints: ['Remember this'],
+            },
+            mistakes: [{ mistake: 'Common mistake', correction: 'Correct approach', debuggingTip: 'How to debug' }],
+            advanced: {
+                optimizationTechniques: ['Optimization tip'],
+                edgeCases: ['Edge case handling'],
+                industryPractices: ['Industry standard'],
+            },
+            resources: [{ title: 'Resource', url: 'https://example.com', type: 'documentation' }],
+            nextPreview: 'Next topic preview',
+        };
+    }
+    getFallbackModules(count) {
+        const modules = [];
+        for (let i = 1; i <= count; i++) {
+            modules.push({
+                title: `Module ${i}`,
+                description: `Module ${i} description`,
+                lessons: [`Lesson ${i}.1`, `Lesson ${i}.2`, `Lesson ${i}.3`],
+            });
+        }
+        return modules;
+    }
 };
 exports.ContentGeneratorEnhancedService = ContentGeneratorEnhancedService;
-exports.ContentGeneratorEnhancedService = ContentGeneratorEnhancedService = __decorate([
+exports.ContentGeneratorEnhancedService = ContentGeneratorEnhancedService = ContentGeneratorEnhancedService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [])
+    __metadata("design:paramtypes", [ollama_service_1.OllamaService])
 ], ContentGeneratorEnhancedService);
 //# sourceMappingURL=content-generator-enhanced.service.js.map

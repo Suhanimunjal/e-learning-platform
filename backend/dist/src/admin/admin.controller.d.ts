@@ -19,6 +19,7 @@ export declare class AdminController {
     getGenerationJob(jobId: string): Promise<{
         error: string | null;
         id: string;
+        createdAt: Date;
         type: string;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
@@ -26,19 +27,33 @@ export declare class AdminController {
         retryCount: number;
         version: string;
         tenantId: string | null;
-        createdAt: Date;
         updatedAt: Date;
     }>;
-    getActivityLogs(limit?: string, offset?: string): Promise<{
+    getActivityLogs(limit?: string, offset?: string, action?: string, entityType?: string, startDate?: string, endDate?: string): Promise<({
+        user: never;
+    } & {
         id: string;
-        createdAt: Date;
         action: string;
         entityType: string;
         entityId: string | null;
         userId: string | null;
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-    }[]>;
+        createdAt: Date;
+    })[]>;
+    getNewLogs(since?: string, limit?: string): Promise<({
+        user: never;
+    } & {
+        id: string;
+        action: string;
+        entityType: string;
+        entityId: string | null;
+        userId: string | null;
+        targetUserId: string | null;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
+        createdAt: Date;
+    })[]>;
+    getLogTypes(): Promise<string[]>;
     registerTeacher(body: {
         name: string;
         email: string;
@@ -55,13 +70,14 @@ export declare class AdminController {
             email: string;
             name: string;
             role: import(".prisma/client").$Enums.Role;
+            status: import(".prisma/client").$Enums.UserStatus;
         };
     }>;
     getPendingUsers(): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.UserStatus;
         createdAt: Date;
         name: string;
+        status: import(".prisma/client").$Enums.UserStatus;
         email: string;
         role: import(".prisma/client").$Enums.Role;
         organization: {
@@ -72,8 +88,8 @@ export declare class AdminController {
         success: boolean;
         user: {
             id: string;
-            status: import(".prisma/client").$Enums.UserStatus;
             name: string;
+            status: import(".prisma/client").$Enums.UserStatus;
             email: string;
         };
     }>;
@@ -83,8 +99,8 @@ export declare class AdminController {
         success: boolean;
         user: {
             id: string;
-            status: import(".prisma/client").$Enums.UserStatus;
             name: string;
+            status: import(".prisma/client").$Enums.UserStatus;
             email: string;
             rejectionReason: string;
         };
@@ -100,8 +116,8 @@ export declare class AdminController {
         };
     } & {
         id: string;
-        status: import(".prisma/client").$Enums.CourseStatus;
         createdAt: Date;
+        status: import(".prisma/client").$Enums.CourseStatus;
         updatedAt: Date;
         rejectionReason: string | null;
         organizationId: string | null;
@@ -148,8 +164,8 @@ export declare class AdminController {
         };
     } & {
         id: string;
-        createdAt: Date;
         userId: string;
+        createdAt: Date;
         courseId: string;
         accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
     })[]>;
@@ -157,8 +173,8 @@ export declare class AdminController {
         success: boolean;
         enrollment: {
             id: string;
-            createdAt: Date;
             userId: string;
+            createdAt: Date;
             courseId: string;
             accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
         };
@@ -167,26 +183,26 @@ export declare class AdminController {
         success: boolean;
         enrollment: {
             id: string;
-            createdAt: Date;
             userId: string;
+            createdAt: Date;
             courseId: string;
             accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
         };
     }>;
     getTeachers(): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.UserStatus;
         createdAt: Date;
         name: string;
+        status: import(".prisma/client").$Enums.UserStatus;
         email: string;
         role: import(".prisma/client").$Enums.Role;
     }[]>;
     getTeacherById(teacherId: string): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.UserStatus;
         createdAt: Date;
-        updatedAt: Date;
         name: string;
+        status: import(".prisma/client").$Enums.UserStatus;
+        updatedAt: Date;
         email: string;
         role: import(".prisma/client").$Enums.Role;
         organization: {
@@ -196,28 +212,28 @@ export declare class AdminController {
         };
         coursesCreated: {
             id: string;
-            status: import(".prisma/client").$Enums.CourseStatus;
             createdAt: Date;
             _count: {
                 sections: number;
             };
+            status: import(".prisma/client").$Enums.CourseStatus;
             title: string;
             price: number;
         }[];
     }>;
     getStudents(status?: UserStatus): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.UserStatus;
         createdAt: Date;
         name: string;
+        status: import(".prisma/client").$Enums.UserStatus;
         email: string;
     }[]>;
     getStudentById(studentId: string): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.UserStatus;
         createdAt: Date;
-        updatedAt: Date;
         name: string;
+        status: import(".prisma/client").$Enums.UserStatus;
+        updatedAt: Date;
         email: string;
         role: import(".prisma/client").$Enums.Role;
         organization: {
@@ -230,8 +246,8 @@ export declare class AdminController {
             createdAt: Date;
             course: {
                 id: string;
-                status: import(".prisma/client").$Enums.CourseStatus;
                 createdAt: Date;
+                status: import(".prisma/client").$Enums.CourseStatus;
                 title: string;
                 price: number;
             };
@@ -244,5 +260,49 @@ export declare class AdminController {
         totalTeachers: number;
         totalStudents: number;
         totalCourses: number;
+        blacklistedUsers: number;
+        blacklistedCourses: number;
+    }>;
+    blacklistUser(userId: string, body: {
+        reason: string;
+    }, req: any): Promise<{
+        success: boolean;
+        user: {
+            id: string;
+            name: string;
+            status: import(".prisma/client").$Enums.UserStatus;
+            email: string;
+            role: import(".prisma/client").$Enums.Role;
+        };
+    }>;
+    unblacklistUser(userId: string, req: any): Promise<{
+        success: boolean;
+        user: {
+            id: string;
+            name: string;
+            status: import(".prisma/client").$Enums.UserStatus;
+            email: string;
+            role: import(".prisma/client").$Enums.Role;
+        };
+    }>;
+    blacklistCourse(courseId: string, body: {
+        reason: string;
+    }, req: any): Promise<{
+        success: boolean;
+        course: {
+            id: string;
+            status: import(".prisma/client").$Enums.CourseStatus;
+            title: string;
+            instructorId: string;
+        };
+    }>;
+    unblacklistCourse(courseId: string, req: any): Promise<{
+        success: boolean;
+        course: {
+            id: string;
+            status: import(".prisma/client").$Enums.CourseStatus;
+            title: string;
+            instructorId: string;
+        };
     }>;
 }

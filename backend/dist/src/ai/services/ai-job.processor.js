@@ -14,11 +14,11 @@ exports.AiJobProcessor = void 0;
 const bull_1 = require("@nestjs/bull");
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
-const anthropic_service_1 = require("./anthropic.service");
+const ollama_service_1 = require("./ollama.service");
 let AiJobProcessor = AiJobProcessor_1 = class AiJobProcessor {
-    constructor(prisma, anthropicService) {
+    constructor(prisma, ollamaService) {
         this.prisma = prisma;
-        this.anthropicService = anthropicService;
+        this.ollamaService = ollamaService;
         this.logger = new common_1.Logger(AiJobProcessor_1.name);
     }
     async generateOutline(job) {
@@ -28,7 +28,8 @@ let AiJobProcessor = AiJobProcessor_1 = class AiJobProcessor {
                 where: { id: jobId },
                 data: { status: 'processing' },
             });
-            const outline = await this.anthropicService.generateCourseOutline(topic);
+            const outlinePrompt = `Generate a course outline for: ${topic}. Return JSON with structure: { "title": "Course Title", "description": "...", "modules": [{ "title": "...", "description": "..." }] }`;
+            const outline = await this.ollamaService.generateStructuredResponse(outlinePrompt);
             await this.prisma.aIGenerationJob.update({
                 where: { id: jobId },
                 data: {
@@ -73,7 +74,8 @@ let AiJobProcessor = AiJobProcessor_1 = class AiJobProcessor {
             for (const section of course.sections) {
                 for (const module of section.modules) {
                     if (module.type === 'LESSON' && !module.textContent) {
-                        const content = await this.anthropicService.generateLessonContent(section.title, module.title, module.title);
+                        const lessonPrompt = `Generate lesson content for section "${section.title}", lesson "${module.title}". Return JSON with: { "content": "detailed lesson text", "duration": "estimated minutes" }`;
+                        const content = await this.ollamaService.generateStructuredResponse(lessonPrompt);
                         await this.prisma.module.update({
                             where: { id: module.id },
                             data: {
@@ -124,7 +126,8 @@ let AiJobProcessor = AiJobProcessor_1 = class AiJobProcessor {
             if (!lessonModule.textContent) {
                 throw new Error('Lesson content not generated yet');
             }
-            const quizData = await this.anthropicService.generateQuiz(lessonModule.textContent, lessonModule.title);
+            const quizPrompt = `Generate a quiz for this lesson. Return JSON: { "title": "Quiz Title", "description": "...", "questions": [{ "type": "multiple_choice", "text": "Question text", "options": ["A", "B", "C", "D"], "correctAnswer": "A" }] }`;
+            const quizData = await this.ollamaService.generateStructuredResponse(quizPrompt);
             const quizModule = await this.prisma.module.create({
                 data: {
                     title: `Quiz: ${lessonModule.title}`,
@@ -194,7 +197,8 @@ let AiJobProcessor = AiJobProcessor_1 = class AiJobProcessor {
             if (!lessonModule.textContent) {
                 throw new Error('Lesson content not generated yet');
             }
-            const flashcardsData = await this.anthropicService.generateFlashcards(lessonModule.textContent, lessonModule.title);
+            const flashcardPrompt = `Generate 10 flashcards. Return JSON array: [{ "front": "question", "back": "answer" }]`;
+            const flashcardsData = await this.ollamaService.generateStructuredResponse(flashcardPrompt);
             const flashcardModule = await this.prisma.module.create({
                 data: {
                     title: `Flashcards: ${lessonModule.title}`,
@@ -254,6 +258,6 @@ __decorate([
 exports.AiJobProcessor = AiJobProcessor = AiJobProcessor_1 = __decorate([
     (0, bull_1.Processor)('ai-jobs'),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        anthropic_service_1.AnthropicService])
+        ollama_service_1.OllamaService])
 ], AiJobProcessor);
 //# sourceMappingURL=ai-job.processor.js.map

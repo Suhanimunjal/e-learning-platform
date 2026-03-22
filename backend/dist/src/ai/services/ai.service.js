@@ -14,14 +14,14 @@ exports.AiService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const content_generator_enhanced_service_1 = require("../content-generator-enhanced.service");
-const anthropic_service_1 = require("./anthropic.service");
+const ollama_service_1 = require("./ollama.service");
 const tts_service_1 = require("../tts.service");
 const custom_ai_job_scheduler_1 = require("./custom-ai-job-scheduler");
 let AiService = AiService_1 = class AiService {
-    constructor(prisma, contentGenerator, anthropicService, ttsService, customScheduler) {
+    constructor(prisma, contentGenerator, ollamaService, ttsService, customScheduler) {
         this.prisma = prisma;
         this.contentGenerator = contentGenerator;
-        this.anthropicService = anthropicService;
+        this.ollamaService = ollamaService;
         this.ttsService = ttsService;
         this.customScheduler = customScheduler;
         this.logger = new common_1.Logger(AiService_1.name);
@@ -123,7 +123,7 @@ Return JSON with this structure:
   "mainTakeaway": "one sentence conclusion"
 }`;
         try {
-            const response = await this.anthropicService.generateStructuredResponse(summaryPrompt);
+            const response = await this.ollamaService.generateStructuredResponse(summaryPrompt);
             return {
                 success: true,
                 data: {
@@ -168,7 +168,7 @@ Provide a detailed grading response in JSON format:
   "detailedComments": "line by line or section by section analysis"
 }`;
         try {
-            const gradingResult = await this.anthropicService.generateStructuredResponse(gradingPrompt);
+            const gradingResult = await this.ollamaService.generateStructuredResponse(gradingPrompt);
             await this.prisma.submission.update({
                 where: { id: submissionId },
                 data: {
@@ -246,7 +246,7 @@ Provide a detailed grading response in JSON format:
   "isCorrect": boolean
 }`;
             try {
-                const result = await this.anthropicService.generateStructuredResponse(gradingPrompt);
+                const result = await this.ollamaService.generateStructuredResponse(gradingPrompt);
                 const earnedPoints = Math.min(Math.max(0, result.earnedPoints || 0), question.points);
                 totalScore += earnedPoints;
                 grades[question.id] = {
@@ -530,7 +530,7 @@ Return JSON:
   "targetLang": "${targetLang}"
 }`;
         try {
-            const result = await this.anthropicService.generateStructuredResponse(prompt);
+            const result = await this.ollamaService.generateStructuredResponse(prompt);
             return {
                 success: true,
                 data: {
@@ -561,7 +561,7 @@ Return JSON:
   "code": "ISO 639-1 code"
 }`;
         try {
-            const result = await this.anthropicService.generateStructuredResponse(prompt);
+            const result = await this.ollamaService.generateStructuredResponse(prompt);
             return {
                 success: true,
                 data: {
@@ -684,7 +684,7 @@ Return JSON:
   "suggestions": ["related question 1", "related question 2"]
 }`;
         try {
-            const result = await this.anthropicService.generateStructuredResponse(prompt);
+            const result = await this.ollamaService.generateStructuredResponse(prompt);
             return {
                 success: true,
                 data: {
@@ -723,7 +723,7 @@ exports.AiService = AiService = AiService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         content_generator_enhanced_service_1.ContentGeneratorEnhancedService,
-        anthropic_service_1.AnthropicService,
+        ollama_service_1.OllamaService,
         tts_service_1.TTSService,
         custom_ai_job_scheduler_1.CustomAiJobScheduler])
 ], AiService);

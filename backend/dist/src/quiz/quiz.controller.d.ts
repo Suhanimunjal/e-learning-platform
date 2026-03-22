@@ -68,13 +68,13 @@ export declare class QuizController {
         attempts: {
             id: string;
             userId: string;
+            completedAt: Date | null;
             quizId: string;
             score: number | null;
             passed: boolean | null;
             answers: import("@prisma/client/runtime/client").JsonValue;
             percentage: number | null;
             startedAt: Date;
-            completedAt: Date | null;
         }[];
     } & {
         id: string;
@@ -103,13 +103,13 @@ export declare class QuizController {
         attempts: {
             id: string;
             userId: string;
+            completedAt: Date | null;
             quizId: string;
             score: number | null;
             passed: boolean | null;
             answers: import("@prisma/client/runtime/client").JsonValue;
             percentage: number | null;
             startedAt: Date;
-            completedAt: Date | null;
         }[];
     } & {
         id: string;
@@ -172,13 +172,13 @@ export declare class QuizController {
         attempts: {
             id: string;
             userId: string;
+            completedAt: Date | null;
             quizId: string;
             score: number | null;
             passed: boolean | null;
             answers: import("@prisma/client/runtime/client").JsonValue;
             percentage: number | null;
             startedAt: Date;
-            completedAt: Date | null;
         }[];
     } & {
         id: string;
@@ -258,13 +258,13 @@ export declare class QuizController {
         attempts: {
             id: string;
             userId: string;
+            completedAt: Date | null;
             quizId: string;
             score: number | null;
             passed: boolean | null;
             answers: import("@prisma/client/runtime/client").JsonValue;
             percentage: number | null;
             startedAt: Date;
-            completedAt: Date | null;
         }[];
     } & {
         id: string;
@@ -440,13 +440,13 @@ export declare class QuizController {
     } & {
         id: string;
         userId: string;
+        completedAt: Date | null;
         quizId: string;
         score: number | null;
         passed: boolean | null;
         answers: import("@prisma/client/runtime/client").JsonValue;
         percentage: number | null;
         startedAt: Date;
-        completedAt: Date | null;
     })[]>;
     getQuizAttempt(id: string, attemptId: string, req: any): Promise<{
         user: {
@@ -532,13 +532,13 @@ export declare class QuizController {
     } & {
         id: string;
         userId: string;
+        completedAt: Date | null;
         quizId: string;
         score: number | null;
         passed: boolean | null;
         answers: import("@prisma/client/runtime/client").JsonValue;
         percentage: number | null;
         startedAt: Date;
-        completedAt: Date | null;
     }>;
     getQuizSubmissions(id: string): Promise<{
         quiz: {

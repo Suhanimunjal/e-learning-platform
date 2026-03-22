@@ -25,12 +25,13 @@ export declare class EnrollmentsService {
             sections: ({
                 modules: {
                     id: string;
+                    type: import(".prisma/client").$Enums.ModuleType;
+                    retryCount: number;
                     rejectionReason: string | null;
                     title: string;
                     approvedBy: string | null;
                     order: number;
                     sectionId: string;
-                    type: import(".prisma/client").$Enums.ModuleType;
                     videoUrl: string | null;
                     textContent: string | null;
                     content: import("@prisma/client/runtime/client").JsonValue | null;
@@ -48,7 +49,6 @@ export declare class EnrollmentsService {
                     approvedAt: Date | null;
                     contentGeneratedAt: Date | null;
                     videoGeneratedAt: Date | null;
-                    retryCount: number;
                 }[];
             } & {
                 id: string;
@@ -60,8 +60,8 @@ export declare class EnrollmentsService {
             id: string;
             createdAt: Date;
             status: import(".prisma/client").$Enums.CourseStatus;
-            rejectionReason: string | null;
             updatedAt: Date;
+            rejectionReason: string | null;
             organizationId: string | null;
             slug: string;
             title: string;

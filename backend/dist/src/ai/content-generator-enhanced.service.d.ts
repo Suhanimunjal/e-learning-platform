@@ -1,3 +1,4 @@
+import { OllamaService } from './services/ollama.service';
 export interface StructuredContent {
     topic: string;
     title: string;
@@ -111,9 +112,9 @@ export interface Resource {
     type: 'article' | 'documentation' | 'tutorial' | 'video' | 'tool';
 }
 export declare class ContentGeneratorEnhancedService {
-    private readonly apiKey;
-    private readonly baseUrl;
-    constructor();
+    private ollamaService;
+    private readonly logger;
+    constructor(ollamaService: OllamaService);
     generateFullContent(topic: string, moduleTitle?: string, difficulty?: string): Promise<StructuredContent>;
     generateCourseOutline(courseName: string, difficulty: string, moduleCount: number): Promise<any>;
     private buildContentPrompt;
@@ -121,4 +122,6 @@ export declare class ContentGeneratorEnhancedService {
     generateQuiz(topic: string): Promise<QuizSection>;
     generateAssignment(topic: string): Promise<AssignmentSection>;
     convertToNarrativeText(content: StructuredContent): string;
+    private getFallbackContent;
+    private getFallbackModules;
 }

@@ -1,7 +1,7 @@
 import { OnModuleDestroy } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ContentGeneratorEnhancedService } from '../content-generator-enhanced.service';
-import { AnthropicService } from './anthropic.service';
+import { OllamaService } from './ollama.service';
 export interface AIJob {
     id: string;
     type: 'generate-outline' | 'generate-lessons' | 'generate-quiz' | 'generate-flashcards';
@@ -14,11 +14,11 @@ export interface AIJob {
 export declare class CustomAiJobScheduler implements OnModuleDestroy {
     private prisma;
     private contentGenerator;
-    private anthropicService;
+    private ollamaService;
     private readonly logger;
     private jobs;
     private processing;
-    constructor(prisma: PrismaService, contentGenerator: ContentGeneratorEnhancedService, anthropicService: AnthropicService);
+    constructor(prisma: PrismaService, contentGenerator: ContentGeneratorEnhancedService, ollamaService: OllamaService);
     addJob(type: AIJob['type'], data: any): Promise<AIJob>;
     private processNextJob;
     private processJob;

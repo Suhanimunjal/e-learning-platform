@@ -1,11 +1,11 @@
 import { Job } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
-import { AnthropicService } from './anthropic.service';
+import { OllamaService } from './ollama.service';
 export declare class AiJobProcessor {
     private prisma;
-    private anthropicService;
+    private ollamaService;
     private readonly logger;
-    constructor(prisma: PrismaService, anthropicService: AnthropicService);
+    constructor(prisma: PrismaService, ollamaService: OllamaService);
     generateOutline(job: Job<{
         topic: string;
         jobId: string;

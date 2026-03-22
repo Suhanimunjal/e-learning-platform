@@ -1,6 +1,6 @@
 import { PrismaService } from '../../prisma/prisma.service';
-export type ActivityAction = 'USER_REGISTERED' | 'USER_APPROVED' | 'USER_REJECTED' | 'TEACHER_CREATED' | 'COURSE_CREATED' | 'COURSE_ACCESSED' | 'COURSE_APPROVED' | 'COURSE_REJECTED' | 'ENROLLMENT_REQUESTED' | 'ENROLLMENT_APPROVED' | 'ENROLLMENT_REJECTED' | 'QUIZ_GRADED' | 'ASSIGNMENT_GRADED' | 'COURSE_COMPLETED';
-export type EntityType = 'USER' | 'COURSE' | 'ENROLLMENT' | 'QUIZ' | 'ASSIGNMENT' | 'CERTIFICATE';
+export type ActivityAction = 'USER_REGISTERED' | 'USER_APPROVED' | 'USER_REJECTED' | 'USER_BLACKLISTED' | 'USER_UNBLACKLISTED' | 'TEACHER_CREATED' | 'COURSE_CREATED' | 'COURSE_ACCESSED' | 'COURSE_APPROVED' | 'COURSE_REJECTED' | 'COURSE_BLACKLISTED' | 'COURSE_UNBLACKLISTED' | 'ENROLLMENT_REQUESTED' | 'ENROLLMENT_APPROVED' | 'ENROLLMENT_REJECTED' | 'ENROLLMENT_COMPLETED' | 'QUIZ_STARTED' | 'QUIZ_SUBMITTED' | 'QUIZ_GRADED' | 'ASSIGNMENT_SUBMITTED' | 'ASSIGNMENT_GRADED' | 'COURSE_COMPLETED' | 'USER_LOGIN' | 'USER_LOGOUT' | 'OTP_SENT' | 'OTP_VERIFIED' | 'OTP_FAILED' | 'PASSWORD_CHANGED' | 'PROFILE_UPDATED' | 'MODULE_CREATED' | 'SECTION_CREATED' | 'CONTENT_GENERATED';
+export type EntityType = 'USER' | 'COURSE' | 'ENROLLMENT' | 'QUIZ' | 'ASSIGNMENT' | 'CERTIFICATE' | 'MODULE' | 'SECTION' | 'OTP' | 'CONTENT';
 interface LogParams {
     action: ActivityAction;
     entityType: EntityType;
@@ -9,10 +9,20 @@ interface LogParams {
     targetUserId?: string;
     metadata?: Record<string, any>;
 }
+interface LogFilters {
+    action?: string;
+    entityType?: string;
+    startDate?: Date;
+    endDate?: Date;
+}
 export declare class ActivityLogService {
     private prisma;
+    private readonly logger;
     constructor(prisma: PrismaService);
-    log(params: LogParams): Promise<{
+    log(params: LogParams): Promise<void>;
+    getRecentLogs(limit?: number, offset?: number): Promise<({
+        user: never;
+    } & {
         id: string;
         action: string;
         entityType: string;
@@ -21,8 +31,10 @@ export declare class ActivityLogService {
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
         createdAt: Date;
-    }>;
-    getRecentLogs(limit?: number, offset?: number): Promise<{
+    })[]>;
+    getFilteredLogs(limit: number, offset: number, filters: LogFilters): Promise<({
+        user: never;
+    } & {
         id: string;
         action: string;
         entityType: string;
@@ -31,8 +43,11 @@ export declare class ActivityLogService {
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
         createdAt: Date;
-    }[]>;
-    getLogsByEntity(entityType: EntityType, entityId: string): Promise<{
+    })[]>;
+    getLogTypes(): Promise<string[]>;
+    getLogsByEntity(entityType: EntityType, entityId: string): Promise<({
+        user: never;
+    } & {
         id: string;
         action: string;
         entityType: string;
@@ -41,8 +56,10 @@ export declare class ActivityLogService {
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
         createdAt: Date;
-    }[]>;
-    getLogsByUser(userId: string, limit?: number): Promise<{
+    })[]>;
+    getLogsByUser(userId: string, limit?: number): Promise<({
+        user: never;
+    } & {
         id: string;
         action: string;
         entityType: string;
@@ -51,6 +68,18 @@ export declare class ActivityLogService {
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
         createdAt: Date;
-    }[]>;
+    })[]>;
+    getNewLogsSince(since: Date, limit?: number): Promise<({
+        user: never;
+    } & {
+        id: string;
+        action: string;
+        entityType: string;
+        entityId: string | null;
+        userId: string | null;
+        targetUserId: string | null;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
+        createdAt: Date;
+    })[]>;
 }
 export {};

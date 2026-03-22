@@ -1,17 +1,17 @@
 import { OnModuleDestroy } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ContentGeneratorEnhancedService } from '../content-generator-enhanced.service';
-import { AnthropicService } from './anthropic.service';
+import { OllamaService } from './ollama.service';
 import { TTSService } from '../tts.service';
 import { CustomAiJobScheduler } from './custom-ai-job-scheduler';
 export declare class AiService implements OnModuleDestroy {
     private prisma;
     private contentGenerator;
-    private anthropicService;
+    private ollamaService;
     private ttsService;
     private customScheduler;
     private readonly logger;
-    constructor(prisma: PrismaService, contentGenerator: ContentGeneratorEnhancedService, anthropicService: AnthropicService, ttsService: TTSService, customScheduler: CustomAiJobScheduler);
+    constructor(prisma: PrismaService, contentGenerator: ContentGeneratorEnhancedService, ollamaService: OllamaService, ttsService: TTSService, customScheduler: CustomAiJobScheduler);
     onModuleDestroy(): Promise<void>;
     generateCourseOutline(topic: string, userId: string): Promise<{
         error: string | null;

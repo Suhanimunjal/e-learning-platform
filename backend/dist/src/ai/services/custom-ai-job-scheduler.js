@@ -14,12 +14,12 @@ exports.CustomAiJobScheduler = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const content_generator_enhanced_service_1 = require("../content-generator-enhanced.service");
-const anthropic_service_1 = require("./anthropic.service");
+const ollama_service_1 = require("./ollama.service");
 let CustomAiJobScheduler = CustomAiJobScheduler_1 = class CustomAiJobScheduler {
-    constructor(prisma, contentGenerator, anthropicService) {
+    constructor(prisma, contentGenerator, ollamaService) {
         this.prisma = prisma;
         this.contentGenerator = contentGenerator;
-        this.anthropicService = anthropicService;
+        this.ollamaService = ollamaService;
         this.logger = new common_1.Logger(CustomAiJobScheduler_1.name);
         this.jobs = new Map();
         this.processing = false;
@@ -122,7 +122,7 @@ let CustomAiJobScheduler = CustomAiJobScheduler_1 = class CustomAiJobScheduler {
                     where: { id: data.jobId },
                     data: { status: 'processing' },
                 });
-                const flashcards = await this.anthropicService.generateFlashcards('Flashcard content', data.topic || 'General');
+                const flashcards = await this.ollamaService.generateResponse('Generate flashcards about: ' + (data.topic || 'General'));
                 await this.prisma.aIGenerationJob.update({
                     where: { id: data.jobId },
                     data: {
@@ -148,6 +148,6 @@ exports.CustomAiJobScheduler = CustomAiJobScheduler = CustomAiJobScheduler_1 = _
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         content_generator_enhanced_service_1.ContentGeneratorEnhancedService,
-        anthropic_service_1.AnthropicService])
+        ollama_service_1.OllamaService])
 ], CustomAiJobScheduler);
 //# sourceMappingURL=custom-ai-job-scheduler.js.map

@@ -51,9 +51,9 @@ export declare class AuthService {
     validateUser(userId: string): Promise<{
         id: string;
         name: string;
+        status: import(".prisma/client").$Enums.UserStatus;
         email: string;
         role: import(".prisma/client").$Enums.Role;
-        status: import(".prisma/client").$Enums.UserStatus;
         organizationId: string;
     }>;
     private excludePassword;

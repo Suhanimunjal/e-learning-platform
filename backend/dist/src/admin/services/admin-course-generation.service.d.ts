@@ -14,6 +14,7 @@ export declare class AdminCourseGenerationService {
     getJob(jobId: string): Promise<{
         error: string | null;
         id: string;
+        createdAt: Date;
         type: string;
         status: string;
         input: import("@prisma/client/runtime/client").JsonValue;
@@ -21,7 +22,6 @@ export declare class AdminCourseGenerationService {
         retryCount: number;
         version: string;
         tenantId: string | null;
-        createdAt: Date;
         updatedAt: Date;
     }>;
     private executeGeneration;

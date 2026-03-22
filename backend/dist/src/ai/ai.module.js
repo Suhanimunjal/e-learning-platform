@@ -10,7 +10,7 @@ exports.AiModule = void 0;
 const common_1 = require("@nestjs/common");
 const ai_controller_1 = require("./ai.controller");
 const ai_service_1 = require("./services/ai.service");
-const anthropic_service_1 = require("./services/anthropic.service");
+const ollama_service_1 = require("./services/ollama.service");
 const custom_ai_job_scheduler_1 = require("./services/custom-ai-job-scheduler");
 const ai_job_processor_1 = require("./services/ai-job.processor");
 const prisma_service_1 = require("../prisma/prisma.service");
@@ -24,7 +24,7 @@ exports.AiModule = AiModule = __decorate([
     (0, common_1.Module)({
         providers: [
             ai_service_1.AiService,
-            anthropic_service_1.AnthropicService,
+            ollama_service_1.OllamaService,
             custom_ai_job_scheduler_1.CustomAiJobScheduler,
             ai_job_processor_1.AiJobProcessor,
             prisma_service_1.PrismaService,
@@ -33,7 +33,7 @@ exports.AiModule = AiModule = __decorate([
             quiz_verification_service_1.QuizVerificationService,
         ],
         controllers: [ai_controller_1.AiController],
-        exports: [ai_service_1.AiService, tts_service_1.TTSService, content_generator_enhanced_service_1.ContentGeneratorEnhancedService, quiz_verification_service_1.QuizVerificationService],
+        exports: [ai_service_1.AiService, tts_service_1.TTSService, content_generator_enhanced_service_1.ContentGeneratorEnhancedService, quiz_verification_service_1.QuizVerificationService, ollama_service_1.OllamaService],
     })
 ], AiModule);
 //# sourceMappingURL=ai.module.js.map

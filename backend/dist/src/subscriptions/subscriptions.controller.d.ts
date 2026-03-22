@@ -96,6 +96,11 @@ export declare class SubscriptionsController {
             status: import(".prisma/client").$Enums.UserStatus;
             avatar: string | null;
             rejectionReason: string | null;
+            phone: string | null;
+            rollNo: string | null;
+            year: string | null;
+            branch: string | null;
+            course: string | null;
             organizationId: string | null;
         };
         plan: {
@@ -254,6 +259,11 @@ export declare class SubscriptionsController {
             status: import(".prisma/client").$Enums.UserStatus;
             avatar: string | null;
             rejectionReason: string | null;
+            phone: string | null;
+            rollNo: string | null;
+            year: string | null;
+            branch: string | null;
+            course: string | null;
             organizationId: string | null;
         };
         plan: {
@@ -296,6 +306,11 @@ export declare class SubscriptionsController {
             status: import(".prisma/client").$Enums.UserStatus;
             avatar: string | null;
             rejectionReason: string | null;
+            phone: string | null;
+            rollNo: string | null;
+            year: string | null;
+            branch: string | null;
+            course: string | null;
             organizationId: string | null;
         };
         plan: {

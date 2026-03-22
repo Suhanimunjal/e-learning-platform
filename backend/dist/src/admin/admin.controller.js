@@ -38,8 +38,24 @@ let AdminController = class AdminController {
     async getGenerationJob(jobId) {
         return this.adminCourseGenerationService.getJob(jobId);
     }
-    async getActivityLogs(limit, offset) {
-        return this.activityLogService.getRecentLogs(Number(limit) || 50, Number(offset) || 0);
+    async getActivityLogs(limit, offset, action, entityType, startDate, endDate) {
+        const filters = {};
+        if (action)
+            filters.action = action;
+        if (entityType)
+            filters.entityType = entityType;
+        if (startDate)
+            filters.startDate = new Date(startDate);
+        if (endDate)
+            filters.endDate = new Date(endDate);
+        return this.activityLogService.getFilteredLogs(Number(limit) || 50, Number(offset) || 0, filters);
+    }
+    async getNewLogs(since, limit) {
+        const sinceDate = since ? new Date(since) : new Date(Date.now() - 10000);
+        return this.activityLogService.getNewLogsSince(sinceDate, Number(limit) || 100);
+    }
+    async getLogTypes() {
+        return this.activityLogService.getLogTypes();
     }
     async registerTeacher(body, req) {
         const { name, email, password } = body;
@@ -55,7 +71,7 @@ let AdminController = class AdminController {
                 name,
                 password: hashedPassword,
                 role: client_1.Role.TEACHER,
-                status: client_1.UserStatus.ACTIVE,
+                status: client_1.UserStatus.PENDING_APPROVAL,
             },
         });
         await this.activityLogService.log({
@@ -68,8 +84,8 @@ let AdminController = class AdminController {
         });
         return {
             success: true,
-            message: 'Teacher account created successfully',
-            teacher: { id: teacher.id, email: teacher.email, name: teacher.name, role: teacher.role },
+            message: 'Teacher account created successfully. Awaiting approval.',
+            teacher: { id: teacher.id, email: teacher.email, name: teacher.name, role: teacher.role, status: teacher.status },
         };
     }
     async getPendingUsers() {
@@ -326,12 +342,14 @@ let AdminController = class AdminController {
         return student;
     }
     async getStats() {
-        const [pendingApprovals, totalUsers, totalTeachers, totalStudents, totalCourses] = await Promise.all([
+        const [pendingApprovals, totalUsers, totalTeachers, totalStudents, totalCourses, blacklistedUsers, blacklistedCourses] = await Promise.all([
             this.prisma.user.count({ where: { status: client_1.UserStatus.PENDING_APPROVAL, role: client_1.Role.TEACHER } }),
             this.prisma.user.count(),
             this.prisma.user.count({ where: { role: client_1.Role.TEACHER } }),
             this.prisma.user.count({ where: { role: client_1.Role.STUDENT } }),
             this.prisma.course.count(),
+            this.prisma.user.count({ where: { status: 'BLACKLISTED' } }),
+            this.prisma.course.count({ where: { status: 'BLACKLISTED' } }),
         ]);
         return {
             pendingApprovals,
@@ -339,7 +357,73 @@ let AdminController = class AdminController {
             totalTeachers,
             totalStudents,
             totalCourses,
+            blacklistedUsers,
+            blacklistedCourses,
         };
+    }
+    async blacklistUser(userId, body, req) {
+        const user = await this.prisma.user.update({
+            where: { id: userId },
+            data: { status: 'BLACKLISTED', rejectionReason: body.reason },
+            select: { id: true, email: true, name: true, role: true, status: true },
+        });
+        await this.activityLogService.log({
+            action: 'USER_BLACKLISTED',
+            entityType: 'USER',
+            entityId: user.id,
+            userId: req.user.id,
+            targetUserId: user.id,
+            metadata: { email: user.email, name: user.name, reason: body.reason },
+        });
+        return { success: true, user };
+    }
+    async unblacklistUser(userId, req) {
+        const user = await this.prisma.user.update({
+            where: { id: userId },
+            data: { status: client_1.UserStatus.ACTIVE, rejectionReason: null },
+            select: { id: true, email: true, name: true, role: true, status: true },
+        });
+        await this.activityLogService.log({
+            action: 'USER_UNBLACKLISTED',
+            entityType: 'USER',
+            entityId: user.id,
+            userId: req.user.id,
+            targetUserId: user.id,
+            metadata: { email: user.email, name: user.name },
+        });
+        return { success: true, user };
+    }
+    async blacklistCourse(courseId, body, req) {
+        const course = await this.prisma.course.update({
+            where: { id: courseId },
+            data: { status: 'BLACKLISTED', rejectionReason: body.reason },
+            select: { id: true, title: true, status: true, instructorId: true },
+        });
+        await this.activityLogService.log({
+            action: 'COURSE_BLACKLISTED',
+            entityType: 'COURSE',
+            entityId: course.id,
+            userId: req.user.id,
+            targetUserId: course.instructorId,
+            metadata: { title: course.title, reason: body.reason },
+        });
+        return { success: true, course };
+    }
+    async unblacklistCourse(courseId, req) {
+        const course = await this.prisma.course.update({
+            where: { id: courseId },
+            data: { status: 'APPROVED', rejectionReason: null },
+            select: { id: true, title: true, status: true, instructorId: true },
+        });
+        await this.activityLogService.log({
+            action: 'COURSE_UNBLACKLISTED',
+            entityType: 'COURSE',
+            entityId: course.id,
+            userId: req.user.id,
+            targetUserId: course.instructorId,
+            metadata: { title: course.title },
+        });
+        return { success: true, course };
     }
 };
 exports.AdminController = AdminController;
@@ -362,10 +446,28 @@ __decorate([
     (0, common_1.Get)('logs'),
     __param(0, (0, common_1.Query)('limit')),
     __param(1, (0, common_1.Query)('offset')),
+    __param(2, (0, common_1.Query)('action')),
+    __param(3, (0, common_1.Query)('entityType')),
+    __param(4, (0, common_1.Query)('startDate')),
+    __param(5, (0, common_1.Query)('endDate')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getActivityLogs", null);
+__decorate([
+    (0, common_1.Get)('logs/new'),
+    __param(0, (0, common_1.Query)('since')),
+    __param(1, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
-], AdminController.prototype, "getActivityLogs", null);
+], AdminController.prototype, "getNewLogs", null);
+__decorate([
+    (0, common_1.Get)('logs/types'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getLogTypes", null);
 __decorate([
     (0, common_1.Post)('teachers/register'),
     __param(0, (0, common_1.Body)()),
@@ -475,6 +577,40 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getStats", null);
+__decorate([
+    (0, common_1.Post)('users/:userId/blacklist'),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "blacklistUser", null);
+__decorate([
+    (0, common_1.Post)('users/:userId/unblacklist'),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "unblacklistUser", null);
+__decorate([
+    (0, common_1.Post)('courses/:courseId/blacklist'),
+    __param(0, (0, common_1.Param)('courseId')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "blacklistCourse", null);
+__decorate([
+    (0, common_1.Post)('courses/:courseId/unblacklist'),
+    __param(0, (0, common_1.Param)('courseId')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "unblacklistCourse", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

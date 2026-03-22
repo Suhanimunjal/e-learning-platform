@@ -266,6 +266,13 @@ let AuthService = AuthService_1 = class AuthService {
         }
         this.resetLoginAttempts(email);
         if (user.role === client_1.Role.STUDENT) {
+            await this.activityLogService.log({
+                action: 'USER_LOGIN',
+                entityType: 'USER',
+                entityId: user.id,
+                userId: user.id,
+                metadata: { email: user.email, role: user.role, method: 'password' },
+            });
             const payload = { sub: user.id, email: user.email, role: user.role };
             const accessToken = this.jwtService.sign(payload);
             return {
@@ -274,6 +281,13 @@ let AuthService = AuthService_1 = class AuthService {
             };
         }
         if (!this.isOtpEnabled()) {
+            await this.activityLogService.log({
+                action: 'USER_LOGIN',
+                entityType: 'USER',
+                entityId: user.id,
+                userId: user.id,
+                metadata: { email: user.email, role: user.role, method: 'password', otpDisabled: true },
+            });
             return {
                 requiresOtp: false,
                 message: 'Login successful',
@@ -283,6 +297,13 @@ let AuthService = AuthService_1 = class AuthService {
         this.logger.log(`Teacher/Admin ${email} requires OTP. Sending OTP: ${otp}`);
         const emailSent = await this.emailService.sendLoginOTP(email, user.name, otp);
         this.logger.log(`Email send result for ${email}: ${emailSent}`);
+        await this.activityLogService.log({
+            action: 'OTP_SENT',
+            entityType: 'USER',
+            entityId: user.id,
+            userId: user.id,
+            metadata: { email: user.email, role: user.role, emailSent },
+        });
         if (!emailSent) {
             this.otpService.deleteOTP(email);
             throw new common_1.ServiceUnavailableException('Unable to deliver OTP email. Please contact support or try again later.');
@@ -320,6 +341,20 @@ let AuthService = AuthService_1 = class AuthService {
         this.pendingLogins.delete(email);
         this.otpService.deleteOTP(email);
         this.resetLoginAttempts(email);
+        await this.activityLogService.log({
+            action: 'OTP_VERIFIED',
+            entityType: 'USER',
+            entityId: user.id,
+            userId: user.id,
+            metadata: { email: user.email, role: user.role },
+        });
+        await this.activityLogService.log({
+            action: 'USER_LOGIN',
+            entityType: 'USER',
+            entityId: user.id,
+            userId: user.id,
+            metadata: { email: user.email, role: user.role, method: 'otp' },
+        });
         const payload = { sub: user.id, email: user.email, role: user.role };
         const accessToken = this.jwtService.sign(payload);
         return {
