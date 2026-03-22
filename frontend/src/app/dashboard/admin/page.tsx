@@ -23,7 +23,7 @@ import {
   Check,
   X,
 } from 'lucide-react';
-import { apiBaseUrl } from '@/lib/runtime-config';
+import { browserApiBaseUrl } from '@/lib/runtime-config';
 
 interface PendingStudent {
   id: string;
@@ -58,9 +58,77 @@ interface ActivityLog {
   createdAt: string;
 }
 
+interface StudentListItem {
+  id: string;
+  name: string;
+  email: string;
+  status: 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED';
+  createdAt: string;
+}
+
+interface StudentDetail {
+  id: string;
+  name: string;
+  email: string;
+  role: 'STUDENT';
+  status: 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED';
+  createdAt: string;
+  updatedAt: string;
+  organization: {
+    id: string;
+    name: string;
+    createdAt: string;
+  } | null;
+  enrollments: Array<{
+    id: string;
+    accessStatus: string;
+    createdAt: string;
+    course: {
+      id: string;
+      title: string;
+      status: string;
+      price: number;
+      createdAt: string;
+    };
+  }>;
+}
+
+interface TeacherListItem {
+  id: string;
+  name: string;
+  email: string;
+  status: 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED';
+  createdAt: string;
+}
+
+interface TeacherDetail {
+  id: string;
+  name: string;
+  email: string;
+  role: 'TEACHER';
+  status: 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED';
+  createdAt: string;
+  updatedAt: string;
+  organization: {
+    id: string;
+    name: string;
+    createdAt: string;
+  } | null;
+  coursesCreated: Array<{
+    id: string;
+    title: string;
+    status: string;
+    price: number;
+    createdAt: string;
+    _count: {
+      sections: number;
+    };
+  }>;
+}
+
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'pending' | 'teachers' | 'logs'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'teachers' | 'logs'>('overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -80,6 +148,26 @@ export default function AdminDashboard() {
   const [teacherLoading, setTeacherLoading] = useState(false);
   const [teacherMessage, setTeacherMessage] = useState('');
   const [teacherSuccess, setTeacherSuccess] = useState(false);
+
+  const [showStudentsModal, setShowStudentsModal] = useState(false);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+  const [studentsError, setStudentsError] = useState<string | null>(null);
+  const [studentsList, setStudentsList] = useState<StudentListItem[]>([]);
+
+  const [showStudentProfileModal, setShowStudentProfileModal] = useState(false);
+  const [studentProfileLoading, setStudentProfileLoading] = useState(false);
+  const [studentProfileError, setStudentProfileError] = useState<string | null>(null);
+  const [studentProfile, setStudentProfile] = useState<StudentDetail | null>(null);
+
+  const [showTeachersModal, setShowTeachersModal] = useState(false);
+  const [teachersLoading, setTeachersLoading] = useState(false);
+  const [teachersError, setTeachersError] = useState<string | null>(null);
+  const [teachersList, setTeachersList] = useState<TeacherListItem[]>([]);
+
+  const [showTeacherProfileModal, setShowTeacherProfileModal] = useState(false);
+  const [teacherProfileLoading, setTeacherProfileLoading] = useState(false);
+  const [teacherProfileError, setTeacherProfileError] = useState<string | null>(null);
+  const [teacherProfile, setTeacherProfile] = useState<TeacherDetail | null>(null);
   
   // Detail modal
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -97,10 +185,10 @@ export default function AdminDashboard() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [statsRes, studentsRes, logsRes, teachersRes] = await Promise.all([
-        fetch(`${apiBaseUrl}/admin/stats`, { headers }),
-        fetch(`${apiBaseUrl}/admin/users/pending`, { headers }),
-        fetch(`${apiBaseUrl}/admin/logs?limit=50`, { headers }),
-        fetch(`${apiBaseUrl}/admin/teachers`, { headers }),
+        fetch(`${browserApiBaseUrl}/admin/stats`, { headers }),
+        fetch(`${browserApiBaseUrl}/admin/users/pending`, { headers }),
+        fetch(`${browserApiBaseUrl}/admin/logs?limit=50`, { headers }),
+        fetch(`${browserApiBaseUrl}/admin/teachers`, { headers }),
       ]);
 
       const [statsData, studentsData, logsData, teachersData] = await Promise.all([
@@ -130,7 +218,7 @@ export default function AdminDashboard() {
     setActionLoading(userId);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${apiBaseUrl}/admin/users/${userId}/approve`, {
+      const res = await fetch(`${browserApiBaseUrl}/admin/users/${userId}/approve`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -157,7 +245,7 @@ export default function AdminDashboard() {
     setActionLoading(userId);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${apiBaseUrl}/admin/users/${userId}/reject`, {
+      const res = await fetch(`${browserApiBaseUrl}/admin/users/${userId}/reject`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -190,7 +278,7 @@ export default function AdminDashboard() {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${apiBaseUrl}/admin/teachers/register`, {
+      const res = await fetch(`${browserApiBaseUrl}/admin/teachers/register`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -223,6 +311,106 @@ export default function AdminDashboard() {
   const showUserDetail = (student: PendingStudent) => {
     setDetailData(student);
     setShowDetailModal(true);
+  };
+
+  const openStudentsModal = async () => {
+    setStudentsLoading(true);
+    setStudentsError(null);
+    setShowStudentsModal(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${browserApiBaseUrl}/admin/students`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to load students');
+      }
+
+      setStudentsList(data);
+    } catch (err: any) {
+      setStudentsError(err.message || 'Failed to load students');
+    } finally {
+      setStudentsLoading(false);
+    }
+  };
+
+  const openStudentProfile = async (studentId: string) => {
+    setStudentProfileLoading(true);
+    setStudentProfileError(null);
+    setShowStudentProfileModal(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${browserApiBaseUrl}/admin/students/${studentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to load student details');
+      }
+
+      setStudentProfile(data);
+    } catch (err: any) {
+      setStudentProfileError(err.message || 'Failed to load student details');
+      setStudentProfile(null);
+    } finally {
+      setStudentProfileLoading(false);
+    }
+  };
+
+  const openTeachersModal = async () => {
+    setTeachersLoading(true);
+    setTeachersError(null);
+    setShowTeachersModal(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${browserApiBaseUrl}/admin/teachers`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to load teachers');
+      }
+
+      setTeachersList(data);
+    } catch (err: any) {
+      setTeachersError(err.message || 'Failed to load teachers');
+    } finally {
+      setTeachersLoading(false);
+    }
+  };
+
+  const openTeacherProfile = async (teacherId: string) => {
+    setTeacherProfileLoading(true);
+    setTeacherProfileError(null);
+    setShowTeacherProfileModal(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${browserApiBaseUrl}/admin/teachers/${teacherId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to load teacher details');
+      }
+
+      setTeacherProfile(data);
+    } catch (err: any) {
+      setTeacherProfileError(err.message || 'Failed to load teacher details');
+      setTeacherProfile(null);
+    } finally {
+      setTeacherProfileLoading(false);
+    }
   };
 
   const getActionIcon = (action: string) => {
@@ -354,21 +542,6 @@ export default function AdminDashboard() {
               Overview
             </button>
             <button
-              onClick={() => setActiveTab('pending')}
-              className={`pb-4 px-2 font-medium text-sm border-b-2 flex items-center gap-2 ${
-                activeTab === 'pending'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Student Approvals
-              {pendingStudents.length > 0 && (
-                <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
-                  {pendingStudents.length}
-                </span>
-              )}
-            </button>
-            <button
               onClick={() => setActiveTab('teachers')}
               className={`pb-4 px-2 font-medium text-sm border-b-2 ${
                 activeTab === 'teachers'
@@ -400,12 +573,14 @@ export default function AdminDashboard() {
                 value={stats?.totalStudents || 0}
                 icon={Users}
                 color="indigo"
+                onClick={openStudentsModal}
               />
               <StatCard
                 title="Total Teachers"
                 value={stats?.totalTeachers || 0}
                 icon={BookOpen}
                 color="purple"
+                onClick={openTeachersModal}
               />
               <StatCard
                 title="Pending Approvals"
@@ -426,9 +601,6 @@ export default function AdminDashboard() {
               <div className="rounded-lg bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Pending Student Registrations</h3>
-                  <Button size="sm" variant="outline" onClick={() => setActiveTab('pending')}>
-                    View All
-                  </Button>
                 </div>
                 <div className="space-y-3">
                   {pendingStudents.slice(0, 5).map((s) => (
@@ -456,18 +628,6 @@ export default function AdminDashboard() {
               </div>
             )}
           </>
-        )}
-
-        {/* Student Approvals Tab */}
-        {activeTab === 'pending' && (
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Pending Student Registrations</h3>
-            {pendingStudents.length === 0 ? (
-              <p className="text-gray-500 text-sm py-8 text-center">No pending student registrations</p>
-            ) : (
-              <DataTable data={pendingStudents} columns={studentColumns} />
-            )}
-          </div>
         )}
 
         {/* Teachers Tab */}
@@ -676,6 +836,202 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+        </Modal>
+
+        <Modal
+          isOpen={showStudentsModal}
+          onClose={() => setShowStudentsModal(false)}
+          title="Students"
+          size="lg"
+        >
+          {studentsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+              <span className="ml-2 text-gray-600">Loading students...</span>
+            </div>
+          ) : studentsError ? (
+            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{studentsError}</div>
+          ) : studentsList.length === 0 ? (
+            <p className="text-sm text-gray-500">No students found.</p>
+          ) : (
+            <div className="space-y-2">
+              {studentsList.map((student) => (
+                <button
+                  key={student.id}
+                  onClick={() => openStudentProfile(student.id)}
+                  className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-left hover:border-indigo-300 hover:bg-indigo-50"
+                >
+                  <div>
+                    <p className="font-medium text-gray-900">{student.name}</p>
+                    <p className="text-sm text-gray-500">{student.email}</p>
+                  </div>
+                  <div className="text-xs text-gray-500">{student.status}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </Modal>
+
+        <Modal
+          isOpen={showStudentProfileModal}
+          onClose={() => {
+            setShowStudentProfileModal(false);
+            setStudentProfile(null);
+            setStudentProfileError(null);
+          }}
+          title="Student Profile"
+          size="xl"
+        >
+          {studentProfileLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+              <span className="ml-2 text-gray-600">Loading student profile...</span>
+            </div>
+          ) : studentProfileError ? (
+            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{studentProfileError}</div>
+          ) : studentProfile ? (
+            <div className="space-y-6">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <h4 className="text-lg font-semibold text-gray-900">{studentProfile.name}</h4>
+                <p className="text-sm text-gray-600">{studentProfile.email}</p>
+                <div className="mt-2 flex gap-4 text-xs text-gray-500">
+                  <span>Status: {studentProfile.status}</span>
+                  <span>Joined: {new Date(studentProfile.createdAt).toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h5 className="mb-2 font-semibold text-gray-900">Organization</h5>
+                {studentProfile.organization ? (
+                  <div className="text-sm text-gray-700">
+                    <p>Name: {studentProfile.organization.name}</p>
+                    <p>Created: {new Date(studentProfile.organization.createdAt).toLocaleString()}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No organization assigned.</p>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h5 className="mb-3 font-semibold text-gray-900">Enrollments</h5>
+                {studentProfile.enrollments.length === 0 ? (
+                  <p className="text-sm text-gray-500">No enrollments found.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {studentProfile.enrollments.map((enrollment) => (
+                      <div key={enrollment.id} className="rounded-lg bg-gray-50 p-3">
+                        <p className="font-medium text-gray-900">{enrollment.course.title}</p>
+                        <div className="mt-1 flex flex-wrap gap-3 text-xs text-gray-500">
+                          <span>Access: {enrollment.accessStatus}</span>
+                          <span>Course Status: {enrollment.course.status}</span>
+                          <span>Price: {enrollment.course.price}</span>
+                          <span>Enrolled: {new Date(enrollment.createdAt).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </Modal>
+
+        <Modal
+          isOpen={showTeachersModal}
+          onClose={() => setShowTeachersModal(false)}
+          title="Teachers"
+          size="lg"
+        >
+          {teachersLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+              <span className="ml-2 text-gray-600">Loading teachers...</span>
+            </div>
+          ) : teachersError ? (
+            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{teachersError}</div>
+          ) : teachersList.length === 0 ? (
+            <p className="text-sm text-gray-500">No teachers found.</p>
+          ) : (
+            <div className="space-y-2">
+              {teachersList.map((teacher) => (
+                <button
+                  key={teacher.id}
+                  onClick={() => openTeacherProfile(teacher.id)}
+                  className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-left hover:border-purple-300 hover:bg-purple-50"
+                >
+                  <div>
+                    <p className="font-medium text-gray-900">{teacher.name}</p>
+                    <p className="text-sm text-gray-500">{teacher.email}</p>
+                  </div>
+                  <div className="text-xs text-gray-500">{teacher.status}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </Modal>
+
+        <Modal
+          isOpen={showTeacherProfileModal}
+          onClose={() => {
+            setShowTeacherProfileModal(false);
+            setTeacherProfile(null);
+            setTeacherProfileError(null);
+          }}
+          title="Teacher Profile"
+          size="xl"
+        >
+          {teacherProfileLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+              <span className="ml-2 text-gray-600">Loading teacher profile...</span>
+            </div>
+          ) : teacherProfileError ? (
+            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{teacherProfileError}</div>
+          ) : teacherProfile ? (
+            <div className="space-y-6">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <h4 className="text-lg font-semibold text-gray-900">{teacherProfile.name}</h4>
+                <p className="text-sm text-gray-600">{teacherProfile.email}</p>
+                <div className="mt-2 flex gap-4 text-xs text-gray-500">
+                  <span>Status: {teacherProfile.status}</span>
+                  <span>Joined: {new Date(teacherProfile.createdAt).toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h5 className="mb-2 font-semibold text-gray-900">Organization</h5>
+                {teacherProfile.organization ? (
+                  <div className="text-sm text-gray-700">
+                    <p>Name: {teacherProfile.organization.name}</p>
+                    <p>Created: {new Date(teacherProfile.organization.createdAt).toLocaleString()}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No organization assigned.</p>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h5 className="mb-3 font-semibold text-gray-900">Courses</h5>
+                {teacherProfile.coursesCreated.length === 0 ? (
+                  <p className="text-sm text-gray-500">No courses found.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {teacherProfile.coursesCreated.map((course) => (
+                      <div key={course.id} className="rounded-lg bg-gray-50 p-3">
+                        <p className="font-medium text-gray-900">{course.title}</p>
+                        <div className="mt-1 flex flex-wrap gap-3 text-xs text-gray-500">
+                          <span>Status: {course.status}</span>
+                          <span>Sections: {course._count.sections}</span>
+                          <span>Price: {course.price}</span>
+                          <span>Created: {new Date(course.createdAt).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
         </Modal>
       </div>
     </DashboardLayout>

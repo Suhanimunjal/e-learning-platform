@@ -14,3 +14,4 @@ try {
 
 export const apiBaseUrl = parsedApiBaseUrl.toString().replace(/\/$/, '');
 export const backendOrigin = parsedApiBaseUrl.origin;
+export const browserApiBaseUrl = '/api/proxy';

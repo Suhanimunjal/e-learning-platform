@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Loader2, GraduationCap, Eye, EyeOff } from 'lucide-react';
-import { apiBaseUrl } from '@/lib/runtime-config';
+import { browserApiBaseUrl } from '@/lib/runtime-config';
 
 export default function StudentRegisterPage() {
   const router = useRouter();
@@ -100,7 +100,7 @@ export default function StudentRegisterPage() {
         role: 'STUDENT',
       };
 
-      const res = await fetch(`${apiBaseUrl}/auth/register`, {
+      const res = await fetch(`${browserApiBaseUrl}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

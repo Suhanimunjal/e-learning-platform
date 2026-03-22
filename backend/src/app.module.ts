@@ -18,6 +18,7 @@ import { VideoGenerationModule } from './video-generation/video-generation.modul
 import { QuizModule } from './quiz/quiz.module';
 import { AdminModule } from './admin/admin.module';
 import { CourseEnrollmentGuard } from './common/guards/course-enrollment.guard';
+import { StudentModule } from './student/student.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { CourseEnrollmentGuard } from './common/guards/course-enrollment.guard';
     VideoGenerationModule,
     QuizModule,
     AdminModule,
+    StudentModule,
   ],
   controllers: [HealthController],
   providers: [CourseEnrollmentGuard],

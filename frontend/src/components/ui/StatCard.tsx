@@ -9,6 +9,7 @@ interface StatCardProps {
     isPositive: boolean;
   };
   color?: 'indigo' | 'green' | 'red' | 'yellow' | 'purple' | 'blue';
+  onClick?: () => void;
 }
 
 const colorClasses = {
@@ -20,9 +21,26 @@ const colorClasses = {
   blue: 'bg-blue-50 text-blue-600',
 };
 
-export default function StatCard({ title, value, icon: Icon, trend, color = 'indigo' }: StatCardProps) {
+export default function StatCard({ title, value, icon: Icon, trend, color = 'indigo', onClick }: StatCardProps) {
+  const interactiveClasses = onClick ? 'cursor-pointer transition hover:shadow-md' : '';
+
   return (
-    <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-100">
+    <div
+      className={`rounded-lg bg-white p-6 shadow-sm border border-gray-100 ${interactiveClasses}`}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (!onClick) {
+          return;
+        }
+
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+    >
       <div className="flex items-center justify-between">
         <div className={`rounded-lg p-3 ${colorClasses[color]}`}>
           <Icon className="h-6 w-6" />

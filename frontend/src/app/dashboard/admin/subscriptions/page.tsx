@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
-import { apiBaseUrl } from '@/lib/runtime-config';
+import { browserApiBaseUrl } from '@/lib/runtime-config';
 import { CreditCard, Loader2, Check, X } from 'lucide-react';
 
 interface Subscription {
@@ -31,7 +31,7 @@ export default function AdminSubscriptionsPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch(`${apiBaseUrl}/subscriptions`, {
+      const res = await fetch(`${browserApiBaseUrl}/subscriptions`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -48,7 +48,7 @@ export default function AdminSubscriptionsPage() {
   const handleCancelSubscription = async (id: string) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${apiBaseUrl}/subscriptions/${id}/cancel`, {
+      await fetch(`${browserApiBaseUrl}/subscriptions/${id}/cancel`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });

@@ -1,28 +1,41 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { Award, Download, Loader2 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Badge from '@/components/ui/Badge';
-import { Award, Download, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { StudentCertificate, student } from '@/lib/api';
 
 export default function StudentCertificatesPage() {
-  const [certificates, setCertificates] = useState<any[]>([]);
+  const [certificates, setCertificates] = useState<StudentCertificate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Mock certificates for now
-    setTimeout(() => {
-      setCertificates([
-        {
-          id: '1',
-          courseName: 'Introduction to Python Programming',
-          issuedAt: '2026-02-15',
-          verified: true,
-        },
-      ]);
-      setLoading(false);
-    }, 1000);
+    const loadCertificates = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await student.getCertificates();
+        setCertificates(data);
+      } catch {
+        setError('Failed to load certificates.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCertificates();
   }, []);
+
+  const downloadCertificate = async (certificateId: string) => {
+    try {
+      const { downloadUrl } = await student.getCertificateDownload(certificateId);
+      window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      setError('Failed to download certificate.');
+    }
+  };
 
   if (loading) {
     return (
@@ -39,7 +52,9 @@ export default function StudentCertificatesPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">My Certificates</h1>
-        
+
+        {error && <div className="rounded-lg bg-red-50 p-4 text-red-700">{error}</div>}
+
         {certificates.length === 0 ? (
           <div className="rounded-lg bg-white p-12 text-center">
             <Award className="mx-auto h-12 w-12 text-gray-400" />
@@ -55,14 +70,17 @@ export default function StudentCertificatesPage() {
                     <Award className="h-8 w-8 text-yellow-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{cert.courseName}</h3>
+                    <h3 className="font-semibold text-gray-900">{cert.course.title}</h3>
                     <div className="mt-2 flex items-center gap-2">
                       <Badge variant="success">Verified</Badge>
                       <span className="text-sm text-gray-500">
                         Issued: {new Date(cert.issuedAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <button className="mt-4 flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700">
+                    <button
+                      onClick={() => downloadCertificate(cert.id)}
+                      className="mt-4 flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    >
                       <Download className="h-4 w-4" />
                       Download Certificate
                     </button>
