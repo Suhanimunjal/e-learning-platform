@@ -55,8 +55,8 @@ export default function StudentDashboard() {
       setLoading(true);
       setError(null);
 
-      const [dashboardData, enrolledData, catalogData, certificatesData, notificationsData, unreadData] =
-        await Promise.all([
+      const [dashboardResult, enrolledResult, catalogResult, certificatesResult, notificationsResult, unreadResult] =
+        await Promise.allSettled([
           student.getDashboard(),
           student.getEnrolled(),
           courses.getAll(),
@@ -65,12 +65,45 @@ export default function StudentDashboard() {
           student.getUnreadNotificationCount(),
         ]);
 
-      setDashboard(dashboardData);
-      setEnrolled(enrolledData);
-      setCatalog(catalogData as PublicCourse[]);
-      setCertificates(certificatesData);
-      setNotifications(notificationsData);
-      setUnreadCount(unreadData.unreadCount);
+      const errors: string[] = [];
+
+      if (dashboardResult.status === 'fulfilled') {
+        setDashboard(dashboardResult.value);
+      } else {
+        errors.push('Dashboard');
+      }
+
+      if (enrolledResult.status === 'fulfilled') {
+        setEnrolled(enrolledResult.value);
+      } else {
+        errors.push('Enrolled courses');
+      }
+
+      if (catalogResult.status === 'fulfilled') {
+        setCatalog(catalogResult.value as PublicCourse[]);
+      } else {
+        errors.push('Course catalog');
+      }
+
+      if (certificatesResult.status === 'fulfilled') {
+        setCertificates(certificatesResult.value);
+      } else {
+        errors.push('Certificates');
+      }
+
+      if (notificationsResult.status === 'fulfilled') {
+        setNotifications(notificationsResult.value);
+      } else {
+        errors.push('Notifications');
+      }
+
+      if (unreadResult.status === 'fulfilled') {
+        setUnreadCount(unreadResult.value.unreadCount);
+      }
+
+      if (errors.length > 0) {
+        setError(`Failed to load: ${errors.join(', ')}. Some data may be missing.`);
+      }
     } catch {
       setError('Failed to load student dashboard data.');
       setDashboard(null);

@@ -13,7 +13,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user } = useAuth();
   const router = useRouter();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -36,7 +36,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         onClose={() => setIsSidebarOpen(false)}
       />
 
-      <div className={`transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
+      {/* On desktop (lg+), always offset by sidebar width. On mobile, no offset. */}
+      <div className="lg:ml-64">
         <Navbar onMenuClick={() => setIsSidebarOpen((prev) => !prev)} />
 
         <main className="p-4 sm:p-6 lg:p-8">

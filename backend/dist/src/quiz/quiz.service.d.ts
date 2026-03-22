@@ -21,6 +21,8 @@ export declare class QuizService {
                     videoIntro: string | null;
                     price: number;
                     approvedBy: string | null;
+                    materials: import("@prisma/client/runtime/client").JsonValue | null;
+                    youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
                     instructorId: string;
                 };
             } & {
@@ -61,20 +63,20 @@ export declare class QuizService {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
         attempts: {
             id: string;
             userId: string;
             completedAt: Date | null;
             quizId: string;
-            score: number | null;
-            passed: boolean | null;
             answers: import("@prisma/client/runtime/client").JsonValue;
+            score: number | null;
             percentage: number | null;
+            passed: boolean | null;
             startedAt: Date;
         }[];
     } & {
@@ -107,6 +109,8 @@ export declare class QuizService {
                     videoIntro: string | null;
                     price: number;
                     approvedBy: string | null;
+                    materials: import("@prisma/client/runtime/client").JsonValue | null;
+                    youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
                     instructorId: string;
                 };
             } & {
@@ -147,20 +151,20 @@ export declare class QuizService {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
         attempts: {
             id: string;
             userId: string;
             completedAt: Date | null;
             quizId: string;
-            score: number | null;
-            passed: boolean | null;
             answers: import("@prisma/client/runtime/client").JsonValue;
+            score: number | null;
             percentage: number | null;
+            passed: boolean | null;
             startedAt: Date;
         }[];
     } & {
@@ -182,20 +186,20 @@ export declare class QuizService {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
         attempts: {
             id: string;
             userId: string;
             completedAt: Date | null;
             quizId: string;
-            score: number | null;
-            passed: boolean | null;
             answers: import("@prisma/client/runtime/client").JsonValue;
+            score: number | null;
             percentage: number | null;
+            passed: boolean | null;
             startedAt: Date;
         }[];
     } & {
@@ -217,10 +221,10 @@ export declare class QuizService {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
     } & {
         id: string;
@@ -240,30 +244,30 @@ export declare class QuizService {
         order: number;
         type: string;
         options: import("@prisma/client/runtime/client").JsonValue | null;
-        quizId: string;
         text: string;
         correctAnswer: string | null;
         points: number;
+        quizId: string;
     }>;
     updateQuestion(questionId: string, updateQuestionDto: any, user: User): Promise<{
         id: string;
         order: number;
         type: string;
         options: import("@prisma/client/runtime/client").JsonValue | null;
-        quizId: string;
         text: string;
         correctAnswer: string | null;
         points: number;
+        quizId: string;
     }>;
     deleteQuestion(questionId: string, user: User): Promise<{
         id: string;
         order: number;
         type: string;
         options: import("@prisma/client/runtime/client").JsonValue | null;
-        quizId: string;
         text: string;
         correctAnswer: string | null;
         points: number;
+        quizId: string;
     }>;
     publishQuiz(quizId: string, user: User): Promise<{
         questions: {
@@ -271,10 +275,10 @@ export declare class QuizService {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
     } & {
         id: string;
@@ -295,10 +299,10 @@ export declare class QuizService {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
     } & {
         id: string;
@@ -366,20 +370,20 @@ export declare class QuizService {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
         attempts: {
             id: string;
             userId: string;
             completedAt: Date | null;
             quizId: string;
-            score: number | null;
-            passed: boolean | null;
             answers: import("@prisma/client/runtime/client").JsonValue;
+            score: number | null;
             percentage: number | null;
+            passed: boolean | null;
             startedAt: Date;
         }[];
     } & {
@@ -440,10 +444,10 @@ export declare class QuizService {
         userId: string;
         completedAt: Date | null;
         quizId: string;
-        score: number | null;
-        passed: boolean | null;
         answers: import("@prisma/client/runtime/client").JsonValue;
+        score: number | null;
         percentage: number | null;
+        passed: boolean | null;
         startedAt: Date;
     })[]>;
     getQuizAttempt(quizId: string, attemptId: string, user: User): Promise<{
@@ -469,6 +473,8 @@ export declare class QuizService {
                         videoIntro: string | null;
                         price: number;
                         approvedBy: string | null;
+                        materials: import("@prisma/client/runtime/client").JsonValue | null;
+                        youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
                         instructorId: string;
                     };
                 } & {
@@ -509,10 +515,10 @@ export declare class QuizService {
                 order: number;
                 type: string;
                 options: import("@prisma/client/runtime/client").JsonValue | null;
-                quizId: string;
                 text: string;
                 correctAnswer: string | null;
                 points: number;
+                quizId: string;
             }[];
         } & {
             id: string;
@@ -532,10 +538,10 @@ export declare class QuizService {
         userId: string;
         completedAt: Date | null;
         quizId: string;
-        score: number | null;
-        passed: boolean | null;
         answers: import("@prisma/client/runtime/client").JsonValue;
+        score: number | null;
         percentage: number | null;
+        passed: boolean | null;
         startedAt: Date;
     }>;
     getQuizSubmissions(quizId: string): Promise<{
@@ -556,6 +562,8 @@ export declare class QuizService {
                         videoIntro: string | null;
                         price: number;
                         approvedBy: string | null;
+                        materials: import("@prisma/client/runtime/client").JsonValue | null;
+                        youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
                         instructorId: string;
                     };
                 } & {
@@ -596,10 +604,10 @@ export declare class QuizService {
                 order: number;
                 type: string;
                 options: import("@prisma/client/runtime/client").JsonValue | null;
-                quizId: string;
                 text: string;
                 correctAnswer: string | null;
                 points: number;
+                quizId: string;
             }[];
         } & {
             id: string;

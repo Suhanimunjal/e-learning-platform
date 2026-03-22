@@ -28,7 +28,13 @@ const quiz_module_1 = require("./quiz/quiz.module");
 const admin_module_1 = require("./admin/admin.module");
 const course_enrollment_guard_1 = require("./common/guards/course-enrollment.guard");
 const student_module_1 = require("./student/student.module");
+const sanitization_middleware_1 = require("./common/middleware/sanitization.middleware");
 let AppModule = class AppModule {
+    configure(consumer) {
+        consumer
+            .apply(sanitization_middleware_1.SanitizationMiddleware)
+            .forRoutes('*');
+    }
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([

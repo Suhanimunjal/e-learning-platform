@@ -35,10 +35,16 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core_1 = require("@nestjs/core");
 const app_module_1 = require("./app.module");
+const common_1 = require("@nestjs/common");
 const express = __importStar(require("express"));
 const path_1 = require("path");
+const fs_1 = require("fs");
+const global_exception_filter_1 = require("./common/filters/global-exception.filter");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    const uploadsDir = (0, path_1.join)(process.cwd(), 'uploads', 'course-materials');
+    (0, fs_1.mkdirSync)(uploadsDir, { recursive: true });
+    app.useGlobalFilters(new global_exception_filter_1.GlobalExceptionFilter());
     const frontendOriginsRaw = process.env.FRONTEND_ORIGINS;
     if (!frontendOriginsRaw) {
         throw new Error('FRONTEND_ORIGINS is required. No fallback origin is allowed.');
@@ -58,6 +64,11 @@ async function bootstrap() {
     });
     app.use('/uploads', express.static((0, path_1.join)(process.cwd(), 'uploads')));
     app.setGlobalPrefix('api');
+    app.useGlobalPipes(new common_1.ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: false,
+    }));
     const port = process.env.PORT || 3001;
     await app.listen(port);
     console.log(`Backend is running on: http://localhost:${port}`);

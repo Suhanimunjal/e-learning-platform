@@ -6,7 +6,8 @@ import Button from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
 import { usePlugins } from '@/contexts/PluginContext';
 import { backendOrigin } from '@/lib/runtime-config';
-import { courses, sections as sectionsApi, modules as modulesApi, quizzes as quizzesApi, grading } from '@/lib/api';
+import { courses, uploads as uploadsApi, sections as sectionsApi, modules as modulesApi, quizzes as quizzesApi, grading, UploadedFile } from '@/lib/api';
+import ReactMarkdown from 'react-markdown';
 import {
   ArrowLeft,
   Plus,
@@ -24,6 +25,13 @@ import {
   Unlock,
   CheckCircle,
   AlertCircle,
+  Upload,
+  File,
+  Link,
+  Youtube,
+  Eye,
+  Edit3,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 import TopicInput from '@/components/ai/TopicInput';
@@ -69,6 +77,15 @@ export default function CreateCoursePage() {
   });
   const [courseId, setCourseId] = useState<string | null>(null);
 
+  // STATE: Materials & Links
+  const [materials, setMaterials] = useState<UploadedFile[]>([]);
+  const [youtubeLinks, setYoutubeLinks] = useState<string[]>([]);
+  const [newYoutubeLink, setNewYoutubeLink] = useState('');
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+
+  // STATE: Markdown preview toggle
+  const [showMarkdownPreview, setShowMarkdownPreview] = useState(false);
+
   // STATE: Sections & Modules
   const [sections, setSections] = useState<Section[]>([]);
   const [loadingSections, setLoadingSections] = useState(false);
@@ -80,7 +97,52 @@ export default function CreateCoursePage() {
   const [loading, setLoading] = useState(false);
 
   // =========================
-  // ✅ FIXED: REAL COURSE CREATION
+  // FILE UPLOAD HANDLER
+  // =========================
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingFiles(true);
+    try {
+      const fileArray = Array.from(files);
+      const uploaded = await uploadsApi.uploadMultiple(fileArray);
+      setMaterials((prev) => [...prev, ...uploaded]);
+    } catch (err: any) {
+      console.error('File upload error:', err);
+      alert('Failed to upload files: ' + (err?.response?.data?.message || err?.message));
+    } finally {
+      setUploadingFiles(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveMaterial = (index: number) => {
+    setMaterials((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // =========================
+  // YOUTUBE LINK HANDLERS
+  // =========================
+  const handleAddYoutubeLink = () => {
+    const link = newYoutubeLink.trim();
+    if (!link) return;
+
+    if (!link.includes('youtube.com') && !link.includes('youtu.be')) {
+      alert('Please enter a valid YouTube URL');
+      return;
+    }
+
+    setYoutubeLinks((prev) => [...prev, link]);
+    setNewYoutubeLink('');
+  };
+
+  const handleRemoveYoutubeLink = (index: number) => {
+    setYoutubeLinks((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // =========================
+  // COURSE CREATION
   // =========================
   const handleCreateCourse = async () => {
     try {
@@ -93,7 +155,9 @@ export default function CreateCoursePage() {
 
       const created = await courses.create({
         ...courseData,
-        slug: courseData.title.toLowerCase().replace(/\s+/g, '-'),
+        slug: courseData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+        materials: materials.length > 0 ? materials : undefined,
+        youtubeLinks: youtubeLinks.length > 0 ? youtubeLinks : undefined,
       });
 
       setCourseId(created.id);
@@ -118,7 +182,7 @@ export default function CreateCoursePage() {
   };
 
   // =========================
-  // ✅ FIXED: REAL SECTION CREATION
+  // SECTION CREATION
   // =========================
   const handleAddSection = async () => {
     if (!courseId) {
@@ -147,7 +211,7 @@ export default function CreateCoursePage() {
   };
 
   // =========================
-  // ✅ FIXED: REAL MODULE CREATION (NO FAKE IDS)
+  // MODULE CREATION
   // =========================
   const handleAddModule = async (sectionId: string, type: Module['type']) => {
     try {
@@ -180,7 +244,7 @@ export default function CreateCoursePage() {
   };
 
   // =========================
-  // ✅ FIXED: CONTENT FLOW (GENERATE + APPROVE + QUIZ + VIDEO)
+  // CONTENT FLOW
   // =========================
   const handleGenerateContent = async (
     sectionId: string,
@@ -188,7 +252,6 @@ export default function CreateCoursePage() {
     topic: string
   ) => {
     try {
-      // 1️⃣ Set GENERATING status
       setSections(prev =>
         prev.map(s =>
           s.id === sectionId
@@ -204,21 +267,11 @@ export default function CreateCoursePage() {
         )
       );
 
-      // 2️⃣ Generate content from AI
       const res = await modulesApi.generateContent(moduleId, topic);
-      console.log('✅ Content generated:', res);
-
-      // 3️⃣ Approve content automatically
       const approvedRes = await modulesApi.approveContent(moduleId);
-      console.log('✅ Content approved');
-
-      // 4️⃣ Generate video automatically
       const videoRes = await modulesApi.generateVideo(moduleId);
-      console.log('✅ Video generated:', videoRes);
 
-      // 5️⃣ Create quiz automatically from generated content
       try {
-        // Find QUIZ module for this section
         const quizModule = sections
           .find(s => s.id === sectionId)
           ?.modules.find(m => m.type === 'QUIZ');
@@ -231,15 +284,12 @@ export default function CreateCoursePage() {
             passingScore: 70,
             questions: res.quiz?.questions || [],
           };
-
           await quizzesApi.create(quizData);
-          console.log('✅ Quiz created');
         }
       } catch (quizErr) {
-        console.error('⚠️ Quiz creation failed (continuing anyway):', quizErr);
+        console.error('Quiz creation failed (continuing anyway):', quizErr);
       }
 
-      // 6️⃣ Update UI with final state
       setSections(prev =>
         prev.map(s =>
           s.id === sectionId
@@ -266,12 +316,11 @@ export default function CreateCoursePage() {
         )
       );
 
-      alert('✅ Content, video, and quiz generated successfully!');
+      alert('Content, video, and quiz generated successfully!');
     } catch (err: any) {
-      console.error('❌ Content generation failed:', err);
+      console.error('Content generation failed:', err);
       alert('Content generation failed: ' + (err?.response?.data?.message || err?.message || 'Unknown error'));
 
-      // Reset state on error
       setSections(prev =>
         prev.map(s =>
           s.id === sectionId
@@ -289,48 +338,29 @@ export default function CreateCoursePage() {
     }
   };
 
-  // =========================
-  // MANUAL APPROVAL
-  // =========================
-  const handleApproveContent = async (
-    sectionId: string,
-    moduleId: string
-  ) => {
+  const handleApproveContent = async (sectionId: string, moduleId: string) => {
     try {
-      const res = await modulesApi.approveContent(moduleId);
-      console.log('✅ Content approved:', res);
-
-      // Update UI state
+      await modulesApi.approveContent(moduleId);
       setSections(prev =>
         prev.map(s =>
           s.id === sectionId
             ? {
                 ...s,
                 modules: s.modules.map(m =>
-                  m.id === moduleId
-                    ? { ...m, contentStatus: 'APPROVED' }
-                    : m
+                  m.id === moduleId ? { ...m, contentStatus: 'APPROVED' } : m
                 ),
               }
             : s
         )
       );
-
-      alert('✅ Content approved successfully!');
+      alert('Content approved successfully!');
     } catch (err: any) {
-      console.error('❌ Approval failed:', err);
-      alert('Approval failed: ' + (err?.response?.data?.message || err?.message || 'Unknown error'));
+      console.error('Approval failed:', err);
+      alert('Approval failed: ' + (err?.response?.data?.message || err?.message));
     }
   };
 
-  // =========================
-  // MANUAL VIDEO GENERATION
-  // =========================
-  const handleGenerateVideo = async (
-    sectionId: string,
-    moduleId: string,
-    voiceId?: string
-  ) => {
+  const handleGenerateVideo = async (sectionId: string, moduleId: string, voiceId?: string) => {
     try {
       setSections(prev =>
         prev.map(s =>
@@ -338,9 +368,7 @@ export default function CreateCoursePage() {
             ? {
                 ...s,
                 modules: s.modules.map(m =>
-                  m.id === moduleId
-                    ? { ...m, videoStatus: 'GENERATING', isGenerating: true }
-                    : m
+                  m.id === moduleId ? { ...m, videoStatus: 'GENERATING', isGenerating: true } : m
                 ),
               }
             : s
@@ -374,16 +402,13 @@ export default function CreateCoursePage() {
     } catch (err: any) {
       console.error('Video generation error:', err);
       alert('Video generation failed');
-
       setSections(prev =>
         prev.map(s =>
           s.id === sectionId
             ? {
                 ...s,
                 modules: s.modules.map(m =>
-                  m.id === moduleId
-                    ? { ...m, videoStatus: 'PENDING', isGenerating: false }
-                    : m
+                  m.id === moduleId ? { ...m, videoStatus: 'PENDING', isGenerating: false } : m
                 ),
               }
             : s
@@ -392,9 +417,6 @@ export default function CreateCoursePage() {
     }
   };
 
-  // =========================
-  // DELETE MODULE
-  // =========================
   const handleDeleteModule = (sectionId: string, moduleId: string) => {
     setSections(prev =>
       prev.map(s =>
@@ -405,16 +427,10 @@ export default function CreateCoursePage() {
     );
   };
 
-  // =========================
-  // DELETE SECTION
-  // =========================
   const handleDeleteSection = (sectionId: string) => {
     setSections(prev => prev.filter(s => s.id !== sectionId));
   };
 
-  // =========================
-  // UI HELPERS
-  // =========================
   const toggleModule = (id: string) => {
     setExpandedModules(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
@@ -427,9 +443,6 @@ export default function CreateCoursePage() {
     );
   };
 
-  // =========================
-  // PUBLISH COURSE
-  // =========================
   const handlePublishCourse = async () => {
     if (!courseId) {
       alert('Create course first');
@@ -439,7 +452,7 @@ export default function CreateCoursePage() {
     try {
       setSubmitting(true);
       await courses.update(courseId, { published: true });
-      alert('✅ Course published!');
+      alert('Course published!');
       router.push('/dashboard/teacher/courses');
     } catch (err: any) {
       console.error('Publish error:', err);
@@ -449,15 +462,30 @@ export default function CreateCoursePage() {
     }
   };
 
-  // =========================
-  // RENDER
-  // =========================
+  const getFileIcon = (type: string) => {
+    switch (type) {
+      case 'pdf': return <FileText size={16} className="text-red-500" />;
+      case 'ppt': return <FileText size={16} className="text-orange-500" />;
+      case 'doc': return <FileText size={16} className="text-blue-500" />;
+      case 'xls': return <FileText size={16} className="text-green-500" />;
+      case 'image': return <ImageIcon size={16} className="text-purple-500" />;
+      case 'video': return <Video size={16} className="text-pink-500" />;
+      default: return <File size={16} className="text-gray-500" />;
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">Create Course</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Create Course</h1>
           <button
             onClick={() => router.back()}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
@@ -470,43 +498,189 @@ export default function CreateCoursePage() {
         {/* Course Details */}
         {!courseId ? (
           <div className="border rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4">Course Details</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-900">Course Details</h2>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
+              {/* Title */}
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-900">Course Title *</label>
+                <label className="block text-sm font-semibold mb-1 text-gray-900">
+                  Course Title *
+                </label>
                 <input
                   type="text"
                   value={courseData.title}
                   onChange={e => setCourseData({ ...courseData, title: e.target.value })}
                   placeholder="Enter course title"
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 bg-white"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
+              {/* Description with Markdown */}
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-900">Description</label>
-                <textarea
-                  value={courseData.description}
-                  onChange={e => setCourseData({ ...courseData, description: e.target.value })}
-                  placeholder="Enter course description"
-                  className="w-full border border-gray-300 rounded px-3 py-2 h-24 text-gray-900 bg-white"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Description (Markdown supported)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowMarkdownPreview(!showMarkdownPreview)}
+                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    {showMarkdownPreview ? (
+                      <>
+                        <Edit3 size={14} /> Edit
+                      </>
+                    ) : (
+                      <>
+                        <Eye size={14} /> Preview
+                      </>
+                    )}
+                  </button>
+                </div>
+                {showMarkdownPreview ? (
+                  <div className="w-full border border-gray-300 rounded px-3 py-2 min-h-[120px] bg-gray-50 prose prose-sm max-w-none text-gray-900">
+                    <ReactMarkdown>{courseData.description || '*No description yet*'}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <textarea
+                    value={courseData.description}
+                    onChange={e => setCourseData({ ...courseData, description: e.target.value })}
+                    placeholder={"Enter course description. You can use Markdown:\n\n**Bold**, *italic*, `code`\n- Bullet lists\n- Item 2\n\n## Headings\n[Links](url)\n> Blockquotes"}
+                    className="w-full border border-gray-300 rounded px-3 py-2 h-36 text-gray-900 bg-white font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                )}
+                <p className="text-xs text-gray-600 mt-1">
+                  Supports Markdown formatting: **bold**, *italic*, `code`, lists, headings, links, and more
+                </p>
               </div>
 
+              {/* Price */}
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-900">Price ($)</label>
+                <label className="block text-sm font-semibold mb-1 text-gray-900">
+                  Price ($)
+                </label>
                 <input
                   type="number"
                   value={courseData.price}
-                  onChange={e => setCourseData({ ...courseData, price: parseFloat(e.target.value) })}
+                  onChange={e => setCourseData({ ...courseData, price: parseFloat(e.target.value) || 0 })}
                   placeholder="0"
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 bg-white"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
+              {/* File Uploads */}
+              <div>
+                <label className="block text-sm font-semibold mb-1 text-gray-900">
+                  Course Materials (PDF, PPT, DOC, etc.)
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
+                  <input
+                    type="file"
+                    id="file-upload"
+                    multiple
+                    accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.mp4,.webm"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="flex flex-col items-center cursor-pointer"
+                  >
+                    <Upload size={32} className="text-gray-500 mb-2" />
+                    <span className="text-sm font-semibold text-gray-800">
+                      {uploadingFiles ? 'Uploading...' : 'Click to upload files'}
+                    </span>
+                    <span className="text-xs text-gray-600 mt-1">
+                      PDF, PPT, DOC, XLS, images, videos (max 50MB each)
+                    </span>
+                  </label>
+                </div>
+
+                {/* Uploaded Files List */}
+                {materials.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {materials.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded px-3 py-2"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {getFileIcon(file.type)}
+                          <span className="text-sm text-gray-900 truncate">{file.name}</span>
+                          <span className="text-xs text-gray-600 whitespace-nowrap">
+                            {formatFileSize(file.size)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveMaterial(index)}
+                          className="text-red-500 hover:text-red-700 ml-2"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* YouTube Links */}
+              <div>
+                <label className="block text-sm font-semibold mb-1 text-gray-900">
+                  YouTube Video Links
+                </label>
+                <div className="flex gap-2">
+                  <div className="flex-1 flex items-center border border-gray-300 rounded overflow-hidden">
+                    <span className="pl-3 text-red-500">
+                      <Youtube size={18} />
+                    </span>
+                    <input
+                      type="url"
+                      value={newYoutubeLink}
+                      onChange={e => setNewYoutubeLink(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddYoutubeLink();
+                        }
+                      }}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      className="flex-1 px-3 py-2 text-gray-900 bg-white outline-none"
+                    />
+                  </div>
+                  <button
+                    onClick={handleAddYoutubeLink}
+                    className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded border border-red-200 font-medium"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {/* YouTube Links List */}
+                {youtubeLinks.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {youtubeLinks.map((link, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-red-50 border border-red-200 rounded px-3 py-2"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <Youtube size={16} className="text-red-500 flex-shrink-0" />
+                          <span className="text-sm text-gray-900 truncate">{link}</span>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveYoutubeLink(index)}
+                          className="text-red-500 hover:text-red-700 ml-2"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <Button onClick={handleCreateCourse} loading={loading}>
-                ✅ Create Course
+                Create Course
               </Button>
             </div>
           </div>
@@ -515,11 +689,32 @@ export default function CreateCoursePage() {
             {/* Course Created */}
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center gap-3">
               <CheckCircle className="text-green-600" size={24} />
-              <div>
+              <div className="flex-1">
                 <p className="font-bold text-green-900">{courseData.title}</p>
-                <p className="text-sm text-green-700">{courseData.description}</p>
+                <div className="text-sm text-green-800 prose prose-sm max-w-none">
+                  <ReactMarkdown>{courseData.description}</ReactMarkdown>
+                </div>
               </div>
             </div>
+
+            {/* Materials Summary */}
+            {(materials.length > 0 || youtubeLinks.length > 0) && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-blue-900 mb-2">Course Resources</h3>
+                <div className="flex flex-wrap gap-2">
+                  {materials.map((m, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 bg-white border border-blue-200 rounded px-2 py-1 text-xs text-gray-800">
+                      {getFileIcon(m.type)} {m.name}
+                    </span>
+                  ))}
+                  {youtubeLinks.map((link, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 bg-white border border-red-200 rounded px-2 py-1 text-xs text-gray-800">
+                      <Youtube size={12} className="text-red-500" /> Video {i + 1}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Sections */}
             <div className="space-y-4">
@@ -529,7 +724,7 @@ export default function CreateCoursePage() {
                   <div className="flex items-center justify-between">
                     <button
                       onClick={() => toggleSection(section.id)}
-                      className="flex items-center gap-2 font-bold hover:text-blue-600 flex-1"
+                      className="flex items-center gap-2 font-bold hover:text-blue-600 flex-1 text-gray-900"
                     >
                       {expandedSections.includes(section.id) ? (
                         <ChevronUp size={20} />
@@ -557,7 +752,7 @@ export default function CreateCoursePage() {
                           <div className="flex items-center justify-between">
                             <button
                               onClick={() => toggleModule(module.id)}
-                              className="flex items-center gap-2 font-semibold hover:text-blue-600 flex-1"
+                              className="flex items-center gap-2 font-semibold hover:text-blue-600 flex-1 text-gray-900"
                             >
                               {expandedModules.includes(module.id) ? (
                                 <ChevronUp size={18} />
@@ -569,7 +764,6 @@ export default function CreateCoursePage() {
                               {module.type === 'ASSIGNMENT' && <Video size={18} />}
                               <span>{module.title}</span>
 
-                              {/* Status Badge */}
                               {module.isGenerating && (
                                 <Loader2 className="animate-spin text-blue-600 ml-2" size={16} />
                               )}
@@ -601,16 +795,14 @@ export default function CreateCoursePage() {
                                      />
                                    ) : (
                                      <div className="space-y-3">
-                                       {/* Content Status Section */}
                                        <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                                         <p className="font-semibold text-blue-900">📝 Content Generated</p>
-                                         <p className="text-sm text-blue-700">{module.topic}</p>
-                                         <p className="text-xs text-blue-600 mt-1">
+                                         <p className="font-semibold text-blue-900">Content Generated</p>
+                                         <p className="text-sm text-blue-800">{module.topic}</p>
+                                         <p className="text-xs text-blue-700 mt-1">
                                            Status: <span className="font-semibold">{module.contentStatus}</span>
                                          </p>
                                        </div>
 
-                                       {/* Approval Button - Only show if GENERATED but not APPROVED */}
                                        {module.contentStatus === 'GENERATED' && (
                                          <button
                                            onClick={() => handleApproveContent(section.id, module.id)}
@@ -621,30 +813,27 @@ export default function CreateCoursePage() {
                                          </button>
                                        )}
 
-                                       {/* Approved Badge */}
                                        {module.contentStatus === 'APPROVED' && (
                                          <div className="bg-green-50 border border-green-200 rounded p-3">
                                            <p className="font-semibold text-green-900 flex items-center gap-2">
                                              <CheckCircle size={18} className="text-green-600" />
-                                             ✅ Content Approved
+                                             Content Approved
                                            </p>
                                          </div>
                                        )}
 
-                                       {/* Video Section */}
                                        {module.videoUrl && (
                                          <div className="bg-purple-50 border border-purple-200 rounded p-3">
-                                           <p className="text-sm font-medium text-purple-900 mb-2">🎬 Video:</p>
+                                           <p className="text-sm font-medium text-purple-900 mb-2">Video:</p>
                                            <video controls className="w-full max-w-md">
                                              <source src={`${backendOrigin}${module.videoUrl}`} />
                                            </video>
                                          </div>
                                        )}
 
-                                       {/* Audio Section */}
                                        {module.audioUrl && (
                                          <div className="bg-orange-50 border border-orange-200 rounded p-3">
-                                           <p className="text-sm font-medium text-orange-900 mb-2">🔊 Audio:</p>
+                                           <p className="text-sm font-medium text-orange-900 mb-2">Audio:</p>
                                            <AudioPlayer
                                              audioUrl={`${backendOrigin}${module.audioUrl}`}
                                            />
@@ -655,24 +844,23 @@ export default function CreateCoursePage() {
                                  </>
                                )}
 
-                               {/* QUIZ Type */}
                                {module.type === 'QUIZ' && (
                                  <>
                                    {module.contentStatus === 'APPROVED' ? (
                                      <div className="bg-green-50 border border-green-200 rounded p-3">
                                        <p className="font-semibold text-green-900 flex items-center gap-2">
                                          <CheckCircle size={18} className="text-green-600" />
-                                         ✅ Quiz Ready for Questions
+                                         Quiz Ready for Questions
                                        </p>
-                                       <p className="text-sm text-green-700 mt-1">This QUIZ module is approved and ready to accept quiz questions.</p>
+                                       <p className="text-sm text-green-800 mt-1">This quiz module is approved and ready to accept questions.</p>
                                      </div>
                                    ) : (
                                      <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
                                        <p className="font-semibold text-yellow-900 flex items-center gap-2">
                                          <AlertCircle size={18} className="text-yellow-600" />
-                                         ⏳ Waiting for Approval
+                                         Waiting for Approval
                                        </p>
-                                       <p className="text-sm text-yellow-700 mt-1">This QUIZ module needs to be approved before creating questions.</p>
+                                       <p className="text-sm text-yellow-800 mt-1">This quiz module needs to be approved before creating questions.</p>
                                      </div>
                                    )}
                                  </>
@@ -712,7 +900,7 @@ export default function CreateCoursePage() {
               <button
                 onClick={handleAddSection}
                 disabled={loadingSections}
-                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:text-blue-600 font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:text-blue-600 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 text-gray-800"
               >
                 <Plus size={20} /> Add Section
               </button>
@@ -721,11 +909,11 @@ export default function CreateCoursePage() {
             {/* Publish Button */}
             <div className="mt-8 flex gap-3">
               <Button onClick={handlePublishCourse} loading={submitting} variant="primary">
-                🚀 Publish Course
+                Publish Course
               </Button>
               <button
                 onClick={() => router.back()}
-                className="px-6 py-2 border rounded hover:bg-gray-50"
+                className="px-6 py-2 border rounded hover:bg-gray-50 text-gray-800"
               >
                 Cancel
               </button>

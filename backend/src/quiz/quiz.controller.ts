@@ -10,7 +10,8 @@ import {
   Request,
 } from '@nestjs/common';
 import { QuizService } from './quiz.service';
-import { CreateQuizDto, UpdateQuizDto, CreateQuestionDto } from './dto';
+import { CreateQuizDto, UpdateQuizDto, CreateQuestionDto, UpdateQuestionDto } from './dto';
+import { SubmitQuizDto, GradeQuizAttemptDto } from './dto/quiz-body.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -82,7 +83,7 @@ export class QuizController {
   @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
   updateQuestion(
     @Param('questionId') questionId: string,
-    @Body() updateQuestionDto: any,
+    @Body() updateQuestionDto: UpdateQuestionDto,
     @Request() req,
   ) {
     return this.quizService.updateQuestion(questionId, updateQuestionDto, req.user);
@@ -103,7 +104,7 @@ export class QuizController {
   @Post(':id/submit')
   submitQuiz(
     @Param('id') id: string,
-    @Body() body: { answers: { questionId: string; answer: string | string[] }[]; timeSpent: number },
+    @Body() body: SubmitQuizDto,
     @Request() req,
   ) {
     return this.quizService.submitQuizAttempt(id, req.user, body.answers, body.timeSpent);
@@ -143,7 +144,7 @@ export class QuizController {
   gradeQuizAttempt(
     @Param('id') id: string,
     @Param('attemptId') attemptId: string,
-    @Body() body: { grades: Record<string, { points: number; feedback: string }> },
+    @Body() body: GradeQuizAttemptDto,
     @Request() req,
   ) {
     return this.quizService.gradeQuizAttempt(id, attemptId, body.grades, req.user);

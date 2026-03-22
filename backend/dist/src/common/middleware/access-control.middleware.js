@@ -24,7 +24,6 @@ let AccessControlMiddleware = class AccessControlMiddleware {
         if (!user) {
             return next();
         }
-        req.user = user;
         next();
     }
 };

@@ -18,7 +18,7 @@ export declare class SubscriptionPaymentsService {
             billingCycle: string;
         };
         keyId: any;
-        status: "pending" | "completed" | "active" | "cancelled" | "expired" | "created" | "authenticated" | "halted";
+        status: "pending" | "completed" | "active" | "created" | "authenticated" | "halted" | "cancelled" | "expired";
     }>;
     handleSubscriptionWebhook(payload: any, signature: string): Promise<{
         success: boolean;

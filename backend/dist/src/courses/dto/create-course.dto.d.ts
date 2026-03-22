@@ -1,3 +1,8 @@
+export declare class CourseMaterialDto {
+    name: string;
+    url: string;
+    type: string;
+}
 export declare class CreateCourseDto {
     title: string;
     slug: string;
@@ -5,6 +10,8 @@ export declare class CreateCourseDto {
     thumbnail?: string;
     videoIntro?: string;
     price?: number;
-    published?: boolean;
+    status?: string;
     organizationId?: string;
+    materials?: CourseMaterialDto[];
+    youtubeLinks?: string[];
 }

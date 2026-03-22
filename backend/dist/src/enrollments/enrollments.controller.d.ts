@@ -53,18 +53,20 @@ export declare class EnrollmentsController {
             })[];
         } & {
             id: string;
-            description: string;
-            updatedAt: Date;
             slug: string;
             createdAt: Date;
+            updatedAt: Date;
             status: import(".prisma/client").$Enums.CourseStatus;
             rejectionReason: string | null;
             organizationId: string | null;
             title: string;
+            description: string;
             thumbnail: string | null;
             videoIntro: string | null;
             price: number;
             approvedBy: string | null;
+            materials: import("@prisma/client/runtime/client").JsonValue | null;
+            youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
             instructorId: string;
         };
     } & {
@@ -74,44 +76,16 @@ export declare class EnrollmentsController {
         userId: string;
         accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
     })[]>;
-    getPendingEnrollments(req: any): Promise<({
-        course: {
-            id: string;
-            title: string;
-        };
-        user: {
-            id: string;
-            name: string;
-            email: string;
-        };
-    } & {
-        id: string;
-        createdAt: Date;
-        courseId: string;
-        userId: string;
-        accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
-    })[]>;
-    approveEnrollment(enrollmentId: string, req: any): Promise<{
-        id: string;
-        createdAt: Date;
-        courseId: string;
-        userId: string;
-        accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
-    }>;
-    rejectEnrollment(enrollmentId: string, body: {
-        reason?: string;
-    }, req: any): Promise<{
-        id: string;
-        createdAt: Date;
-        courseId: string;
-        userId: string;
-        accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
-    }>;
     getCourseStudents(courseId: string, req: any): Promise<({
         user: {
             id: string;
             name: string;
             email: string;
+            phone: string;
+            rollNo: string;
+            year: string;
+            branch: string;
+            course: string;
         };
     } & {
         id: string;
@@ -120,4 +94,8 @@ export declare class EnrollmentsController {
         userId: string;
         accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
     })[]>;
+    removeStudent(enrollmentId: string, req: any): Promise<{
+        success: boolean;
+        message: string;
+    }>;
 }

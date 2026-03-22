@@ -13,10 +13,33 @@ export class CoursesService {
   ) {}
 
   async create(createCourseDto: CreateCourseDto, user: User) {
+    const { materials, youtubeLinks, ...courseFields } = createCourseDto as any;
+
     const data: any = {
-      ...createCourseDto,
+      ...courseFields,
       instructorId: user.id,
     };
+
+    // Handle legacy 'published' field from frontend
+    if ('published' in data) {
+      if (data.published) {
+        data.status = 'APPROVED';
+      }
+      delete data.published;
+    }
+
+    // Set default status if not provided
+    if (!data.status) {
+      data.status = 'PENDING_APPROVAL';
+    }
+
+    if (materials && materials.length > 0) {
+      data.materials = materials;
+    }
+
+    if (youtubeLinks && youtubeLinks.length > 0) {
+      data.youtubeLinks = youtubeLinks;
+    }
 
     if (user.role === Role.TEACHER || user.role === Role.MANAGER) {
       data.organizationId = user.organizationId;
@@ -177,9 +200,24 @@ export class CoursesService {
       throw new ForbiddenException('You can only update your own courses');
     }
 
+    const { materials, youtubeLinks, published, ...updateFields } = updateCourseDto as any;
+    const data: any = { ...updateFields };
+
+    // Handle legacy 'published' field
+    if (published !== undefined) {
+      data.status = published ? 'APPROVED' : course.status;
+    }
+
+    if (materials !== undefined) {
+      data.materials = materials;
+    }
+    if (youtubeLinks !== undefined) {
+      data.youtubeLinks = youtubeLinks;
+    }
+
     return this.prisma.course.update({
       where: { id },
-      data: updateCourseDto,
+      data,
     });
   }
 

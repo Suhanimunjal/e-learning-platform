@@ -12,14 +12,13 @@ export class AccessControlMiddleware implements NestMiddleware {
       return next();
     }
 
-    // Check if user is authenticated
+    // Check if user is authenticated (populated by JWT strategy)
     const user = (req as any).user;
     if (!user) {
       return next();
     }
 
-    // Store user in request for later use
-    req.user = user;
+    // User is already on req from Passport/JWT strategy
     next();
   }
 }

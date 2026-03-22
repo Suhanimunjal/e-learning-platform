@@ -1,6 +1,8 @@
 import { ModulesService } from './modules.service';
 import { CreateModuleDto } from './dto/create-module.dto';
+import { UpdateModuleDto } from './dto/update-module.dto';
 import { GenerateContentDto } from './dto/generate-content.dto';
+import { UpdateContentBodyDto, GenerateVideoBodyDto, RejectVideoBodyDto } from './dto/module-body.dto';
 export declare class ModulesController {
     private readonly modulesService;
     constructor(modulesService: ModulesService);
@@ -74,6 +76,8 @@ export declare class ModulesController {
                 videoIntro: string | null;
                 price: number;
                 approvedBy: string | null;
+                materials: import("@prisma/client/runtime/client").JsonValue | null;
+                youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
                 instructorId: string;
             };
         } & {
@@ -109,7 +113,7 @@ export declare class ModulesController {
         retryCount: number;
         sectionId: string;
     }>;
-    update(id: string, updateModuleDto: any, req: any): Promise<{
+    update(id: string, updateModuleDto: UpdateModuleDto, req: any): Promise<{
         id: string;
         rejectionReason: string | null;
         title: string;
@@ -171,9 +175,7 @@ export declare class ModulesController {
         quiz: import("../ai/content-generator-enhanced.service").QuizQuestion[];
         assignment: import("../ai/content-generator-enhanced.service").AssignmentSection;
     }>;
-    updateContent(id: string, body: {
-        content: any;
-    }, req: any): Promise<{
+    updateContent(id: string, body: UpdateContentBodyDto, req: any): Promise<{
         id: string;
         rejectionReason: string | null;
         title: string;
@@ -241,9 +243,7 @@ export declare class ModulesController {
         canGenerateVideo: boolean;
         hasVideo: boolean;
     }>;
-    generateVideo(id: string, body: {
-        voiceId?: string;
-    }, req: any): Promise<{
+    generateVideo(id: string, body: GenerateVideoBodyDto, req: any): Promise<{
         status: string;
         content: any;
         audioUrl: string;
@@ -263,9 +263,7 @@ export declare class ModulesController {
         nextModuleUnlocked: boolean;
         nextModuleId: string;
     }>;
-    rejectVideo(id: string, body: {
-        reason?: string;
-    }, req: any): Promise<{
+    rejectVideo(id: string, body: RejectVideoBodyDto, req: any): Promise<{
         id: string;
         rejectionReason: string | null;
         title: string;

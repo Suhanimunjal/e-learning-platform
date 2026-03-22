@@ -51,19 +51,19 @@ async function main() {
     await prisma.quiz.deleteMany();
     await prisma.submission.deleteMany();
     await prisma.assignment.deleteMany();
+    await prisma.module.deleteMany();
+    await prisma.section.deleteMany();
     await prisma.enrollment.deleteMany();
     await prisma.aIGenerationJob.deleteMany();
     await prisma.analyticsEvent.deleteMany();
-    await prisma.section.deleteMany();
-    await prisma.module.deleteMany();
-    await prisma.course.deleteMany();
-    await prisma.user.deleteMany();
-    await prisma.organization.deleteMany();
-    await prisma.subscription.deleteMany();
-    await prisma.subscriptionPlan.deleteMany();
-    await prisma.order.deleteMany();
     await prisma.notification.deleteMany();
     await prisma.review.deleteMany();
+    await prisma.order.deleteMany();
+    await prisma.course.deleteMany();
+    await prisma.subscription.deleteMany();
+    await prisma.user.deleteMany();
+    await prisma.organization.deleteMany();
+    await prisma.subscriptionPlan.deleteMany();
     await prisma.plugin.deleteMany();
     console.log('Cleaned existing data\n');
     console.log('Creating organizations...');
@@ -96,6 +96,16 @@ async function main() {
             organizationId: org1.id,
         },
     });
+    const admin2 = await prisma.user.create({
+        data: {
+            email: 'tanubhavj.mca25@cs.du.ac.in',
+            name: 'Tanubhav Jain',
+            password: hashedPassword,
+            role: client_1.Role.ADMIN,
+            status: client_1.UserStatus.ACTIVE,
+            organizationId: org1.id,
+        },
+    });
     const teacher1 = await prisma.user.create({
         data: {
             email: 'teacher@example.com',
@@ -103,6 +113,7 @@ async function main() {
             password: hashedPassword,
             role: client_1.Role.TEACHER,
             status: client_1.UserStatus.ACTIVE,
+            phone: '+91 9876543210',
             organizationId: org1.id,
         },
     });
@@ -113,6 +124,7 @@ async function main() {
             password: hashedPassword,
             role: client_1.Role.TEACHER,
             status: client_1.UserStatus.ACTIVE,
+            phone: '+91 9123456780',
             organizationId: org2.id,
         },
     });
@@ -122,7 +134,12 @@ async function main() {
             name: 'Alice Williams',
             password: hashedPassword,
             role: client_1.Role.STUDENT,
-            status: client_1.UserStatus.PENDING_APPROVAL,
+            status: client_1.UserStatus.ACTIVE,
+            phone: '+91 8765432109',
+            rollNo: 'CS2025001',
+            year: '2nd Year',
+            branch: 'Computer Science',
+            course: 'MCA',
             organizationId: org1.id,
         },
     });
@@ -132,7 +149,12 @@ async function main() {
             name: 'Bob Davis',
             password: hashedPassword,
             role: client_1.Role.STUDENT,
-            status: client_1.UserStatus.PENDING_APPROVAL,
+            status: client_1.UserStatus.ACTIVE,
+            phone: '+91 7654321098',
+            rollNo: 'CS2025002',
+            year: '1st Year',
+            branch: 'Computer Science',
+            course: 'B.Tech',
             organizationId: org1.id,
         },
     });
@@ -142,11 +164,16 @@ async function main() {
             name: 'Carol Martinez',
             password: hashedPassword,
             role: client_1.Role.STUDENT,
-            status: client_1.UserStatus.PENDING_APPROVAL,
+            status: client_1.UserStatus.ACTIVE,
+            phone: '+91 6543210987',
+            rollNo: 'EC2025003',
+            year: '3rd Year',
+            branch: 'Electronics',
+            course: 'B.Tech',
             organizationId: org2.id,
         },
     });
-    console.log('Created 6 users\n');
+    console.log('Created 7 users\n');
     console.log('Creating subscription plans...');
     await prisma.subscriptionPlan.createMany({
         data: [
@@ -349,10 +376,10 @@ async function main() {
     console.log('Creating enrollments...');
     await prisma.enrollment.createMany({
         data: [
-            { userId: student1.id, courseId: course1.id },
-            { userId: student1.id, courseId: course2.id },
-            { userId: student2.id, courseId: course1.id },
-            { userId: student3.id, courseId: course3.id },
+            { userId: student1.id, courseId: course1.id, accessStatus: 'APPROVED' },
+            { userId: student1.id, courseId: course2.id, accessStatus: 'APPROVED' },
+            { userId: student2.id, courseId: course1.id, accessStatus: 'APPROVED' },
+            { userId: student3.id, courseId: course3.id, accessStatus: 'APPROVED' },
         ],
     });
     console.log('Created 4 enrollments\n');
@@ -396,16 +423,6 @@ async function main() {
         });
     }
     console.log('Created 10 plugins\n');
-    console.log('Creating notifications...');
-    await prisma.notification.createMany({
-        data: [
-            { userId: student1.id, type: 'enrollment', title: 'Enrolled in Course', message: 'You have been enrolled in Introduction to JavaScript' },
-            { userId: student1.id, type: 'quiz', title: 'Quiz Available', message: 'A new quiz is available in JavaScript Basics Quiz' },
-            { userId: student2.id, type: 'enrollment', title: 'Enrolled in Course', message: 'You have been enrolled in Introduction to JavaScript' },
-            { userId: teacher1.id, type: 'enrollment', title: 'New Student', message: 'Alice Williams enrolled in your course' },
-        ],
-    });
-    console.log('Created notifications\n');
     console.log('==================================================');
     console.log('DATABASE SEED COMPLETED SUCCESSFULLY!');
     console.log('==================================================');

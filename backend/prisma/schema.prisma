@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,12 +7,12 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(uuid())
-  email           String   @unique
+  id              String                 @id @default(uuid())
+  email           String                 @unique
   name            String
   password        String?
-  role            Role     @default(STUDENT)
-  status          UserStatus @default(PENDING_APPROVAL)
+  role            Role                   @default(STUDENT)
+  status          UserStatus             @default(PENDING_APPROVAL)
   avatar          String?
   organizationId  String?
   rejectionReason String?
@@ -22,11 +21,11 @@ model User {
   year            String?
   branch          String?
   course          String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  organization    Organization? @relation(fields: [organizationId], references: [id])
-  coursesCreated  Course[]      @relation("InstructorCourses")
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  organization    Organization?          @relation(fields: [organizationId], references: [id])
+  coursesCreated  Course[]               @relation("InstructorCourses")
   enrollments     Enrollment[]
   orders          Order[]
   submissions     Submission[]
@@ -40,7 +39,7 @@ model User {
   analyticsEvents AnalyticsEvent[]
   reviews         Review[]
   pendingCourses  PendingCourseRequest[]
-  
+
   @@index([email])
   @@index([role])
   @@index([status])
@@ -79,22 +78,24 @@ model Organization {
 }
 
 model Course {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   title           String
-  slug            String   @unique
+  slug            String        @unique
   description     String
   thumbnail       String?
   videoIntro      String?
-  price           Float    @default(0)
+  price           Float         @default(0)
   instructorId    String
   organizationId  String?
-  status          CourseStatus @default(PENDING_APPROVAL)
+  status          CourseStatus  @default(PENDING_APPROVAL)
   approvedBy      String?
   rejectionReason String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  materials       Json?
+  youtubeLinks    Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
   
-  instructor      User     @relation("InstructorCourses", fields: [instructorId], references: [id])
+  instructor      User          @relation("InstructorCourses", fields: [instructorId], references: [id])
   organization    Organization? @relation(fields: [organizationId], references: [id])
   sections        Section[]
   enrollments     Enrollment[]
@@ -165,7 +166,6 @@ model Module {
   hasVideo    Boolean  @default(false)
   videoGenId String?
   
-  // Video Generation Fields
   topic              String?
   generatedContent   Json?
   contentStatus      ContentStatus @default(PENDING)
@@ -174,12 +174,10 @@ model Module {
   transcript         String?
   voiceId            String?
   
-  // Approval workflow
   approvedAt          DateTime?
   approvedBy          String?
   rejectionReason     String?
   
-  // Content generation tracking
   contentGeneratedAt DateTime?
   videoGeneratedAt   DateTime?
   retryCount         Int @default(0)
@@ -279,11 +277,11 @@ model Submission {
 }
 
 model Enrollment {
-  id           String   @id @default(uuid())
+  id           String           @id @default(uuid())
   userId       String
   courseId     String
   accessStatus EnrollmentStatus @default(PENDING)
-  createdAt    DateTime @default(now())
+  createdAt    DateTime         @default(now())
   
   user         User     @relation(fields: [userId], references: [id])
   course       Course   @relation(fields: [courseId], references: [id])
@@ -344,13 +342,13 @@ model SubscriptionPlan {
   name              String
   description       String?
   price             Float
-  billingCycle      String   @default("monthly") // monthly, yearly, quarterly
-  features          Json?    // JSON array of features included in the plan
-  maxCourses        Int      @default(-1) // -1 means unlimited
-  maxStudents       Int      @default(-1) // -1 means unlimited
-  supportLevel      String   @default("basic") // basic, premium, enterprise
+  billingCycle      String   @default("monthly")
+  features          Json?
+  maxCourses        Int      @default(-1)
+  maxStudents       Int      @default(-1)
+  supportLevel      String   @default("basic")
   isActive          Boolean  @default(true)
-  razorpayPlanId    String?  // Razorpay Plan ID for recurring payments
+  razorpayPlanId    String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   
@@ -364,7 +362,7 @@ model Subscription {
   id                   String   @id @default(uuid())
   userId               String
   planId               String
-  status               String   @default("active") // active, cancelled, expired, paused
+  status               String   @default("active")
   currentPeriodStart   DateTime @default(now())
   currentPeriodEnd     DateTime
   nextBillingDate      DateTime?
@@ -510,12 +508,12 @@ model AnalyticsEvent {
 
 model ActivityLog {
   id          String   @id @default(uuid())
-  action      String   // e.g., 'USER_REGISTERED', 'COURSE_APPROVED', 'ENROLLMENT_REQUESTED'
-  entityType  String   // e.g., 'USER', 'COURSE', 'ENROLLMENT'
+  action      String
+  entityType  String
   entityId    String?
-  userId      String?  // The user who performed the action
-  targetUserId String?  // The user affected by the action (if applicable)
-  metadata    Json?    // Additional details
+  userId      String?
+  targetUserId String?
+  metadata    Json?
   createdAt   DateTime @default(now())
 
   @@index([action])
@@ -549,4 +547,28 @@ enum PluginCategory {
   INTEGRATIONS
   AI
   UTILITY
+}
+
+model BlacklistedUser {
+  id              String     @id @default(uuid())
+  originalUserId  String     @unique
+  email           String
+  name            String
+  password        String?
+  role            Role
+  avatar          String?
+  organizationId  String?
+  rejectionReason String?
+  phone           String?
+  rollNo          String?
+  year            String?
+  branch          String?
+  course          String?
+  reason          String
+  blacklistedAt   DateTime   @default(now())
+  blacklistedBy   String?
+
+  @@index([email])
+  @@index([role])
+  @@index([blacklistedAt])
 }

@@ -24,6 +24,7 @@ const email_service_1 = require("../common/services/email.service");
 const activity_log_service_1 = require("../common/services/activity-log.service");
 const generate_ai_course_dto_1 = require("./dto/generate-ai-course.dto");
 const admin_course_generation_service_1 = require("./services/admin-course-generation.service");
+const admin_dto_1 = require("./dto/admin.dto");
 let AdminController = class AdminController {
     constructor(prisma, otpService, emailService, activityLogService, adminCourseGenerationService) {
         this.prisma = prisma;
@@ -31,6 +32,9 @@ let AdminController = class AdminController {
         this.emailService = emailService;
         this.activityLogService = activityLogService;
         this.adminCourseGenerationService = adminCourseGenerationService;
+    }
+    async notify(userId, type, title, message) {
+        await this.prisma.notification.create({ data: { userId, type, title, message } });
     }
     async generateAiCourse(body, req) {
         return this.adminCourseGenerationService.startGeneration(body, req.user.id);
@@ -98,6 +102,7 @@ let AdminController = class AdminController {
                 id: true,
                 email: true,
                 name: true,
+                phone: true,
                 role: true,
                 status: true,
                 createdAt: true,
@@ -113,6 +118,7 @@ let AdminController = class AdminController {
             select: { id: true, email: true, name: true, status: true },
         });
         await this.emailService.sendTeacherApproved(user.email, user.name);
+        await this.notify(user.id, 'account', 'Account Approved', 'Your account has been approved. You can now access all features.');
         await this.activityLogService.log({
             action: 'USER_APPROVED',
             entityType: 'USER',
@@ -130,6 +136,7 @@ let AdminController = class AdminController {
             select: { id: true, email: true, name: true, status: true, rejectionReason: true },
         });
         await this.emailService.sendTeacherRejected(user.email, user.name, body.reason);
+        await this.notify(user.id, 'account', 'Account Rejected', body.reason || 'Your account application has been rejected by the administrator.');
         await this.activityLogService.log({
             action: 'USER_REJECTED',
             entityType: 'USER',
@@ -156,6 +163,7 @@ let AdminController = class AdminController {
             data: { status: 'APPROVED', approvedBy: req.user.id },
             select: { id: true, title: true, status: true, instructorId: true },
         });
+        await this.notify(course.instructorId, 'course', 'Course Approved', `Your course "${course.title}" has been approved and is now visible to students.`);
         await this.activityLogService.log({
             action: 'COURSE_APPROVED',
             entityType: 'COURSE',
@@ -172,6 +180,7 @@ let AdminController = class AdminController {
             data: { status: 'REJECTED', rejectionReason: body.reason },
             select: { id: true, title: true, status: true, rejectionReason: true, instructorId: true },
         });
+        await this.notify(course.instructorId, 'course', 'Course Rejected', `Your course "${course.title}" has been rejected. ${body.reason || ''}`);
         await this.activityLogService.log({
             action: 'COURSE_REJECTED',
             entityType: 'COURSE',
@@ -201,6 +210,7 @@ let AdminController = class AdminController {
         const course = await this.prisma.course.findUnique({ where: { id: enrollment.courseId } });
         if (user && course) {
             await this.emailService.sendEnrollmentApproved(user.email, user.name, course.title);
+            await this.notify(user.id, 'enrollment', 'Enrollment Approved', `Your enrollment in "${course.title}" has been approved. You can now access the course.`);
         }
         await this.activityLogService.log({
             action: 'ENROLLMENT_APPROVED',
@@ -234,9 +244,14 @@ let AdminController = class AdminController {
                 id: true,
                 email: true,
                 name: true,
+                phone: true,
                 role: true,
                 status: true,
+                rejectionReason: true,
                 createdAt: true,
+                updatedAt: true,
+                organization: { select: { id: true, name: true } },
+                _count: { select: { coursesCreated: true } },
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -251,8 +266,11 @@ let AdminController = class AdminController {
                 id: true,
                 name: true,
                 email: true,
+                phone: true,
                 role: true,
                 status: true,
+                rejectionReason: true,
+                avatar: true,
                 createdAt: true,
                 updatedAt: true,
                 organization: {
@@ -281,17 +299,27 @@ let AdminController = class AdminController {
         return teacher;
     }
     async getStudents(status) {
-        const whereClause = status
-            ? { role: client_1.Role.STUDENT, status }
-            : { role: client_1.Role.STUDENT };
+        const whereClause = { role: client_1.Role.STUDENT };
+        if (status) {
+            whereClause.status = status;
+        }
         return this.prisma.user.findMany({
             where: whereClause,
             select: {
                 id: true,
                 name: true,
                 email: true,
+                phone: true,
+                rollNo: true,
+                year: true,
+                branch: true,
+                course: true,
                 status: true,
+                rejectionReason: true,
                 createdAt: true,
+                updatedAt: true,
+                organization: { select: { id: true, name: true } },
+                _count: { select: { enrollments: true } },
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -306,8 +334,15 @@ let AdminController = class AdminController {
                 id: true,
                 name: true,
                 email: true,
+                phone: true,
+                rollNo: true,
+                year: true,
+                branch: true,
+                course: true,
                 role: true,
                 status: true,
+                rejectionReason: true,
+                avatar: true,
                 createdAt: true,
                 updatedAt: true,
                 organization: {
@@ -341,6 +376,95 @@ let AdminController = class AdminController {
         }
         return student;
     }
+    async cleanupRejectedStudents(req) {
+        const rejectedStudents = await this.prisma.user.findMany({
+            where: {
+                role: client_1.Role.STUDENT,
+                status: client_1.UserStatus.REJECTED,
+            },
+            select: { id: true, email: true, name: true },
+        });
+        if (rejectedStudents.length === 0) {
+            return { success: true, deleted: 0, message: 'No rejected students to clean up' };
+        }
+        const studentIds = rejectedStudents.map(s => s.id);
+        await this.prisma.enrollment.deleteMany({
+            where: { userId: { in: studentIds } },
+        });
+        await this.prisma.progress.deleteMany({
+            where: { userId: { in: studentIds } },
+        });
+        await this.prisma.quizAttempt.deleteMany({
+            where: { userId: { in: studentIds } },
+        });
+        await this.prisma.submission.deleteMany({
+            where: { userId: { in: studentIds } },
+        });
+        await this.prisma.analyticsEvent.deleteMany({
+            where: { userId: { in: studentIds } },
+        });
+        await this.prisma.notification.deleteMany({
+            where: { userId: { in: studentIds } },
+        });
+        const result = await this.prisma.user.deleteMany({
+            where: {
+                role: client_1.Role.STUDENT,
+                status: client_1.UserStatus.REJECTED,
+            },
+        });
+        await this.activityLogService.log({
+            action: 'REJECTED_STUDENTS_CLEANED',
+            entityType: 'USER',
+            userId: req.user.id,
+            metadata: {
+                deletedCount: result.count,
+                deletedEmails: rejectedStudents.map(s => s.email),
+            },
+        });
+        return {
+            success: true,
+            deleted: result.count,
+            message: `Deleted ${result.count} rejected student application(s)`,
+        };
+    }
+    async cleanupAllRejected(req) {
+        const deleted = {};
+        const rejectedStudents = await this.prisma.user.findMany({
+            where: { role: client_1.Role.STUDENT, status: client_1.UserStatus.REJECTED },
+            select: { id: true },
+        });
+        if (rejectedStudents.length > 0) {
+            const ids = rejectedStudents.map(s => s.id);
+            await this.prisma.enrollment.deleteMany({ where: { userId: { in: ids } } });
+            await this.prisma.progress.deleteMany({ where: { userId: { in: ids } } });
+            await this.prisma.quizAttempt.deleteMany({ where: { userId: { in: ids } } });
+            await this.prisma.submission.deleteMany({ where: { userId: { in: ids } } });
+            await this.prisma.analyticsEvent.deleteMany({ where: { userId: { in: ids } } });
+            await this.prisma.notification.deleteMany({ where: { userId: { in: ids } } });
+            const r = await this.prisma.user.deleteMany({ where: { role: client_1.Role.STUDENT, status: client_1.UserStatus.REJECTED } });
+            deleted.students = r.count;
+        }
+        const rejectedTeachers = await this.prisma.user.findMany({
+            where: { role: client_1.Role.TEACHER, status: client_1.UserStatus.REJECTED },
+            select: { id: true },
+        });
+        if (rejectedTeachers.length > 0) {
+            const ids = rejectedTeachers.map(t => t.id);
+            await this.prisma.analyticsEvent.deleteMany({ where: { userId: { in: ids } } });
+            await this.prisma.notification.deleteMany({ where: { userId: { in: ids } } });
+            const r = await this.prisma.user.deleteMany({ where: { role: client_1.Role.TEACHER, status: client_1.UserStatus.REJECTED } });
+            deleted.teachers = r.count;
+        }
+        const r = await this.prisma.course.deleteMany({ where: { status: client_1.CourseStatus.REJECTED } });
+        deleted.courses = r.count;
+        await this.activityLogService.log({
+            action: 'ALL_REJECTED_CLEANED',
+            entityType: 'SYSTEM',
+            userId: req.user.id,
+            metadata: deleted,
+        });
+        return { success: true, deleted, message: 'All rejected items cleaned up' };
+    }
     async getStats() {
         const [pendingApprovals, totalUsers, totalTeachers, totalStudents, totalCourses, blacklistedUsers, blacklistedCourses] = await Promise.all([
             this.prisma.user.count({ where: { status: client_1.UserStatus.PENDING_APPROVAL, role: client_1.Role.TEACHER } }),
@@ -367,15 +491,24 @@ let AdminController = class AdminController {
             data: { status: client_1.UserStatus.BLACKLISTED, rejectionReason: body.reason },
             select: { id: true, email: true, name: true, role: true, status: true },
         });
+        let blacklistedCourses = 0;
+        if (user.role === client_1.Role.TEACHER) {
+            const result = await this.prisma.course.updateMany({
+                where: { instructorId: userId, status: { not: client_1.CourseStatus.BLACKLISTED } },
+                data: { status: client_1.CourseStatus.BLACKLISTED, rejectionReason: `Instructor blacklisted: ${body.reason}` },
+            });
+            blacklistedCourses = result.count;
+        }
+        await this.notify(user.id, 'account', 'Account Blacklisted', `Your account has been suspended. ${body.reason || 'Contact support for details.'}`);
         await this.activityLogService.log({
             action: 'USER_BLACKLISTED',
             entityType: 'USER',
             entityId: user.id,
             userId: req.user.id,
             targetUserId: user.id,
-            metadata: { email: user.email, name: user.name, reason: body.reason },
+            metadata: { email: user.email, name: user.name, role: user.role, reason: body.reason, blacklistedCourses },
         });
-        return { success: true, user };
+        return { success: true, user, blacklistedCourses };
     }
     async unblacklistUser(userId, req) {
         const user = await this.prisma.user.update({
@@ -383,15 +516,24 @@ let AdminController = class AdminController {
             data: { status: client_1.UserStatus.ACTIVE, rejectionReason: null },
             select: { id: true, email: true, name: true, role: true, status: true },
         });
+        let restoredCourses = 0;
+        if (user.role === client_1.Role.TEACHER) {
+            const result = await this.prisma.course.updateMany({
+                where: { instructorId: userId, status: client_1.CourseStatus.BLACKLISTED },
+                data: { status: client_1.CourseStatus.APPROVED, rejectionReason: null },
+            });
+            restoredCourses = result.count;
+        }
+        await this.notify(user.id, 'account', 'Account Restored', 'Your account has been reactivated. You can now access all features.');
         await this.activityLogService.log({
             action: 'USER_UNBLACKLISTED',
             entityType: 'USER',
             entityId: user.id,
             userId: req.user.id,
             targetUserId: user.id,
-            metadata: { email: user.email, name: user.name },
+            metadata: { email: user.email, name: user.name, restoredCourses },
         });
-        return { success: true, user };
+        return { success: true, user, restoredCourses };
     }
     async blacklistCourse(courseId, body, req) {
         const course = await this.prisma.course.update({
@@ -399,6 +541,7 @@ let AdminController = class AdminController {
             data: { status: client_1.CourseStatus.BLACKLISTED, rejectionReason: body.reason },
             select: { id: true, title: true, status: true, instructorId: true },
         });
+        await this.notify(course.instructorId, 'course', 'Course Blacklisted', `Your course "${course.title}" has been hidden. ${body.reason || ''}`);
         await this.activityLogService.log({
             action: 'COURSE_BLACKLISTED',
             entityType: 'COURSE',
@@ -424,6 +567,46 @@ let AdminController = class AdminController {
             metadata: { title: course.title },
         });
         return { success: true, course };
+    }
+    async deleteCourse(courseId, req) {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+            select: { id: true, title: true, instructorId: true },
+        });
+        if (!course) {
+            throw new common_1.NotFoundException('Course not found');
+        }
+        const sections = await this.prisma.section.findMany({ where: { courseId }, select: { id: true } });
+        const sectionIds = sections.map(s => s.id);
+        if (sectionIds.length > 0) {
+            const modules = await this.prisma.module.findMany({ where: { sectionId: { in: sectionIds } }, select: { id: true } });
+            const moduleIds = modules.map(m => m.id);
+            if (moduleIds.length > 0) {
+                await this.prisma.progress.deleteMany({ where: { moduleId: { in: moduleIds } } });
+                await this.prisma.quizAttempt.deleteMany({ where: { quiz: { moduleId: { in: moduleIds } } } });
+                await this.prisma.question.deleteMany({ where: { quiz: { moduleId: { in: moduleIds } } } });
+                await this.prisma.quiz.deleteMany({ where: { moduleId: { in: moduleIds } } });
+                await this.prisma.submission.deleteMany({ where: { assignment: { moduleId: { in: moduleIds } } } });
+                await this.prisma.assignment.deleteMany({ where: { moduleId: { in: moduleIds } } });
+            }
+            await this.prisma.module.deleteMany({ where: { sectionId: { in: sectionIds } } });
+        }
+        await this.prisma.section.deleteMany({ where: { courseId } });
+        await this.prisma.enrollment.deleteMany({ where: { courseId } });
+        await this.prisma.review.deleteMany({ where: { courseId } });
+        await this.prisma.order.deleteMany({ where: { courseId } });
+        await this.prisma.discussion.deleteMany({ where: { courseId } });
+        await this.prisma.certificate.deleteMany({ where: { courseId } });
+        await this.prisma.course.delete({ where: { id: courseId } });
+        await this.activityLogService.log({
+            action: 'COURSE_DELETED',
+            entityType: 'COURSE',
+            entityId: courseId,
+            userId: req.user.id,
+            targetUserId: course.instructorId,
+            metadata: { title: course.title },
+        });
+        return { success: true, message: `Course "${course.title}" deleted permanently` };
     }
 };
 exports.AdminController = AdminController;
@@ -473,7 +656,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [admin_dto_1.RegisterTeacherBodyDto, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "registerTeacher", null);
 __decorate([
@@ -496,7 +679,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, admin_dto_1.RejectUserBodyDto, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "rejectUser", null);
 __decorate([
@@ -519,7 +702,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, admin_dto_1.RejectCourseBodyDto, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "rejectCourse", null);
 __decorate([
@@ -572,6 +755,20 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getStudentById", null);
 __decorate([
+    (0, common_1.Delete)('students/cleanup-rejected'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "cleanupRejectedStudents", null);
+__decorate([
+    (0, common_1.Delete)('cleanup-all-rejected'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "cleanupAllRejected", null);
+__decorate([
     (0, common_1.Get)('stats'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -583,7 +780,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, admin_dto_1.BlacklistUserBodyDto, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "blacklistUser", null);
 __decorate([
@@ -600,7 +797,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, admin_dto_1.BlacklistCourseBodyDto, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "blacklistCourse", null);
 __decorate([
@@ -611,6 +808,14 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "unblacklistCourse", null);
+__decorate([
+    (0, common_1.Delete)('courses/:courseId'),
+    __param(0, (0, common_1.Param)('courseId')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "deleteCourse", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

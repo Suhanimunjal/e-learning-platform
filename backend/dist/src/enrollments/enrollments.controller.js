@@ -29,17 +29,11 @@ let EnrollmentsController = class EnrollmentsController {
     getMyCourses(req) {
         return this.enrollmentsService.getMyCourses(req.user);
     }
-    getPendingEnrollments(req) {
-        return this.enrollmentsService.getPendingEnrollments(req.user.id);
-    }
-    approveEnrollment(enrollmentId, req) {
-        return this.enrollmentsService.approveEnrollment(enrollmentId, req.user.id);
-    }
-    rejectEnrollment(enrollmentId, body, req) {
-        return this.enrollmentsService.rejectEnrollment(enrollmentId, req.user.id);
-    }
     getCourseStudents(courseId, req) {
         return this.enrollmentsService.getCourseStudents(courseId, req.user);
+    }
+    removeStudent(enrollmentId, req) {
+        return this.enrollmentsService.removeStudentFromCourse(enrollmentId, req.user);
     }
 };
 exports.EnrollmentsController = EnrollmentsController;
@@ -59,36 +53,6 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], EnrollmentsController.prototype, "getMyCourses", null);
 __decorate([
-    (0, common_1.Get)('pending'),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.Role.TEACHER),
-    __param(0, (0, common_1.Request)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
-], EnrollmentsController.prototype, "getPendingEnrollments", null);
-__decorate([
-    (0, common_1.Post)(':enrollmentId/approve'),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.Role.TEACHER),
-    __param(0, (0, common_1.Param)('enrollmentId')),
-    __param(1, (0, common_1.Request)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", void 0)
-], EnrollmentsController.prototype, "approveEnrollment", null);
-__decorate([
-    (0, common_1.Post)(':enrollmentId/reject'),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.Role.TEACHER),
-    __param(0, (0, common_1.Param)('enrollmentId')),
-    __param(1, (0, common_1.Body)()),
-    __param(2, (0, common_1.Request)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
-    __metadata("design:returntype", void 0)
-], EnrollmentsController.prototype, "rejectEnrollment", null);
-__decorate([
     (0, common_1.Get)('course/:courseId/students'),
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
@@ -98,6 +62,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], EnrollmentsController.prototype, "getCourseStudents", null);
+__decorate([
+    (0, common_1.Delete)(':enrollmentId'),
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.MANAGER, client_1.Role.TEACHER),
+    __param(0, (0, common_1.Param)('enrollmentId')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], EnrollmentsController.prototype, "removeStudent", null);
 exports.EnrollmentsController = EnrollmentsController = __decorate([
     (0, common_1.Controller)('enrollments'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

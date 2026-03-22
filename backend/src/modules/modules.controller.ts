@@ -1,7 +1,9 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query, ValidationPipe } from '@nestjs/common';
 import { ModulesService } from './modules.service';
 import { CreateModuleDto } from './dto/create-module.dto';
+import { UpdateModuleDto } from './dto/update-module.dto';
 import { GenerateContentDto } from './dto/generate-content.dto';
+import { UpdateContentBodyDto, GenerateVideoBodyDto, RejectVideoBodyDto } from './dto/module-body.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CourseEnrollmentGuard } from '../common/guards/course-enrollment.guard';
@@ -33,7 +35,7 @@ export class ModulesController {
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
-  update(@Param('id') id: string, @Body() updateModuleDto: any, @Request() req) {
+  update(@Param('id') id: string, @Body() updateModuleDto: UpdateModuleDto, @Request() req) {
     return this.modulesService.update(id, updateModuleDto, req.user);
   }
 
@@ -58,7 +60,7 @@ export class ModulesController {
 
   @Patch(':id/content')
   @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
-  updateContent(@Param('id') id: string, @Body() body: { content: any }, @Request() req) {
+  updateContent(@Param('id') id: string, @Body() body: UpdateContentBodyDto, @Request() req) {
     return this.modulesService.updateContent(id, body.content, req.user);
   }
 
@@ -78,7 +80,7 @@ export class ModulesController {
   @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
   generateVideo(
     @Param('id') id: string,
-    @Body() body: { voiceId?: string },
+    @Body() body: GenerateVideoBodyDto,
     @Request() req,
   ) {
     return this.modulesService.generateVideo(id, body.voiceId, req.user);
@@ -100,7 +102,7 @@ export class ModulesController {
   @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
   rejectVideo(
     @Param('id') id: string,
-    @Body() body: { reason?: string },
+    @Body() body: RejectVideoBodyDto,
     @Request() req,
   ) {
     return this.modulesService.rejectVideo(id, body.reason, req.user);

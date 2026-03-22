@@ -16,6 +16,7 @@ exports.SectionsController = void 0;
 const common_1 = require("@nestjs/common");
 const sections_service_1 = require("./sections.service");
 const create_section_dto_1 = require("./dto/create-section.dto");
+const update_section_dto_1 = require("./dto/update-section.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const client_1 = require("@prisma/client");
@@ -61,7 +62,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, update_section_dto_1.UpdateSectionDto, Object]),
     __metadata("design:returntype", void 0)
 ], SectionsController.prototype, "update", null);
 __decorate([

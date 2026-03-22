@@ -33,9 +33,12 @@ export type ActivityAction =
   | 'PROFILE_UPDATED'
   | 'MODULE_CREATED'
   | 'SECTION_CREATED'
-  | 'CONTENT_GENERATED';
+  | 'CONTENT_GENERATED'
+  | 'REJECTED_STUDENTS_CLEANED'
+  | 'ALL_REJECTED_CLEANED'
+  | 'COURSE_DELETED';
 
-export type EntityType = 'USER' | 'COURSE' | 'ENROLLMENT' | 'QUIZ' | 'ASSIGNMENT' | 'CERTIFICATE' | 'MODULE' | 'SECTION' | 'OTP' | 'CONTENT';
+export type EntityType = 'USER' | 'COURSE' | 'ENROLLMENT' | 'QUIZ' | 'ASSIGNMENT' | 'CERTIFICATE' | 'MODULE' | 'SECTION' | 'OTP' | 'CONTENT' | 'SYSTEM';
 
 interface LogParams {
   action: ActivityAction;

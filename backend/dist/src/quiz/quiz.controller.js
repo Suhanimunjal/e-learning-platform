@@ -16,6 +16,7 @@ exports.QuizController = void 0;
 const common_1 = require("@nestjs/common");
 const quiz_service_1 = require("./quiz.service");
 const dto_1 = require("./dto");
+const quiz_body_dto_1 = require("./dto/quiz-body.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const client_1 = require("@prisma/client");
@@ -166,7 +167,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, dto_1.UpdateQuestionDto, Object]),
     __metadata("design:returntype", void 0)
 ], QuizController.prototype, "updateQuestion", null);
 __decorate([
@@ -192,7 +193,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, quiz_body_dto_1.SubmitQuizDto, Object]),
     __metadata("design:returntype", void 0)
 ], QuizController.prototype, "submitQuiz", null);
 __decorate([
@@ -236,7 +237,7 @@ __decorate([
     __param(2, (0, common_1.Body)()),
     __param(3, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object, Object]),
+    __metadata("design:paramtypes", [String, String, quiz_body_dto_1.GradeQuizAttemptDto, Object]),
     __metadata("design:returntype", void 0)
 ], QuizController.prototype, "gradeQuizAttempt", null);
 exports.QuizController = QuizController = __decorate([

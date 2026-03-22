@@ -1,8 +1,10 @@
-import { Controller, Post, Body, Get, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Patch, Body, Get, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { RegisterTeacherDto } from './dto/register-teacher.dto';
 import { LoginDto } from './dto/login.dto';
+import { VerifyOtpDto, ResendOtpDto } from './dto/otp.dto';
+import { UpdateProfileDto, ChangePasswordDto, ChangePasswordOtpDto } from './dto/profile.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -74,12 +76,12 @@ export class AuthController {
   }
 
   @Post('verify-otp')
-  async verifyOTP(@Body() body: { email: string; otp: string }) {
+  async verifyOTP(@Body() body: VerifyOtpDto) {
     return this.authService.verifyLoginOTP(body.email, body.otp);
   }
 
   @Post('resend-otp')
-  async resendOTP(@Body() body: { email: string }) {
+  async resendOTP(@Body() body: ResendOtpDto) {
     return this.authService.resendLoginOTP(body.email);
   }
 
@@ -87,6 +89,30 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getProfile(@Request() req) {
     return req.user;
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  async updateProfile(@Request() req, @Body() dto: UpdateProfileDto) {
+    return this.authService.updateProfile(req.user.id, dto);
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(req.user.id, dto.currentPassword, dto.newPassword);
+  }
+
+  @Post('change-password-otp')
+  @UseGuards(JwtAuthGuard)
+  async changePasswordWithOtp(@Request() req, @Body() dto: ChangePasswordOtpDto) {
+    return this.authService.changePassword(req.user.id, '', dto.newPassword, dto.otp);
+  }
+
+  @Post('send-password-otp')
+  @UseGuards(JwtAuthGuard)
+  async sendPasswordOtp(@Request() req) {
+    return this.authService.sendPasswordOtp(req.user.id);
   }
 
   @Get('admin-only')

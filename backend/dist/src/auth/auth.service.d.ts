@@ -54,7 +54,40 @@ export declare class AuthService {
         email: string;
         role: import(".prisma/client").$Enums.Role;
         status: import(".prisma/client").$Enums.UserStatus;
+        phone: string;
+        rollNo: string;
+        year: string;
+        branch: string;
+        course: string;
         organizationId: string;
     }>;
     private excludePassword;
+    updateProfile(userId: string, data: {
+        name?: string;
+        phone?: string;
+        rollNo?: string;
+        year?: string;
+        branch?: string;
+        course?: string;
+    }): Promise<{
+        id: string;
+        name: string;
+        email: string;
+        role: import(".prisma/client").$Enums.Role;
+        status: import(".prisma/client").$Enums.UserStatus;
+        phone: string;
+        rollNo: string;
+        year: string;
+        branch: string;
+        course: string;
+        organizationId: string;
+    }>;
+    changePassword(userId: string, currentPassword: string, newPassword: string, otp?: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    sendPasswordOtp(userId: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
 }

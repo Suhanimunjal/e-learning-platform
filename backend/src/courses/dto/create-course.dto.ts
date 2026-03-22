@@ -1,4 +1,16 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsUUID, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class CourseMaterialDto {
+  @IsString()
+  name: string;
+
+  @IsString()
+  url: string;
+
+  @IsString()
+  type: string; // 'pdf', 'ppt', 'doc', 'video', 'link'
+}
 
 export class CreateCourseDto {
   @IsString()
@@ -23,10 +35,21 @@ export class CreateCourseDto {
   price?: number = 0;
 
   @IsOptional()
-  @IsBoolean()
-  published?: boolean = false;
+  @IsString()
+  status?: string; // PENDING_APPROVAL, APPROVED, REJECTED, BLACKLISTED
 
   @IsOptional()
   @IsUUID()
   organizationId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CourseMaterialDto)
+  materials?: CourseMaterialDto[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  youtubeLinks?: string[];
 }

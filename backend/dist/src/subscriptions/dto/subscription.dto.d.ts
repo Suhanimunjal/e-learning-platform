@@ -20,7 +20,6 @@ export declare class UpdateSubscriptionPlanDto {
     isActive?: boolean;
 }
 export declare class CreateSubscriptionDto {
-    userId: string;
     planId: string;
     razorpaySubscriptionId?: string;
 }

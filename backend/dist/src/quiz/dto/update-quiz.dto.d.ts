@@ -1,4 +1,11 @@
-import { UpdateQuestionDto } from './update-question.dto';
+export declare class UpdateQuestionDto {
+    type?: string;
+    text?: string;
+    options?: any;
+    correctAnswer?: string;
+    points?: number;
+    order?: number;
+}
 export declare class UpdateQuizDto {
     title?: string;
     description?: string;

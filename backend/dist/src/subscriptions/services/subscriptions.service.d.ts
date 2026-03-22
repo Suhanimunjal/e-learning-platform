@@ -11,7 +11,6 @@ export declare class SubscriptionsService {
         razorpaySubscriptionId?: string;
     }): Promise<{
         user: {
-            year: string | null;
             id: string;
             name: string;
             updatedAt: Date;
@@ -24,6 +23,7 @@ export declare class SubscriptionsService {
             rejectionReason: string | null;
             phone: string | null;
             rollNo: string | null;
+            year: string | null;
             branch: string | null;
             course: string | null;
             organizationId: string | null;
@@ -40,8 +40,8 @@ export declare class SubscriptionsService {
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            isActive: boolean;
             razorpayPlanId: string | null;
+            isActive: boolean;
         };
     } & {
         id: string;
@@ -50,15 +50,14 @@ export declare class SubscriptionsService {
         status: string;
         userId: string;
         planId: string;
+        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
-        razorpaySubscriptionId: string | null;
     }>;
     getSubscriptionById(subscriptionId: string): Promise<{
         user: {
-            year: string | null;
             id: string;
             name: string;
             updatedAt: Date;
@@ -71,6 +70,7 @@ export declare class SubscriptionsService {
             rejectionReason: string | null;
             phone: string | null;
             rollNo: string | null;
+            year: string | null;
             branch: string | null;
             course: string | null;
             organizationId: string | null;
@@ -87,8 +87,8 @@ export declare class SubscriptionsService {
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            isActive: boolean;
             razorpayPlanId: string | null;
+            isActive: boolean;
         };
     } & {
         id: string;
@@ -97,11 +97,11 @@ export declare class SubscriptionsService {
         status: string;
         userId: string;
         planId: string;
+        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
-        razorpaySubscriptionId: string | null;
     }>;
     getUserSubscription(userId: string): Promise<{
         plan: {
@@ -116,8 +116,8 @@ export declare class SubscriptionsService {
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            isActive: boolean;
             razorpayPlanId: string | null;
+            isActive: boolean;
         };
     } & {
         id: string;
@@ -126,11 +126,11 @@ export declare class SubscriptionsService {
         status: string;
         userId: string;
         planId: string;
+        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
-        razorpaySubscriptionId: string | null;
     }>;
     getUserActiveSubscription(userId: string): Promise<{
         plan: {
@@ -145,8 +145,8 @@ export declare class SubscriptionsService {
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            isActive: boolean;
             razorpayPlanId: string | null;
+            isActive: boolean;
         };
     } & {
         id: string;
@@ -155,11 +155,11 @@ export declare class SubscriptionsService {
         status: string;
         userId: string;
         planId: string;
+        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
-        razorpaySubscriptionId: string | null;
     }>;
     cancelSubscription(subscriptionId: string): Promise<{
         plan: {
@@ -174,8 +174,8 @@ export declare class SubscriptionsService {
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            isActive: boolean;
             razorpayPlanId: string | null;
+            isActive: boolean;
         };
     } & {
         id: string;
@@ -184,11 +184,11 @@ export declare class SubscriptionsService {
         status: string;
         userId: string;
         planId: string;
+        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
-        razorpaySubscriptionId: string | null;
     }>;
     renewSubscription(subscriptionId: string): Promise<{
         plan: {
@@ -203,8 +203,8 @@ export declare class SubscriptionsService {
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            isActive: boolean;
             razorpayPlanId: string | null;
+            isActive: boolean;
         };
     } & {
         id: string;
@@ -213,11 +213,11 @@ export declare class SubscriptionsService {
         status: string;
         userId: string;
         planId: string;
+        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
-        razorpaySubscriptionId: string | null;
     }>;
     checkExpiredSubscriptions(): Promise<{
         id: string;
@@ -226,18 +226,17 @@ export declare class SubscriptionsService {
         status: string;
         userId: string;
         planId: string;
+        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
-        razorpaySubscriptionId: string | null;
     }[]>;
     getAllSubscriptions(filter?: {
         status?: string;
         planId?: string;
     }): Promise<({
         user: {
-            year: string | null;
             id: string;
             name: string;
             updatedAt: Date;
@@ -250,6 +249,7 @@ export declare class SubscriptionsService {
             rejectionReason: string | null;
             phone: string | null;
             rollNo: string | null;
+            year: string | null;
             branch: string | null;
             course: string | null;
             organizationId: string | null;
@@ -266,8 +266,8 @@ export declare class SubscriptionsService {
             maxCourses: number;
             maxStudents: number;
             supportLevel: string;
-            isActive: boolean;
             razorpayPlanId: string | null;
+            isActive: boolean;
         };
     } & {
         id: string;
@@ -276,10 +276,10 @@ export declare class SubscriptionsService {
         status: string;
         userId: string;
         planId: string;
+        razorpaySubscriptionId: string | null;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
         nextBillingDate: Date | null;
         cancelledAt: Date | null;
-        razorpaySubscriptionId: string | null;
     })[]>;
 }

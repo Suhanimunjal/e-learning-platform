@@ -1,5 +1,6 @@
 import { QuizService } from './quiz.service';
-import { CreateQuizDto, UpdateQuizDto, CreateQuestionDto } from './dto';
+import { CreateQuizDto, UpdateQuizDto, CreateQuestionDto, UpdateQuestionDto } from './dto';
+import { SubmitQuizDto, GradeQuizAttemptDto } from './dto/quiz-body.dto';
 export declare class QuizController {
     private readonly quizService;
     constructor(quizService: QuizService);
@@ -20,6 +21,8 @@ export declare class QuizController {
                     videoIntro: string | null;
                     price: number;
                     approvedBy: string | null;
+                    materials: import("@prisma/client/runtime/client").JsonValue | null;
+                    youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
                     instructorId: string;
                 };
             } & {
@@ -60,20 +63,20 @@ export declare class QuizController {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
         attempts: {
             id: string;
             userId: string;
             completedAt: Date | null;
             quizId: string;
-            score: number | null;
-            passed: boolean | null;
             answers: import("@prisma/client/runtime/client").JsonValue;
+            score: number | null;
             percentage: number | null;
+            passed: boolean | null;
             startedAt: Date;
         }[];
     } & {
@@ -95,20 +98,20 @@ export declare class QuizController {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
         attempts: {
             id: string;
             userId: string;
             completedAt: Date | null;
             quizId: string;
-            score: number | null;
-            passed: boolean | null;
             answers: import("@prisma/client/runtime/client").JsonValue;
+            score: number | null;
             percentage: number | null;
+            passed: boolean | null;
             startedAt: Date;
         }[];
     } & {
@@ -164,20 +167,20 @@ export declare class QuizController {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
         attempts: {
             id: string;
             userId: string;
             completedAt: Date | null;
             quizId: string;
-            score: number | null;
-            passed: boolean | null;
             answers: import("@prisma/client/runtime/client").JsonValue;
+            score: number | null;
             percentage: number | null;
+            passed: boolean | null;
             startedAt: Date;
         }[];
     } & {
@@ -210,6 +213,8 @@ export declare class QuizController {
                     videoIntro: string | null;
                     price: number;
                     approvedBy: string | null;
+                    materials: import("@prisma/client/runtime/client").JsonValue | null;
+                    youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
                     instructorId: string;
                 };
             } & {
@@ -250,20 +255,20 @@ export declare class QuizController {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
         attempts: {
             id: string;
             userId: string;
             completedAt: Date | null;
             quizId: string;
-            score: number | null;
-            passed: boolean | null;
             answers: import("@prisma/client/runtime/client").JsonValue;
+            score: number | null;
             percentage: number | null;
+            passed: boolean | null;
             startedAt: Date;
         }[];
     } & {
@@ -285,10 +290,10 @@ export declare class QuizController {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
     } & {
         id: string;
@@ -309,10 +314,10 @@ export declare class QuizController {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
     } & {
         id: string;
@@ -333,10 +338,10 @@ export declare class QuizController {
             order: number;
             type: string;
             options: import("@prisma/client/runtime/client").JsonValue | null;
-            quizId: string;
             text: string;
             correctAnswer: string | null;
             points: number;
+            quizId: string;
         }[];
     } & {
         id: string;
@@ -369,30 +374,30 @@ export declare class QuizController {
         order: number;
         type: string;
         options: import("@prisma/client/runtime/client").JsonValue | null;
-        quizId: string;
         text: string;
         correctAnswer: string | null;
         points: number;
+        quizId: string;
     }>;
-    updateQuestion(questionId: string, updateQuestionDto: any, req: any): Promise<{
+    updateQuestion(questionId: string, updateQuestionDto: UpdateQuestionDto, req: any): Promise<{
         id: string;
         order: number;
         type: string;
         options: import("@prisma/client/runtime/client").JsonValue | null;
-        quizId: string;
         text: string;
         correctAnswer: string | null;
         points: number;
+        quizId: string;
     }>;
     deleteQuestion(questionId: string, req: any): Promise<{
         id: string;
         order: number;
         type: string;
         options: import("@prisma/client/runtime/client").JsonValue | null;
-        quizId: string;
         text: string;
         correctAnswer: string | null;
         points: number;
+        quizId: string;
     }>;
     startQuiz(id: string, req: any): Promise<{
         attemptId: string;
@@ -410,13 +415,7 @@ export declare class QuizController {
         currentAttempt: number;
         startedAt: Date;
     }>;
-    submitQuiz(id: string, body: {
-        answers: {
-            questionId: string;
-            answer: string | string[];
-        }[];
-        timeSpent: number;
-    }, req: any): Promise<{
+    submitQuiz(id: string, body: SubmitQuizDto, req: any): Promise<{
         attemptId: string;
         score: number;
         maxScore: number;
@@ -442,10 +441,10 @@ export declare class QuizController {
         userId: string;
         completedAt: Date | null;
         quizId: string;
-        score: number | null;
-        passed: boolean | null;
         answers: import("@prisma/client/runtime/client").JsonValue;
+        score: number | null;
         percentage: number | null;
+        passed: boolean | null;
         startedAt: Date;
     })[]>;
     getQuizAttempt(id: string, attemptId: string, req: any): Promise<{
@@ -471,6 +470,8 @@ export declare class QuizController {
                         videoIntro: string | null;
                         price: number;
                         approvedBy: string | null;
+                        materials: import("@prisma/client/runtime/client").JsonValue | null;
+                        youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
                         instructorId: string;
                     };
                 } & {
@@ -511,10 +512,10 @@ export declare class QuizController {
                 order: number;
                 type: string;
                 options: import("@prisma/client/runtime/client").JsonValue | null;
-                quizId: string;
                 text: string;
                 correctAnswer: string | null;
                 points: number;
+                quizId: string;
             }[];
         } & {
             id: string;
@@ -534,10 +535,10 @@ export declare class QuizController {
         userId: string;
         completedAt: Date | null;
         quizId: string;
-        score: number | null;
-        passed: boolean | null;
         answers: import("@prisma/client/runtime/client").JsonValue;
+        score: number | null;
         percentage: number | null;
+        passed: boolean | null;
         startedAt: Date;
     }>;
     getQuizSubmissions(id: string): Promise<{
@@ -558,6 +559,8 @@ export declare class QuizController {
                         videoIntro: string | null;
                         price: number;
                         approvedBy: string | null;
+                        materials: import("@prisma/client/runtime/client").JsonValue | null;
+                        youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
                         instructorId: string;
                     };
                 } & {
@@ -598,10 +601,10 @@ export declare class QuizController {
                 order: number;
                 type: string;
                 options: import("@prisma/client/runtime/client").JsonValue | null;
-                quizId: string;
                 text: string;
                 correctAnswer: string | null;
                 points: number;
+                quizId: string;
             }[];
         } & {
             id: string;
@@ -663,12 +666,7 @@ export declare class QuizController {
         total: number;
         pendingCount: number;
     }>;
-    gradeQuizAttempt(id: string, attemptId: string, body: {
-        grades: Record<string, {
-            points: number;
-            feedback: string;
-        }>;
-    }, req: any): Promise<{
+    gradeQuizAttempt(id: string, attemptId: string, body: GradeQuizAttemptDto, req: any): Promise<{
         success: boolean;
         attemptId: string;
         grades: Record<string, {

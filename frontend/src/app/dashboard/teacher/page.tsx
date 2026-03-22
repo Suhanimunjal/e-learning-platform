@@ -76,13 +76,25 @@ export default function TeacherDashboard() {
 
       // Fetch pending enrollments for teacher's courses
       const pendingRes = await fetch(`${browserApiBaseUrl}/enrollments/pending`, { headers });
-      const pendingData = await pendingRes.json();
-      setPendingEnrollments(Array.isArray(pendingData) ? pendingData : []);
+      let pendingData: any[] = [];
+      if (pendingRes.ok) {
+        pendingData = await pendingRes.json();
+        setPendingEnrollments(Array.isArray(pendingData) ? pendingData : []);
+      } else {
+        console.error('Failed to fetch pending enrollments:', pendingRes.status);
+        setPendingEnrollments([]);
+      }
 
       // Fetch pending quiz submissions
       const quizzesRes = await fetch(`${browserApiBaseUrl}/quiz/submissions/pending`, { headers });
-      const quizzesData = await quizzesRes.json();
-      setPendingQuizzes(Array.isArray(quizzesData) ? quizzesData : []);
+      let quizzesData: any[] = [];
+      if (quizzesRes.ok) {
+        quizzesData = await quizzesRes.json();
+        setPendingQuizzes(Array.isArray(quizzesData) ? quizzesData : []);
+      } else {
+        console.error('Failed to fetch pending quizzes:', quizzesRes.status);
+        setPendingQuizzes([]);
+      }
 
       // Calculate stats
       const totalStudents = enrollmentsData?.length || 0;

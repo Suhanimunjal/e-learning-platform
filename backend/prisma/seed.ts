@@ -21,19 +21,19 @@ async function main() {
   await prisma.quiz.deleteMany();
   await prisma.submission.deleteMany();
   await prisma.assignment.deleteMany();
+  await prisma.module.deleteMany();
+  await prisma.section.deleteMany();
   await prisma.enrollment.deleteMany();
   await prisma.aIGenerationJob.deleteMany();
   await prisma.analyticsEvent.deleteMany();
-  await prisma.section.deleteMany();
-  await prisma.module.deleteMany();
-  await prisma.course.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.organization.deleteMany();
-  await prisma.subscription.deleteMany();
-  await prisma.subscriptionPlan.deleteMany();
-  await prisma.order.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.review.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.course.deleteMany();
+  await prisma.subscription.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.organization.deleteMany();
+  await prisma.subscriptionPlan.deleteMany();
   await prisma.plugin.deleteMany();
   console.log('Cleaned existing data\n');
 
@@ -72,6 +72,17 @@ async function main() {
     },
   });
 
+  const admin2 = await prisma.user.create({
+    data: {
+      email: 'tanubhavj.mca25@cs.du.ac.in',
+      name: 'Tanubhav Jain',
+      password: hashedPassword,
+      role: Role.ADMIN,
+      status: UserStatus.ACTIVE,
+      organizationId: org1.id,
+    },
+  });
+
   const teacher1 = await prisma.user.create({
     data: {
       email: 'teacher@example.com',
@@ -79,6 +90,7 @@ async function main() {
       password: hashedPassword,
       role: Role.TEACHER,
       status: UserStatus.ACTIVE,
+      phone: '+91 9876543210',
       organizationId: org1.id,
     },
   });
@@ -90,7 +102,20 @@ async function main() {
       password: hashedPassword,
       role: Role.TEACHER,
       status: UserStatus.ACTIVE,
+      phone: '+91 9123456780',
       organizationId: org2.id,
+    },
+  });
+
+  const teacher3 = await prisma.user.create({
+    data: {
+      email: 'junejatanubhav@gmail.com',
+      name: 'Tanubhav Juneja',
+      password: hashedPassword,
+      role: Role.TEACHER,
+      status: UserStatus.ACTIVE,
+      phone: '+91 9876501234',
+      organizationId: org1.id,
     },
   });
 
@@ -100,7 +125,12 @@ async function main() {
       name: 'Alice Williams',
       password: hashedPassword,
       role: Role.STUDENT,
-      status: UserStatus.PENDING_APPROVAL,
+      status: UserStatus.ACTIVE,
+      phone: '+91 8765432109',
+      rollNo: 'CS2025001',
+      year: '2nd Year',
+      branch: 'Computer Science',
+      course: 'MCA',
       organizationId: org1.id,
     },
   });
@@ -111,7 +141,12 @@ async function main() {
       name: 'Bob Davis',
       password: hashedPassword,
       role: Role.STUDENT,
-      status: UserStatus.PENDING_APPROVAL,
+      status: UserStatus.ACTIVE,
+      phone: '+91 7654321098',
+      rollNo: 'CS2025002',
+      year: '1st Year',
+      branch: 'Computer Science',
+      course: 'B.Tech',
       organizationId: org1.id,
     },
   });
@@ -122,12 +157,17 @@ async function main() {
       name: 'Carol Martinez',
       password: hashedPassword,
       role: Role.STUDENT,
-      status: UserStatus.PENDING_APPROVAL,
+      status: UserStatus.ACTIVE,
+      phone: '+91 6543210987',
+      rollNo: 'EC2025003',
+      year: '3rd Year',
+      branch: 'Electronics',
+      course: 'B.Tech',
       organizationId: org2.id,
     },
   });
 
-  console.log('Created 6 users\n');
+  console.log('Created 8 users\n');
 
   // Create subscription plans
   console.log('Creating subscription plans...');
@@ -216,7 +256,19 @@ async function main() {
       thumbnail: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800',
     },
   });
-  console.log('Created 4 courses\n');
+
+  const course5 = await prisma.course.create({
+    data: {
+      title: 'Node.js Backend Development',
+      slug: 'nodejs-backend-dev',
+      description: 'Build scalable backend applications with Node.js, Express, and PostgreSQL.',
+      instructorId: teacher3.id,
+      price: 59.99,
+      status: 'APPROVED',
+      thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800',
+    },
+  });
+  console.log('Created 5 courses\n');
 
   // Create sections and modules
   console.log('Creating sections and modules...');
@@ -358,10 +410,10 @@ async function main() {
   console.log('Creating enrollments...');
   await prisma.enrollment.createMany({
     data: [
-      { userId: student1.id, courseId: course1.id },
-      { userId: student1.id, courseId: course2.id },
-      { userId: student2.id, courseId: course1.id },
-      { userId: student3.id, courseId: course3.id },
+      { userId: student1.id, courseId: course1.id, accessStatus: 'APPROVED' as any },
+      { userId: student1.id, courseId: course2.id, accessStatus: 'APPROVED' as any },
+      { userId: student2.id, courseId: course1.id, accessStatus: 'APPROVED' as any },
+      { userId: student3.id, courseId: course3.id, accessStatus: 'APPROVED' as any },
     ],
   });
   console.log('Created 4 enrollments\n');
@@ -413,24 +465,13 @@ async function main() {
   }
   console.log('Created 10 plugins\n');
 
-  // Create notifications
-  console.log('Creating notifications...');
-  await prisma.notification.createMany({
-    data: [
-      { userId: student1.id, type: 'enrollment', title: 'Enrolled in Course', message: 'You have been enrolled in Introduction to JavaScript' },
-      { userId: student1.id, type: 'quiz', title: 'Quiz Available', message: 'A new quiz is available in JavaScript Basics Quiz' },
-      { userId: student2.id, type: 'enrollment', title: 'Enrolled in Course', message: 'You have been enrolled in Introduction to JavaScript' },
-      { userId: teacher1.id, type: 'enrollment', title: 'New Student', message: 'Alice Williams enrolled in your course' },
-    ],
-  });
-  console.log('Created notifications\n');
-
   console.log('==================================================');
   console.log('DATABASE SEED COMPLETED SUCCESSFULLY!');
   console.log('==================================================');
   console.log('\nUsers:');
   console.log('  Admin:    suhanimunjal97@gmail.com / Test@123');
   console.log('  Teacher:  teacher@example.com / Test@123');
+  console.log('  Teacher:  junejatanubhav@gmail.com / Test@123');
   console.log('  Student:  student@lms.com / Test@123');
   console.log('==================================================\n');
 }

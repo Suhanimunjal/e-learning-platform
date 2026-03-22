@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { SectionsService } from './sections.service';
 import { CreateSectionDto } from './dto/create-section.dto';
+import { UpdateSectionDto } from './dto/update-section.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -24,7 +25,7 @@ export class SectionsController {
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
-  update(@Param('id') id: string, @Body() updateSectionDto: any, @Request() req) {
+  update(@Param('id') id: string, @Body() updateSectionDto: UpdateSectionDto, @Request() req) {
     return this.sectionsService.update(id, updateSectionDto, req.user);
   }
 

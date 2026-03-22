@@ -14,12 +14,12 @@ export declare class AdminCourseGenerationService {
     getJob(jobId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
         createdAt: Date;
+        updatedAt: Date;
         status: string;
         type: string;
         retryCount: number;
+        version: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
         tenantId: string | null;

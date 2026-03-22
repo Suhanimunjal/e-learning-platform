@@ -1,10 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 import * as express from 'express';
 import { join } from 'path';
+import { mkdirSync } from 'fs';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Ensure uploads directory exists
+  const uploadsDir = join(process.cwd(), 'uploads', 'course-materials');
+  mkdirSync(uploadsDir, { recursive: true });
+
+  // Global exception filter for error logging
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   const frontendOriginsRaw = process.env.FRONTEND_ORIGINS;
   if (!frontendOriginsRaw) {
@@ -33,6 +43,15 @@ async function bootstrap() {
   
   // Set global prefix
   app.setGlobalPrefix('api');
+
+  // Enable validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: false,
+    }),
+  );
   
   const port = process.env.PORT || 3001;
   await app.listen(port);

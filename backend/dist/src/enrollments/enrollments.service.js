@@ -40,19 +40,23 @@ let EnrollmentsService = class EnrollmentsService {
             if (existingEnrollment.accessStatus === 'APPROVED') {
                 throw new common_1.ConflictException('You are already enrolled in this course');
             }
-            if (existingEnrollment.accessStatus === 'PENDING') {
-                throw new common_1.ConflictException('Your enrollment request is pending approval');
+            if (existingEnrollment.accessStatus === 'REJECTED') {
+                const updated = await this.prisma.enrollment.update({
+                    where: { id: existingEnrollment.id },
+                    data: { accessStatus: 'APPROVED' },
+                });
+                return { ...updated, message: 'Successfully enrolled in the course' };
             }
         }
         const enrollment = await this.prisma.enrollment.create({
             data: {
                 userId: user.id,
                 courseId: courseId,
-                accessStatus: 'PENDING',
+                accessStatus: 'APPROVED',
             },
         });
         await this.activityLogService.log({
-            action: 'ENROLLMENT_REQUESTED',
+            action: 'ENROLLMENT_APPROVED',
             entityType: 'ENROLLMENT',
             entityId: enrollment.id,
             userId: user.id,
@@ -61,7 +65,7 @@ let EnrollmentsService = class EnrollmentsService {
         });
         return {
             ...enrollment,
-            message: 'Enrollment request submitted. Waiting for teacher approval.',
+            message: 'Successfully enrolled in the course',
         };
     }
     async getMyCourses(user) {
@@ -91,74 +95,6 @@ let EnrollmentsService = class EnrollmentsService {
             orderBy: { createdAt: 'desc' },
         });
     }
-    async getPendingEnrollments(userId) {
-        const courses = await this.prisma.course.findMany({
-            where: { instructorId: userId },
-            select: { id: true },
-        });
-        const courseIds = courses.map(c => c.id);
-        return this.prisma.enrollment.findMany({
-            where: {
-                courseId: { in: courseIds },
-                accessStatus: 'PENDING',
-            },
-            include: {
-                user: { select: { id: true, name: true, email: true } },
-                course: { select: { id: true, title: true } },
-            },
-            orderBy: { createdAt: 'desc' },
-        });
-    }
-    async approveEnrollment(enrollmentId, teacherId) {
-        const enrollment = await this.prisma.enrollment.findUnique({
-            where: { id: enrollmentId },
-            include: { course: true },
-        });
-        if (!enrollment) {
-            throw new common_1.NotFoundException('Enrollment not found');
-        }
-        if (enrollment.course.instructorId !== teacherId) {
-            throw new common_1.ForbiddenException('You can only approve enrollments for your own courses');
-        }
-        const updated = await this.prisma.enrollment.update({
-            where: { id: enrollmentId },
-            data: { accessStatus: 'APPROVED' },
-        });
-        await this.activityLogService.log({
-            action: 'ENROLLMENT_APPROVED',
-            entityType: 'ENROLLMENT',
-            entityId: enrollment.id,
-            userId: teacherId,
-            targetUserId: enrollment.userId,
-            metadata: { courseTitle: enrollment.course.title },
-        });
-        return updated;
-    }
-    async rejectEnrollment(enrollmentId, teacherId) {
-        const enrollment = await this.prisma.enrollment.findUnique({
-            where: { id: enrollmentId },
-            include: { course: true },
-        });
-        if (!enrollment) {
-            throw new common_1.NotFoundException('Enrollment not found');
-        }
-        if (enrollment.course.instructorId !== teacherId) {
-            throw new common_1.ForbiddenException('You can only reject enrollments for your own courses');
-        }
-        const updated = await this.prisma.enrollment.update({
-            where: { id: enrollmentId },
-            data: { accessStatus: 'REJECTED' },
-        });
-        await this.activityLogService.log({
-            action: 'ENROLLMENT_REJECTED',
-            entityType: 'ENROLLMENT',
-            entityId: enrollment.id,
-            userId: teacherId,
-            targetUserId: enrollment.userId,
-            metadata: { courseTitle: enrollment.course.title },
-        });
-        return updated;
-    }
     async getCourseStudents(courseId, user) {
         const course = await this.prisma.course.findUnique({
             where: { id: courseId },
@@ -183,10 +119,40 @@ let EnrollmentsService = class EnrollmentsService {
                         id: true,
                         name: true,
                         email: true,
+                        phone: true,
+                        rollNo: true,
+                        year: true,
+                        branch: true,
+                        course: true,
                     },
                 },
             },
+            orderBy: { createdAt: 'desc' },
         });
+    }
+    async removeStudentFromCourse(enrollmentId, user) {
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: { id: enrollmentId },
+            include: { course: true },
+        });
+        if (!enrollment) {
+            throw new common_1.NotFoundException('Enrollment not found');
+        }
+        if (user.role === 'TEACHER' && enrollment.course.instructorId !== user.id) {
+            throw new common_1.ForbiddenException('You can only remove students from your own courses');
+        }
+        await this.prisma.enrollment.delete({
+            where: { id: enrollmentId },
+        });
+        await this.activityLogService.log({
+            action: 'ENROLLMENT_REJECTED',
+            entityType: 'ENROLLMENT',
+            entityId: enrollment.id,
+            userId: user.id,
+            targetUserId: enrollment.userId,
+            metadata: { courseTitle: enrollment.course.title, action: 'removed_by_teacher' },
+        });
+        return { success: true, message: 'Student removed from course' };
     }
 };
 exports.EnrollmentsService = EnrollmentsService;

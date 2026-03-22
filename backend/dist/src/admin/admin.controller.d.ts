@@ -5,6 +5,7 @@ import { EmailService } from '../common/services/email.service';
 import { ActivityLogService } from '../common/services/activity-log.service';
 import { GenerateAiCourseDto } from './dto/generate-ai-course.dto';
 import { AdminCourseGenerationService } from './services/admin-course-generation.service';
+import { RegisterTeacherBodyDto, RejectUserBodyDto, BlacklistUserBodyDto, RejectCourseBodyDto, BlacklistCourseBodyDto } from './dto/admin.dto';
 export declare class AdminController {
     private prisma;
     private otpService;
@@ -12,6 +13,7 @@ export declare class AdminController {
     private activityLogService;
     private adminCourseGenerationService;
     constructor(prisma: PrismaService, otpService: OtpService, emailService: EmailService, activityLogService: ActivityLogService, adminCourseGenerationService: AdminCourseGenerationService);
+    private notify;
     generateAiCourse(body: GenerateAiCourseDto, req: any): Promise<{
         jobId: string;
         status: string;
@@ -19,12 +21,12 @@ export declare class AdminController {
     getGenerationJob(jobId: string): Promise<{
         error: string | null;
         id: string;
-        version: string;
-        updatedAt: Date;
         createdAt: Date;
+        updatedAt: Date;
         status: string;
         type: string;
         retryCount: number;
+        version: string;
         input: import("@prisma/client/runtime/client").JsonValue;
         output: import("@prisma/client/runtime/client").JsonValue | null;
         tenantId: string | null;
@@ -32,29 +34,25 @@ export declare class AdminController {
     getActivityLogs(limit?: string, offset?: string, action?: string, entityType?: string, startDate?: string, endDate?: string): Promise<{
         id: string;
         createdAt: Date;
+        userId: string | null;
         action: string;
         entityType: string;
         entityId: string | null;
-        userId: string | null;
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
     }[]>;
     getNewLogs(since?: string, limit?: string): Promise<{
         id: string;
         createdAt: Date;
+        userId: string | null;
         action: string;
         entityType: string;
         entityId: string | null;
-        userId: string | null;
         targetUserId: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
     }[]>;
     getLogTypes(): Promise<string[]>;
-    registerTeacher(body: {
-        name: string;
-        email: string;
-        password: string;
-    }, req: any): Promise<{
+    registerTeacher(body: RegisterTeacherBodyDto, req: any): Promise<{
         success: boolean;
         message: string;
         teacher?: undefined;
@@ -79,6 +77,7 @@ export declare class AdminController {
         email: string;
         role: import(".prisma/client").$Enums.Role;
         status: import(".prisma/client").$Enums.UserStatus;
+        phone: string;
     }[]>;
     approveUser(userId: string, req: any): Promise<{
         success: boolean;
@@ -89,9 +88,7 @@ export declare class AdminController {
             status: import(".prisma/client").$Enums.UserStatus;
         };
     }>;
-    rejectUser(userId: string, body: {
-        reason?: string;
-    }, req: any): Promise<{
+    rejectUser(userId: string, body: RejectUserBodyDto, req: any): Promise<{
         success: boolean;
         user: {
             id: string;
@@ -102,28 +99,30 @@ export declare class AdminController {
         };
     }>;
     getPendingCourses(): Promise<({
-        _count: {
-            sections: number;
-        };
         instructor: {
             id: string;
             name: string;
             email: string;
         };
+        _count: {
+            sections: number;
+        };
     } & {
         id: string;
-        description: string;
-        updatedAt: Date;
         slug: string;
         createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.CourseStatus;
         rejectionReason: string | null;
         organizationId: string | null;
         title: string;
+        description: string;
         thumbnail: string | null;
         videoIntro: string | null;
         price: number;
         approvedBy: string | null;
+        materials: import("@prisma/client/runtime/client").JsonValue | null;
+        youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
         instructorId: string;
     })[]>;
     approveCourse(courseId: string, req: any): Promise<{
@@ -135,9 +134,7 @@ export declare class AdminController {
             instructorId: string;
         };
     }>;
-    rejectCourse(courseId: string, body: {
-        reason?: string;
-    }, req: any): Promise<{
+    rejectCourse(courseId: string, body: RejectCourseBodyDto, req: any): Promise<{
         success: boolean;
         course: {
             id: string;
@@ -189,15 +186,25 @@ export declare class AdminController {
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
+        organization: {
+            id: string;
+            name: string;
+        };
         email: string;
         role: import(".prisma/client").$Enums.Role;
         status: import(".prisma/client").$Enums.UserStatus;
+        rejectionReason: string;
+        phone: string;
+        _count: {
+            coursesCreated: number;
+        };
     }[]>;
     getTeacherById(teacherId: string): Promise<{
         id: string;
         name: string;
-        updatedAt: Date;
         createdAt: Date;
+        updatedAt: Date;
         organization: {
             id: string;
             name: string;
@@ -206,29 +213,46 @@ export declare class AdminController {
         email: string;
         role: import(".prisma/client").$Enums.Role;
         status: import(".prisma/client").$Enums.UserStatus;
+        avatar: string;
+        rejectionReason: string;
+        phone: string;
         coursesCreated: {
             id: string;
-            _count: {
-                sections: number;
-            };
             createdAt: Date;
             status: import(".prisma/client").$Enums.CourseStatus;
             title: string;
             price: number;
+            _count: {
+                sections: number;
+            };
         }[];
     }>;
     getStudents(status?: UserStatus): Promise<{
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
+        organization: {
+            id: string;
+            name: string;
+        };
         email: string;
         status: import(".prisma/client").$Enums.UserStatus;
+        rejectionReason: string;
+        phone: string;
+        rollNo: string;
+        year: string;
+        branch: string;
+        course: string;
+        _count: {
+            enrollments: number;
+        };
     }[]>;
     getStudentById(studentId: string): Promise<{
         id: string;
         name: string;
-        updatedAt: Date;
         createdAt: Date;
+        updatedAt: Date;
         organization: {
             id: string;
             name: string;
@@ -237,6 +261,13 @@ export declare class AdminController {
         email: string;
         role: import(".prisma/client").$Enums.Role;
         status: import(".prisma/client").$Enums.UserStatus;
+        avatar: string;
+        rejectionReason: string;
+        phone: string;
+        rollNo: string;
+        year: string;
+        branch: string;
+        course: string;
         enrollments: {
             id: string;
             createdAt: Date;
@@ -250,6 +281,16 @@ export declare class AdminController {
             accessStatus: import(".prisma/client").$Enums.EnrollmentStatus;
         }[];
     }>;
+    cleanupRejectedStudents(req: any): Promise<{
+        success: boolean;
+        deleted: number;
+        message: string;
+    }>;
+    cleanupAllRejected(req: any): Promise<{
+        success: boolean;
+        deleted: Record<string, number>;
+        message: string;
+    }>;
     getStats(): Promise<{
         pendingApprovals: number;
         totalUsers: number;
@@ -259,9 +300,7 @@ export declare class AdminController {
         blacklistedUsers: number;
         blacklistedCourses: number;
     }>;
-    blacklistUser(userId: string, body: {
-        reason: string;
-    }, req: any): Promise<{
+    blacklistUser(userId: string, body: BlacklistUserBodyDto, req: any): Promise<{
         success: boolean;
         user: {
             id: string;
@@ -270,6 +309,7 @@ export declare class AdminController {
             role: import(".prisma/client").$Enums.Role;
             status: import(".prisma/client").$Enums.UserStatus;
         };
+        blacklistedCourses: number;
     }>;
     unblacklistUser(userId: string, req: any): Promise<{
         success: boolean;
@@ -280,10 +320,9 @@ export declare class AdminController {
             role: import(".prisma/client").$Enums.Role;
             status: import(".prisma/client").$Enums.UserStatus;
         };
+        restoredCourses: number;
     }>;
-    blacklistCourse(courseId: string, body: {
-        reason: string;
-    }, req: any): Promise<{
+    blacklistCourse(courseId: string, body: BlacklistCourseBodyDto, req: any): Promise<{
         success: boolean;
         course: {
             id: string;
@@ -300,5 +339,9 @@ export declare class AdminController {
             title: string;
             instructorId: string;
         };
+    }>;
+    deleteCourse(courseId: string, req: any): Promise<{
+        success: boolean;
+        message: string;
     }>;
 }

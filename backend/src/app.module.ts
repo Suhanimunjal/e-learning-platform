@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthController } from './common/health.controller';
@@ -19,6 +19,7 @@ import { QuizModule } from './quiz/quiz.module';
 import { AdminModule } from './admin/admin.module';
 import { CourseEnrollmentGuard } from './common/guards/course-enrollment.guard';
 import { StudentModule } from './student/student.module';
+import { SanitizationMiddleware } from './common/middleware/sanitization.middleware';
 
 @Module({
   imports: [
@@ -46,4 +47,10 @@ import { StudentModule } from './student/student.module';
   controllers: [HealthController],
   providers: [CourseEnrollmentGuard],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(SanitizationMiddleware)
+      .forRoutes('*');
+  }
+}

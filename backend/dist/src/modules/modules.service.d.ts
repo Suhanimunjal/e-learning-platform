@@ -82,6 +82,8 @@ export declare class ModulesService {
                 videoIntro: string | null;
                 price: number;
                 approvedBy: string | null;
+                materials: import("@prisma/client/runtime/client").JsonValue | null;
+                youtubeLinks: import("@prisma/client/runtime/client").JsonValue | null;
                 instructorId: string;
             };
         } & {

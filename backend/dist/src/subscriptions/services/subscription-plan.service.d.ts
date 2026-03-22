@@ -25,8 +25,8 @@ export declare class SubscriptionPlanService {
         maxCourses: number;
         maxStudents: number;
         supportLevel: string;
-        isActive: boolean;
         razorpayPlanId: string | null;
+        isActive: boolean;
     }>;
     getPlanById(planId: string): Promise<{
         id: string;
@@ -40,8 +40,8 @@ export declare class SubscriptionPlanService {
         maxCourses: number;
         maxStudents: number;
         supportLevel: string;
-        isActive: boolean;
         razorpayPlanId: string | null;
+        isActive: boolean;
     }>;
     getAllPlans(onlyActive?: boolean): Promise<{
         id: string;
@@ -55,8 +55,8 @@ export declare class SubscriptionPlanService {
         maxCourses: number;
         maxStudents: number;
         supportLevel: string;
-        isActive: boolean;
         razorpayPlanId: string | null;
+        isActive: boolean;
     }[]>;
     updatePlan(planId: string, data: Partial<{
         name: string;
@@ -79,8 +79,8 @@ export declare class SubscriptionPlanService {
         maxCourses: number;
         maxStudents: number;
         supportLevel: string;
-        isActive: boolean;
         razorpayPlanId: string | null;
+        isActive: boolean;
     }>;
     deletePlan(planId: string): Promise<{
         id: string;
@@ -94,7 +94,7 @@ export declare class SubscriptionPlanService {
         maxCourses: number;
         maxStudents: number;
         supportLevel: string;
-        isActive: boolean;
         razorpayPlanId: string | null;
+        isActive: boolean;
     }>;
 }

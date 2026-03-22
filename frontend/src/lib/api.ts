@@ -47,6 +47,22 @@ export const auth = {
     const res = await api.get('/auth/me');
     return res.data;
   },
+  updateProfile: async (data: { name?: string; phone?: string; rollNo?: string; year?: string; branch?: string; course?: string }) => {
+    const res = await api.patch('/auth/profile', data);
+    return res.data;
+  },
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const res = await api.post('/auth/change-password', { currentPassword, newPassword });
+    return res.data;
+  },
+  sendPasswordOtp: async () => {
+    const res = await api.post('/auth/send-password-otp');
+    return res.data;
+  },
+  changePasswordWithOtp: async (otp: string, newPassword: string) => {
+    const res = await api.post('/auth/change-password-otp', { otp, newPassword });
+    return res.data;
+  },
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -76,6 +92,32 @@ export const courses = {
   },
 };
 
+export interface UploadedFile {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
+export const uploads = {
+  uploadSingle: async (file: File): Promise<UploadedFile> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.post('/uploads/single', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+  uploadMultiple: async (files: File[]): Promise<UploadedFile[]> => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    const res = await api.post('/uploads/multiple', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+};
+
 export const enrollments = {
   enroll: async (courseId: string) => {
     const res = await api.post(`/enrollments/${courseId}`);
@@ -89,16 +131,8 @@ export const enrollments = {
     const res = await api.get(`/enrollments/course/${courseId}/students`);
     return res.data;
   },
-  getPendingEnrollments: async () => {
-    const res = await api.get('/enrollments/pending');
-    return res.data;
-  },
-  approveEnrollment: async (enrollmentId: string) => {
-    const res = await api.post(`/enrollments/${enrollmentId}/approve`);
-    return res.data;
-  },
-  rejectEnrollment: async (enrollmentId: string) => {
-    const res = await api.post(`/enrollments/${enrollmentId}/reject`);
+  removeStudent: async (enrollmentId: string) => {
+    const res = await api.delete(`/enrollments/${enrollmentId}`);
     return res.data;
   },
 };
@@ -225,6 +259,77 @@ export const admin = {
   },
   getGenerationJob: async (jobId: string) => {
     const res = await api.get(`/admin/courses/generation-jobs/${jobId}`);
+    return res.data;
+  },
+  // Students
+  getStudents: async (status?: string) => {
+    const res = await api.get('/admin/students', { params: status ? { status } : {} });
+    return res.data;
+  },
+  getStudentById: async (studentId: string) => {
+    const res = await api.get(`/admin/students/${studentId}`);
+    return res.data;
+  },
+  // Teachers
+  getTeachers: async () => {
+    const res = await api.get('/admin/teachers');
+    return res.data;
+  },
+  getTeacherById: async (teacherId: string) => {
+    const res = await api.get(`/admin/teachers/${teacherId}`);
+    return res.data;
+  },
+  // Cleanup
+  cleanupRejectedStudents: async () => {
+    const res = await api.delete('/admin/students/cleanup-rejected');
+    return res.data;
+  },
+  cleanupAllRejected: async () => {
+    const res = await api.delete('/admin/cleanup-all-rejected');
+    return res.data;
+  },
+  // Stats
+  getStats: async () => {
+    const res = await api.get('/admin/stats');
+    return res.data;
+  },
+  // User management
+  approveUser: async (userId: string) => {
+    const res = await api.post(`/admin/users/${userId}/approve`);
+    return res.data;
+  },
+  rejectUser: async (userId: string, reason?: string) => {
+    const res = await api.post(`/admin/users/${userId}/reject`, { reason });
+    return res.data;
+  },
+  blacklistUser: async (userId: string, reason: string) => {
+    const res = await api.post(`/admin/users/${userId}/blacklist`, { reason });
+    return res.data;
+  },
+  unblacklistUser: async (userId: string) => {
+    const res = await api.post(`/admin/users/${userId}/unblacklist`);
+    return res.data;
+  },
+  // Blacklisted users
+  getBlacklistedUsers: async () => {
+    const res = await api.get('/admin/users/blacklisted');
+    return res.data;
+  },
+  revertBlacklist: async (blacklistedId: string) => {
+    const res = await api.post(`/admin/users/blacklisted/${blacklistedId}/revert`);
+    return res.data;
+  },
+  // Course management
+  blacklistCourse: async (courseId: string, reason: string) => {
+    const res = await api.post(`/admin/courses/${courseId}/blacklist`, { reason });
+    return res.data;
+  },
+  unblacklistCourse: async (courseId: string) => {
+    const res = await api.post(`/admin/courses/${courseId}/unblacklist`);
+    return res.data;
+  },
+  deleteCourse: async (courseId: string) => {
+    const res = await api.delete(`/admin/courses/${courseId}`);
     return res.data;
   },
 };

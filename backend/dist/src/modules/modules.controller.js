@@ -16,7 +16,9 @@ exports.ModulesController = void 0;
 const common_1 = require("@nestjs/common");
 const modules_service_1 = require("./modules.service");
 const create_module_dto_1 = require("./dto/create-module.dto");
+const update_module_dto_1 = require("./dto/update-module.dto");
 const generate_content_dto_1 = require("./dto/generate-content.dto");
+const module_body_dto_1 = require("./dto/module-body.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const course_enrollment_guard_1 = require("../common/guards/course-enrollment.guard");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
@@ -103,7 +105,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, update_module_dto_1.UpdateModuleDto, Object]),
     __metadata("design:returntype", void 0)
 ], ModulesController.prototype, "update", null);
 __decorate([
@@ -132,7 +134,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, module_body_dto_1.UpdateContentBodyDto, Object]),
     __metadata("design:returntype", void 0)
 ], ModulesController.prototype, "updateContent", null);
 __decorate([
@@ -160,7 +162,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, module_body_dto_1.GenerateVideoBodyDto, Object]),
     __metadata("design:returntype", void 0)
 ], ModulesController.prototype, "generateVideo", null);
 __decorate([
@@ -188,7 +190,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, module_body_dto_1.RejectVideoBodyDto, Object]),
     __metadata("design:returntype", void 0)
 ], ModulesController.prototype, "rejectVideo", null);
 __decorate([

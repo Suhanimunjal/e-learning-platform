@@ -522,6 +522,11 @@ export class AuthService {
         name: true,
         role: true,
         status: true,
+        phone: true,
+        rollNo: true,
+        year: true,
+        branch: true,
+        course: true,
         organizationId: true,
       },
     });
@@ -530,5 +535,99 @@ export class AuthService {
   private excludePassword(user: any) {
     const { password, ...result } = user;
     return result;
+  }
+
+  async updateProfile(userId: string, data: { name?: string; phone?: string; rollNo?: string; year?: string; branch?: string; course?: string }) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.phone !== undefined && { phone: data.phone }),
+        ...(data.rollNo !== undefined && { rollNo: data.rollNo }),
+        ...(data.year !== undefined && { year: data.year }),
+        ...(data.branch !== undefined && { branch: data.branch }),
+        ...(data.course !== undefined && { course: data.course }),
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        status: true,
+        phone: true,
+        rollNo: true,
+        year: true,
+        branch: true,
+        course: true,
+        organizationId: true,
+      },
+    });
+
+    await this.activityLogService.log({
+      action: 'PROFILE_UPDATED',
+      entityType: 'USER',
+      entityId: userId,
+      userId,
+      metadata: { updatedFields: Object.keys(data) },
+    });
+
+    return updated;
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string, otp?: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (!user.password) {
+      throw new UnauthorizedException('Account has no password set');
+    }
+
+    // If OTP is provided, verify it instead of current password
+    if (otp) {
+      const isValidOtp = this.otpService.verifyOTP(user.email, otp);
+      if (!isValidOtp) {
+        throw new UnauthorizedException('Invalid or expired OTP');
+      }
+    } else {
+      const isCurrentValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isCurrentValid) {
+        throw new UnauthorizedException('Current password is incorrect');
+      }
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    await this.activityLogService.log({
+      action: 'PASSWORD_CHANGED',
+      entityType: 'USER',
+      entityId: userId,
+      userId,
+    });
+
+    return { success: true, message: 'Password changed successfully' };
+  }
+
+  async sendPasswordOtp(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const otp = this.otpService.generateOTP(user.email);
+    await this.emailService.sendLoginOTP(user.email, user.name, otp);
+
+    return { success: true, message: 'OTP sent to your email address' };
   }
 }

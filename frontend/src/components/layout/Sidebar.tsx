@@ -54,6 +54,7 @@ const adminNav: NavItem[] = [
   { label: 'My Courses', href: '/dashboard/admin/courses', icon: BookOpen },
   { label: 'Create Course', href: '/courses/create', icon: Plus },
   { label: 'Analytics', href: '/dashboard/admin/analytics', icon: BarChart3 },
+  { label: 'Users', href: '/dashboard/admin/users', icon: Users },
   { label: 'Subscriptions', href: '/dashboard/admin/subscriptions', icon: CreditCard },
   { label: 'Plugins', href: '/dashboard/admin/plugins', icon: Plug },
   { label: 'Reports', href: '/dashboard/admin/reports', icon: FileText },
@@ -70,6 +71,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <>
+      {/* Mobile overlay */}
       {isOpen && (
         <button
           type="button"
@@ -79,8 +81,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         />
       )}
 
+      {/* Desktop: always visible. Mobile: slide in/out based on isOpen */}
       <aside
-        className={`fixed left-0 top-0 z-40 h-screen w-64 border-r border-gray-200 bg-white transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed left-0 top-0 z-40 h-screen w-64 border-r border-gray-200 bg-white
+          lg:translate-x-0
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
       >
         <div className="flex h-16 items-center border-b px-6">
           <Link href="/dashboard" className="flex items-center gap-2">
@@ -105,7 +111,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     ? 'bg-indigo-50 text-indigo-600'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
-                onClick={onClose}
+                onClick={() => {
+                  if (window.innerWidth < 1024) onClose();
+                }}
               >
                 <Icon className="h-5 w-5" />
                 {item.label}

@@ -1,5 +1,6 @@
 import { SectionsService } from './sections.service';
 import { CreateSectionDto } from './dto/create-section.dto';
+import { UpdateSectionDto } from './dto/update-section.dto';
 export declare class SectionsController {
     private readonly sectionsService;
     constructor(sectionsService: SectionsService);
@@ -43,7 +44,7 @@ export declare class SectionsController {
         order: number;
         courseId: string;
     })[]>;
-    update(id: string, updateSectionDto: any, req: any): Promise<{
+    update(id: string, updateSectionDto: UpdateSectionDto, req: any): Promise<{
         id: string;
         title: string;
         order: number;
