@@ -312,6 +312,15 @@ export class AuthService {
 
     // For STUDENTs - login directly without OTP (if no failed attempts)
     if (user.role === Role.STUDENT) {
+      // Log successful login
+      await this.activityLogService.log({
+        action: 'USER_LOGIN',
+        entityType: 'USER',
+        entityId: user.id,
+        userId: user.id,
+        metadata: { email: user.email, role: user.role, method: 'password' },
+      });
+
       const payload = { sub: user.id, email: user.email, role: user.role };
       const accessToken = this.jwtService.sign(payload);
       
@@ -322,6 +331,15 @@ export class AuthService {
     }
 
     if (!this.isOtpEnabled()) {
+      // Log successful login (OTP disabled)
+      await this.activityLogService.log({
+        action: 'USER_LOGIN',
+        entityType: 'USER',
+        entityId: user.id,
+        userId: user.id,
+        metadata: { email: user.email, role: user.role, method: 'password', otpDisabled: true },
+      });
+
       return {
         requiresOtp: false,
         message: 'Login successful',
@@ -333,6 +351,15 @@ export class AuthService {
     this.logger.log(`Teacher/Admin ${email} requires OTP. Sending OTP: ${otp}`);
     const emailSent = await this.emailService.sendLoginOTP(email, user.name, otp);
     this.logger.log(`Email send result for ${email}: ${emailSent}`);
+
+    // Log OTP sent
+    await this.activityLogService.log({
+      action: 'OTP_SENT',
+      entityType: 'USER',
+      entityId: user.id,
+      userId: user.id,
+      metadata: { email: user.email, role: user.role, emailSent },
+    });
 
     if (!emailSent) {
       this.otpService.deleteOTP(email);
@@ -384,6 +411,24 @@ export class AuthService {
     
     // Reset login attempts on successful OTP verification
     this.resetLoginAttempts(email);
+
+    // Log successful OTP verification
+    await this.activityLogService.log({
+      action: 'OTP_VERIFIED',
+      entityType: 'USER',
+      entityId: user.id,
+      userId: user.id,
+      metadata: { email: user.email, role: user.role },
+    });
+
+    // Log successful login
+    await this.activityLogService.log({
+      action: 'USER_LOGIN',
+      entityType: 'USER',
+      entityId: user.id,
+      userId: user.id,
+      metadata: { email: user.email, role: user.role, method: 'otp' },
+    });
 
     // Generate JWT
     const payload = { sub: user.id, email: user.email, role: user.role };

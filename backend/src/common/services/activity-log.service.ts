@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 export type ActivityAction = 
@@ -17,13 +17,25 @@ export type ActivityAction =
   | 'ENROLLMENT_REQUESTED'
   | 'ENROLLMENT_APPROVED'
   | 'ENROLLMENT_REJECTED'
+  | 'ENROLLMENT_COMPLETED'
+  | 'QUIZ_STARTED'
+  | 'QUIZ_SUBMITTED'
   | 'QUIZ_GRADED'
+  | 'ASSIGNMENT_SUBMITTED'
   | 'ASSIGNMENT_GRADED'
   | 'COURSE_COMPLETED'
-  | 'LOGIN'
-  | 'LOGOUT';
+  | 'USER_LOGIN'
+  | 'USER_LOGOUT'
+  | 'OTP_SENT'
+  | 'OTP_VERIFIED'
+  | 'OTP_FAILED'
+  | 'PASSWORD_CHANGED'
+  | 'PROFILE_UPDATED'
+  | 'MODULE_CREATED'
+  | 'SECTION_CREATED'
+  | 'CONTENT_GENERATED';
 
-export type EntityType = 'USER' | 'COURSE' | 'ENROLLMENT' | 'QUIZ' | 'ASSIGNMENT' | 'CERTIFICATE';
+export type EntityType = 'USER' | 'COURSE' | 'ENROLLMENT' | 'QUIZ' | 'ASSIGNMENT' | 'CERTIFICATE' | 'MODULE' | 'SECTION' | 'OTP' | 'CONTENT';
 
 interface LogParams {
   action: ActivityAction;
@@ -43,22 +55,25 @@ interface LogFilters {
 
 @Injectable()
 export class ActivityLogService {
+  private readonly logger = new Logger(ActivityLogService.name);
+
   constructor(private prisma: PrismaService) {}
 
-  async log(params: LogParams) {
+  async log(params: LogParams): Promise<void> {
     try {
-      return await this.prisma.activityLog.create({
+      await this.prisma.activityLog.create({
         data: {
           action: params.action,
           entityType: params.entityType,
           entityId: params.entityId,
           userId: params.userId,
           targetUserId: params.targetUserId,
-          metadata: params.metadata,
+          metadata: params.metadata || {},
         },
       });
+      this.logger.debug(`Logged: ${params.action} for ${params.entityType} ${params.entityId || ''}`);
     } catch (error) {
-      console.error('Failed to create activity log:', error);
+      this.logger.error(`Failed to create activity log: ${params.action}`, error);
     }
   }
 
@@ -97,12 +112,18 @@ export class ActivityLogService {
     });
   }
 
+  async getLogTypes(): Promise<string[]> {
+    const types = await this.prisma.activityLog.findMany({
+      select: { action: true },
+      distinct: ['action'],
+      orderBy: { action: 'asc' },
+    });
+    return types.map(t => t.action);
+  }
+
   async getLogsByEntity(entityType: EntityType, entityId: string) {
     return this.prisma.activityLog.findMany({
-      where: {
-        entityType,
-        entityId,
-      },
+      where: { entityType, entityId },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -114,6 +135,16 @@ export class ActivityLogService {
           { userId },
           { targetUserId: userId },
         ],
+      },
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getNewLogsSince(since: Date, limit: number = 100) {
+    return this.prisma.activityLog.findMany({
+      where: {
+        createdAt: { gt: since },
       },
       take: limit,
       orderBy: { createdAt: 'desc' },

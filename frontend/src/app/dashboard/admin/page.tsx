@@ -138,6 +138,11 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   
+  // Log filter states
+  const [logTypes, setLogTypes] = useState<string[]>([]);
+  const [logFilter, setLogFilter] = useState<{ action?: string; entityType?: string }>({});
+  const [lastLogFetch, setLastLogFetch] = useState<Date>(new Date());
+  
   // Loading states for actions
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [processedIds, setProcessedIds] = useState<Set<string>>(new Set());
@@ -175,7 +180,53 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadData();
+    // Fetch log types for filter dropdown
+    fetchLogTypes();
   }, []);
+
+  // Auto-refresh logs every 5 seconds when on logs tab
+  useEffect(() => {
+    if (activeTab !== 'logs') return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = { Authorization: `Bearer ${token}` };
+        
+        let url = `${browserApiBaseUrl}/admin/logs/new?since=${lastLogFetch.toISOString()}&limit=100`;
+        if (logFilter.action) url += `&action=${logFilter.action}`;
+        if (logFilter.entityType) url += `&entityType=${logFilter.entityType}`;
+        
+        const res = await fetch(url, { headers });
+        if (res.ok) {
+          const newLogs = await res.json();
+          if (newLogs.length > 0) {
+            setActivityLogs(prev => [...newLogs, ...prev].slice(0, 200));
+            setLastLogFetch(new Date());
+          }
+        }
+      } catch (err) {
+        console.error('Auto-refresh logs failed:', err);
+      }
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [activeTab, lastLogFetch, logFilter]);
+
+  const fetchLogTypes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${browserApiBaseUrl}/admin/logs/types`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const types = await res.json();
+        setLogTypes(types);
+      }
+    } catch (err) {
+      console.error('Failed to fetch log types:', err);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -668,7 +719,63 @@ export default function AdminDashboard() {
         {/* Activity Logs Tab */}
         {activeTab === 'logs' && (
           <div className="rounded-lg bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  Auto-refreshing every 5s
+                </span>
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Action Type</label>
+                <select
+                  value={logFilter.action || ''}
+                  onChange={(e) => {
+                    setLogFilter(prev => ({ ...prev, action: e.target.value || undefined }));
+                    loadData();
+                  }}
+                  className="block w-48 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none"
+                >
+                  <option value="">All Actions</option>
+                  {logTypes.map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Entity Type</label>
+                <select
+                  value={logFilter.entityType || ''}
+                  onChange={(e) => {
+                    setLogFilter(prev => ({ ...prev, entityType: e.target.value || undefined }));
+                    loadData();
+                  }}
+                  className="block w-40 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none"
+                >
+                  <option value="">All Types</option>
+                  <option value="USER">User</option>
+                  <option value="COURSE">Course</option>
+                  <option value="ENROLLMENT">Enrollment</option>
+                  <option value="QUIZ">Quiz</option>
+                  <option value="ASSIGNMENT">Assignment</option>
+                </select>
+              </div>
+              <button
+                onClick={() => {
+                  setLogFilter({});
+                  loadData();
+                }}
+                className="self-end px-4 py-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-100"
+              >
+                Clear Filters
+              </button>
+            </div>
+
             {activityLogs.length === 0 ? (
               <p className="text-gray-500 text-sm py-8 text-center">No activity logs</p>
             ) : (
@@ -684,7 +791,14 @@ export default function AdminDashboard() {
                         {log.entityType}
                         {log.metadata?.courseTitle && ` - ${log.metadata.courseTitle}`}
                         {log.metadata?.email && ` - ${log.metadata.email}`}
+                        {log.metadata?.name && ` - ${log.metadata.name}`}
+                        {log.metadata?.reason && ` (${log.metadata.reason})`}
                       </p>
+                      {(log as any).user && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          By: {(log as any).user?.name || (log as any).user?.email}
+                        </p>
+                      )}
                     </div>
                     <div className="text-xs text-gray-400">
                       {new Date(log.createdAt).toLocaleString()}

@@ -55,14 +55,16 @@ export class AdminController {
     );
   }
 
+  // Get new logs since timestamp (for auto-refresh/polling)
+  @Get('logs/new')
+  async getNewLogs(@Query('since') since?: string, @Query('limit') limit?: string) {
+    const sinceDate = since ? new Date(since) : new Date(Date.now() - 10000);
+    return this.activityLogService.getNewLogsSince(sinceDate, Number(limit) || 100);
+  }
+
   @Get('logs/types')
   async getLogTypes() {
-    const types = await this.prisma.activityLog.findMany({
-      select: { action: true },
-      distinct: ['action'],
-      orderBy: { action: 'asc' },
-    });
-    return types.map(t => t.action);
+    return this.activityLogService.getLogTypes();
   }
 
   // Teacher Registration by Admin (creates in PENDING status)
