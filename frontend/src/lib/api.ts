@@ -116,6 +116,16 @@ export const uploads = {
     });
     return res.data;
   },
+  getDownloadUrl: (filename: string): string => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
+    return `${browserApiBaseUrl}/uploads/download/${filename}?token=${token}`;
+  },
+  downloadFile: async (filename: string): Promise<Blob> => {
+    const res = await api.get(`/uploads/download/${filename}`, {
+      responseType: 'blob',
+    });
+    return res.data;
+  },
 };
 
 export const enrollments = {

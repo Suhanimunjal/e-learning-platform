@@ -98,7 +98,13 @@ export class ModulesService {
         contentItems: {
           orderBy: { order: 'asc' },
         },
-        moduleQuiz: true,
+        moduleQuiz: {
+          include: {
+            questions: {
+              orderBy: { order: 'asc' },
+            },
+          },
+        },
       },
     });
 

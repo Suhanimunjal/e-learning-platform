@@ -1,4 +1,4 @@
-import { Controller, Post, Patch, Body, Get, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Patch, Body, Get, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException, UnauthorizedException, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { RegisterTeacherDto } from './dto/register-teacher.dto';
@@ -13,6 +13,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
+import { Request as ExpressRequest } from 'express';
 
 const idProofUploadPath = join(process.cwd(), 'uploads', 'id-proofs');
 
@@ -20,13 +21,22 @@ if (!existsSync(idProofUploadPath)) {
   mkdirSync(idProofUploadPath, { recursive: true });
 }
 
+function getClientIp(req: ExpressRequest): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string') {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.ip || req.socket?.remoteAddress || '0.0.0.0';
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('register')
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(@Body() registerDto: RegisterDto, @Req() req: ExpressRequest) {
+    const ip = getClientIp(req);
+    return this.authService.register(registerDto, ip);
   }
 
   @Post('register-teacher')
@@ -71,13 +81,15 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Req() req: ExpressRequest) {
+    const ip = getClientIp(req);
+    return this.authService.login(loginDto, ip);
   }
 
   @Post('verify-otp')
-  async verifyOTP(@Body() body: VerifyOtpDto) {
-    return this.authService.verifyLoginOTP(body.email, body.otp);
+  async verifyOTP(@Body() body: VerifyOtpDto, @Req() req: ExpressRequest) {
+    const ip = getClientIp(req);
+    return this.authService.verifyLoginOTP(body.email, body.otp, ip);
   }
 
   @Post('resend-otp')

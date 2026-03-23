@@ -557,15 +557,20 @@ export default function CreateCoursePage() {
               {/* Price */}
               <div>
                 <label className="block text-sm font-semibold mb-1 text-gray-900">
-                  Price ($)
+                  Price (INR)
                 </label>
                 <input
-                  type="number"
-                  value={courseData.price}
-                  onChange={e => setCourseData({ ...courseData, price: parseFloat(e.target.value) || 0 })}
+                  type="text"
+                  inputMode="decimal"
+                  value={courseData.price === 0 ? '' : String(courseData.price)}
+                  onChange={e => {
+                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                    setCourseData({ ...courseData, price: val === '' ? 0 : parseFloat(val) || 0 });
+                  }}
                   placeholder="0"
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
+                <p className="text-xs text-gray-500 mt-1">Enter 0 for a free course</p>
               </div>
 
               {/* File Uploads */}

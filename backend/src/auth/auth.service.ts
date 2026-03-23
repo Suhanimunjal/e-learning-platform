@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { Role, UserStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { OtpService } from '../common/services/otp.service';
 import { EmailService } from '../common/services/email.service';
 import { ActivityLogService } from '../common/services/activity-log.service';
@@ -26,6 +27,12 @@ interface LoginAttempt {
 const MAX_LOGIN_ATTEMPTS = 3;
 const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
 
+// Token expiry: Admin = 12 hours, Teacher/Student = 365 days (effectively indefinite)
+const ADMIN_TOKEN_EXPIRY = '12h';
+const USER_TOKEN_EXPIRY = '365d';
+const ADMIN_TOKEN_EXPIRY_SECONDS = 12 * 60 * 60;
+const USER_TOKEN_EXPIRY_SECONDS = 365 * 24 * 60 * 60;
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -40,6 +47,64 @@ export class AuthService {
     private activityLogService: ActivityLogService,
   ) {}
 
+  private getExpiryForRole(role: Role): { expiresIn: string; expiresInSeconds: number } {
+    if (role === Role.ADMIN) {
+      return { expiresIn: ADMIN_TOKEN_EXPIRY, expiresInSeconds: ADMIN_TOKEN_EXPIRY_SECONDS };
+    }
+    return { expiresIn: USER_TOKEN_EXPIRY, expiresInSeconds: USER_TOKEN_EXPIRY_SECONDS };
+  }
+
+  private hashIp(ip: string): string {
+    const jwtSecret = process.env.JWT_SECRET || 'default-secret';
+    return crypto.createHmac('sha256', jwtSecret).update(ip).digest('hex').substring(0, 16);
+  }
+
+  private async createSessionToken(userId: string, email: string, role: Role, ip: string): Promise<string> {
+    const jti = crypto.randomUUID();
+    const { expiresInSeconds } = this.getExpiryForRole(role);
+    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
+    const ipHash = this.hashIp(ip);
+
+    // Encrypt payload with IP-derived key
+    const payload = { sub: userId, email, role, jti, ip: ipHash };
+    const accessToken = this.jwtService.sign(payload);
+
+    // Invalidate any existing session for this user (one-token-per-user)
+    await this.prisma.session.deleteMany({ where: { userId } });
+
+    // Create new session
+    await this.prisma.session.create({
+      data: {
+        userId,
+        token: jti,
+        role,
+        expiresAt,
+      },
+    });
+
+    return accessToken;
+  }
+
+  async validateSessionToken(userId: string, jti: string): Promise<boolean> {
+    const session = await this.prisma.session.findFirst({
+      where: { userId, token: jti },
+    });
+    if (!session) return false;
+    if (new Date() > session.expiresAt) {
+      await this.prisma.session.delete({ where: { id: session.id } });
+      return false;
+    }
+    return true;
+  }
+
+  async invalidateSession(userId: string): Promise<void> {
+    await this.prisma.session.deleteMany({ where: { userId } });
+  }
+
+  async invalidateSessionByJti(jti: string): Promise<void> {
+    await this.prisma.session.deleteMany({ where: { token: jti } });
+  }
+
   private toSlug(value: string): string {
     return value
       .toLowerCase()
@@ -50,7 +115,7 @@ export class AuthService {
       .replace(/^-|-$/g, '');
   }
 
-  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
+  async register(registerDto: RegisterDto, ip: string = '0.0.0.0'): Promise<AuthResponseDto> {
     const { email, password, name, role } = registerDto;
 
     // Only allow STUDENT registration via public registration
@@ -89,8 +154,7 @@ export class AuthService {
       metadata: { email: user.email, role: user.role },
     });
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = await this.createSessionToken(user.id, user.email, user.role, ip);
 
     return {
       accessToken,
@@ -408,7 +472,7 @@ export class AuthService {
     };
   }
 
-  async verifyLoginOTP(email: string, otp: string): Promise<AuthResponseDto> {
+  async verifyLoginOTP(email: string, otp: string, ip: string = '0.0.0.0'): Promise<AuthResponseDto> {
     const pendingLogin = this.pendingLogins.get(email);
     
     if (!pendingLogin) {
@@ -458,9 +522,8 @@ export class AuthService {
       metadata: { email: user.email, role: user.role, method: 'otp' },
     });
 
-    // Generate JWT
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const accessToken = this.jwtService.sign(payload);
+    // Generate JWT with session tracking
+    const accessToken = await this.createSessionToken(user.id, user.email, user.role, ip);
 
     return {
       accessToken,
@@ -509,7 +572,7 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResponseDto | { requiresOtp: boolean; message: string; isBlacklisted?: boolean; blacklistedEmail?: string; blacklistedName?: string }> {
+  async login(loginDto: LoginDto, ip: string = '0.0.0.0'): Promise<AuthResponseDto | { requiresOtp: boolean; message: string; isBlacklisted?: boolean; blacklistedEmail?: string; blacklistedName?: string }> {
     const result = await this.initiateLogin(loginDto);
     
     // Handle blacklisted user
@@ -525,10 +588,9 @@ export class AuthService {
 
     if (!result.requiresOtp) {
       // For students, return full auth response
-      const { email, password } = loginDto;
+      const { email } = loginDto;
       const user = await this.prisma.user.findUnique({ where: { email } });
-      const payload = { sub: user!.id, email: user!.email, role: user!.role };
-      const accessToken = this.jwtService.sign(payload);
+      const accessToken = await this.createSessionToken(user!.id, user!.email, user!.role, ip);
       return {
         accessToken,
         user: this.excludePassword(user!),

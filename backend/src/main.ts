@@ -38,6 +38,23 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
   
+  // Security headers middleware - clickjacking and other protections
+  app.use((req: any, res: any, next: any) => {
+    // Prevent clickjacking
+    res.setHeader('X-Frame-Options', 'DENY');
+    // Prevent MIME type sniffing
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    // Enable XSS filter
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    // Strict transport security (HTTPS only)
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    // Content Security Policy - prevent framing
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
+    // Referrer policy
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
+
   // Serve static files (uploads)
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
   

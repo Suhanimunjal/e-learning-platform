@@ -304,8 +304,6 @@ export default function AdminLoginPage() {
           </div>
         </div>
       </div>
-    </div>
-  );
 
       {/* Blacklist Popup Modal */}
       {showBlacklistPopup && (

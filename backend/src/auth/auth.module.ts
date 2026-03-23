@@ -20,7 +20,7 @@ import { PrismaService } from '../prisma/prisma.service';
         }
         return {
           secret,
-          signOptions: { expiresIn: '7d' },
+          signOptions: { expiresIn: '365d' }, // Default max; actual expiry set per-role when signing
         };
       },
       inject: [ConfigService],

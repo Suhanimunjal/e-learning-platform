@@ -669,3 +669,16 @@ model BlacklistedUser {
   @@index([role])
   @@index([blacklistedAt])
 }
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  token     String   @unique
+  role      Role
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}

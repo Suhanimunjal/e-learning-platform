@@ -9,11 +9,15 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { CourseEnrollmentGuard } from '../common/guards/course-enrollment.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('modules')
 @UseGuards(JwtAuthGuard)
 export class ModulesController {
-  constructor(private readonly modulesService: ModulesService) {}
+  constructor(
+    private readonly modulesService: ModulesService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Post()
   @Roles(Role.ADMIN, Role.MANAGER, Role.TEACHER)
@@ -111,5 +115,29 @@ export class ModulesController {
   @Get('voices')
   getVoices() {
     return this.modulesService.getAvailableVoices();
+  }
+
+  // Mark module as complete for student
+  @Post(':id/complete')
+  @Roles(Role.STUDENT)
+  async markComplete(@Param('id') id: string, @Request() req) {
+    const existing = await this.prisma.progress.findFirst({
+      where: { userId: req.user.id, moduleId: id },
+    });
+
+    if (existing) {
+      return this.prisma.progress.update({
+        where: { id: existing.id },
+        data: { completed: true, lastAccessed: new Date() },
+      });
+    }
+
+    return this.prisma.progress.create({
+      data: {
+        userId: req.user.id,
+        moduleId: id,
+        completed: true,
+      },
+    });
   }
 }
