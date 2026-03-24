@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build outputs
+.next/
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Moodle runtime data (keep structure, ignore content)
+server/moodledata/cache/*
+server/moodledata/localcache/*
+server/moodledata/muc/*
+server/moodledata/temp/*
+!server/moodledata/cache/.gitkeep
+!server/moodledata/localcache/.gitkeep
+!server/moodledata/muc/.gitkeep
+!server/moodledata/temp/.gitkeep
+
+# Moodle config (contains credentials)
+server/moodle/config.php
+
+# Temporary files
+tmp/
+*.tmp
+*.temp
+
+# Upload directory content
+adapter/uploads/*
+!adapter/uploads/.gitkeep
